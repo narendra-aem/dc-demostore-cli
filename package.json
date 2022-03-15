@@ -1,5 +1,5 @@
 {
-  "name": "@amp-nova/amp-rsa-cli",
+  "name": "@amplience/amp-rsa-cli",
   "version": "0.2.21",
   "description": "AMP-RSA Demo Automation",
   "mainx": "node -r ts-node/register/transpile-only --preserve-symlinks -r tsconfig-paths/register src/index.ts",
@@ -17,14 +17,14 @@
     "osbuild": {
       "darwin": "chmod +x dist/index.js",
       "linux": "chmod +x dist/index.js",
-      "win32": ""
+      "win32": "cd ."
     },
     "prepare": "npm run build",
     "start": "node -r ts-node/register/transpile-only --preserve-symlinks -r tsconfig-paths/register src/index.ts"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/amp-nova/amp-rsa-cli.git"
+    "url": "git+https://github.com/amplience/amp-rsa-cli.git"
   },
   "files": [
     "dist/*",
@@ -38,9 +38,9 @@
   "author": "Amplience Innovation Team",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/amp-nova/amp-rsa-cli/issues"
+    "url": "https://github.com/amplience/amp-rsa-cli/issues"
   },
-  "homepage": "https://github.com/amp-nova/amp-rsa-cli#readme",
+  "homepage": "https://github.com/amplience/amp-rsa-cli#readme",
   "dependencies": {
     "@justindfuller/async-lodash": "^1.0.9",
     "@rauschma/stringio": "^1.4.0",
@@ -67,7 +67,6 @@
   },
   "devDependencies": {
     "@types/adm-zip": "^0.4.34",
-    "@types/ajv": "^1.0.0",
     "@types/async": "^3.2.10",
     "@types/cli-table": "^0.3.0",
     "@types/fs-extra": "^9.0.13",
