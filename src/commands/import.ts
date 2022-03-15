@@ -109,8 +109,6 @@ export const handler = contextHandler(async (context: ImportContext): Promise<vo
 
     logHeadline(`Phase 1: preparation`)
 
-    process.exit(0)
-
     context.mapping = {
         ...context.mapping,
         url: context.environment.url

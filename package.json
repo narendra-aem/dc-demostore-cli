@@ -16,7 +16,8 @@
     "build": "npm run clean && tsc && cross-os osbuild",
     "osbuild": {
       "darwin": "chmod +x dist/index.js",
-      "linux": "chmod +x dist/index.js"
+      "linux": "chmod +x dist/index.js",
+      "win32": ""
     },
     "prepare": "npm run build",
     "start": "node -r ts-node/register/transpile-only --preserve-symlinks -r tsconfig-paths/register src/index.ts"
