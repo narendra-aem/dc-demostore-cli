@@ -16,17 +16,56 @@ import { ImportContext } from '../handlers/resource-handler';
 import { copyTemplateFilesToTempDir } from '../helpers/import-helper';
 import { contextHandler, loginDAM } from '../common/middleware';
 import amplienceBuilder from '../common/amplience-builder';
-import { AMPRSAConfig } from '../common/types';
 import { WorkflowState } from 'dc-management-sdk-js';
 import { paginator } from '../helpers/paginator';
 import fs from 'fs-extra'
 import { CONFIG_PATH } from '../common/environment-manager';
-import simpleGit from 'simple-git'
+import axios from 'axios';
+import admZip from 'adm-zip'
+import { sleep } from '../common/utils';
 
 export const command = 'import';
 export const desc = "Import hub data";
 
 const automationDirPath = `${CONFIG_PATH}/amp-rsa-automation`
+
+const downloadZip = async (): Promise<void> => {
+    logger.info(`downloading latest automation files to ${chalk.blue(automationDirPath)}...`)
+    const response = await axios({
+        method: 'GET',
+        url: 'https://github.com/amplience/amp-rsa-automation/archive/refs/heads/main.zip',
+        responseType: 'stream'
+    })
+
+    const zipFilePath = `${CONFIG_PATH}/main.zip`
+
+    // pipe the result stream into a file on disc
+    response.data.pipe(fs.createWriteStream(zipFilePath))
+
+    // return a promise and resolve when download finishes
+    return new Promise((resolve, reject) => {
+        response.data.on('end', async () => {
+            logger.info(`download successful, unzipping...`)
+            await sleep(1000)
+
+            let zip = new admZip(zipFilePath)
+            zip.extractAllTo(CONFIG_PATH)
+
+            // move files from the amp-rsa-automation-main folder to the automationDirPath
+            fs.moveSync(`${CONFIG_PATH}/amp-rsa-automation-main`, automationDirPath)
+
+            // delete the zip
+            fs.rmSync(zipFilePath)
+
+            resolve()
+        })
+
+        response.data.on('error', () => {
+            reject()
+        })
+    })
+}
+
 export const builder = (yargs: Argv): Argv => {
     return amplienceBuilder(yargs).options({
         automationDir: {
@@ -49,18 +88,17 @@ export const builder = (yargs: Argv): Argv => {
         async (context: ImportContext) => {
             // delete the cached automation files if --latest was used
             if (context.latest) {
-                await fs.rm(automationDirPath, { recursive: true })
+                await fs.rm(automationDirPath, { recursive: true, force: true })
             }
 
             // set up the automation dir if it does not exist and download the latest automation files
             if (!fs.existsSync(automationDirPath)) {
-                logger.info(`downloading latest automation files...`)
-                await simpleGit().clone('https://github.com/amp-nova/amp-rsa-automation', automationDirPath)
+                await downloadZip()
             }
 
             if (!_.isEmpty(context.matchingSchema)) {
-                context.matchingSchema.push('https://amprsa.net/site/config')                    
-                context.matchingSchema.push('https://amprsa.net/site/automation')                    
+                context.matchingSchema.push('https://amprsa.net/site/config')
+                context.matchingSchema.push('https://amprsa.net/site/automation')
             }
         }
     ])
@@ -70,6 +108,8 @@ export const handler = contextHandler(async (context: ImportContext): Promise<vo
     logger.info(`${chalk.green(command)}: ${desc} started at ${chalk.magentaBright(context.startTime)}`)
 
     logHeadline(`Phase 1: preparation`)
+
+    process.exit(0)
 
     context.mapping = {
         ...context.mapping,
@@ -95,7 +135,7 @@ export const handler = contextHandler(async (context: ImportContext): Promise<vo
         algolia: context.config.algolia,
         dam: await readDAMMapping(context)
     }
-    
+
     // await timed('content-type-schema import', async () => { await new CLIContentTypeSchemaHandler().import(context) })
     // await timed('content-type import', async () => { await new CLIContentTypeHandler().import(context) })
 
@@ -136,7 +176,7 @@ export const handler = contextHandler(async (context: ImportContext): Promise<vo
 
         // update the automation content item with any new mapping content generated
         await amplience.updateAutomation(context)
-        
+
         logHeadline(`Phase 4: reentrant import`)
 
         // process step 7: npm run automate:schemas
