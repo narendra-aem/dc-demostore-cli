@@ -29,15 +29,19 @@ export const desc = "Import hub data";
 
 const automationDirPath = `${CONFIG_PATH}/amp-rsa-automation`
 
-const downloadZip = async (): Promise<void> => {
+const downloadZip = async (branch: string): Promise<void> => {
+    let url = `https://github.com/amplience/amp-rsa-automation/archive/refs/heads/${branch}.zip`
+
     logger.info(`downloading latest automation files to ${chalk.blue(automationDirPath)}...`)
+    logger.info(`\t${chalk.green(url)}`)
+
     const response = await axios({
         method: 'GET',
-        url: 'https://github.com/amplience/amp-rsa-automation/archive/refs/heads/main.zip',
+        url,
         responseType: 'stream'
     })
 
-    const zipFilePath = `${CONFIG_PATH}/main.zip`
+    const zipFilePath = `${CONFIG_PATH}/${branch}.zip`
 
     // pipe the result stream into a file on disc
     response.data.pipe(fs.createWriteStream(zipFilePath))
@@ -51,8 +55,8 @@ const downloadZip = async (): Promise<void> => {
             let zip = new admZip(zipFilePath)
             zip.extractAllTo(CONFIG_PATH)
 
-            // move files from the amp-rsa-automation-main folder to the automationDirPath
-            fs.moveSync(`${CONFIG_PATH}/amp-rsa-automation-main`, automationDirPath)
+            // move files from the amp-rsa-automation-${branch} folder to the automationDirPath
+            fs.moveSync(`${CONFIG_PATH}/amp-rsa-automation-${branch}`, automationDirPath)
 
             // delete the zip
             fs.rmSync(zipFilePath)
@@ -82,6 +86,12 @@ export const builder = (yargs: Argv): Argv => {
             alias: 'l',
             describe: 'use latest automation files',
             type: 'boolean'
+        },
+        branch: {
+            alias: 'b',
+            describe: 'branch of amp-rsa-automation to use',
+            type: 'string',
+            default: 'main'
         }
     }).middleware([
         async (c: ImportContext) => await loginDAM(c),
@@ -93,7 +103,7 @@ export const builder = (yargs: Argv): Argv => {
 
             // set up the automation dir if it does not exist and download the latest automation files
             if (!fs.existsSync(automationDirPath)) {
-                await downloadZip()
+                await downloadZip(context.branch)
             }
 
             if (!_.isEmpty(context.matchingSchema)) {

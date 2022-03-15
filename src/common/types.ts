@@ -48,6 +48,7 @@ export class ImportArgs extends LoggableArgs {
     skipContentImport: boolean
     automationDir: string
     latest: boolean
+    branch: string
 
     damService: DAMService
     config: AMPRSAConfig
