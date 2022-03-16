@@ -37,10 +37,10 @@ npm install -g @amplience/amp-rsa-cli
 ### PreRequisites
 - Amplience account ( Think about what we say here)
 - Details and where to get then from.
-  - hub name (Env)
-  - App URL - link to RSA-CORE
+  - [Hub Name](docs/screenshots.md)
+  - [App URL](docs/ForkDeploy.md) - ( link to your deployed `amp-rsa-core` app )
   - Client ID / Secret - Sent via support@amplience.com - One Time Secret
-  - Hub ID - Screenshot of DC / Settings page
+  - [Hub ID](docs/screenshots.md)
   - Username & Password for Content Hub - Automate VSE details.
 
 On your first invocation of any `amprsa` command, the CLI will prompt you to create an environment:
@@ -49,8 +49,8 @@ On your first invocation of any `amprsa` command, the CLI will prompt you to cre
 
 ```bash
 dave@po:~ $ amprsa env add
-✔ env name: foo
-✔ app deployment url: https://foo.baz.com
+✔ env name: hub-name-from-hub-settings-properties
+✔ app deployment url: https://your-deployed-amp-rsa-core-url.com
 ✔ cms client id: amplience-client-id
 ✔ cms client secret: ***********************
 ✔ cms hub id: hub-id-from-hub-settings-properties
