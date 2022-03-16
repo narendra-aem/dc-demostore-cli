@@ -26,7 +26,7 @@ Run `amprsa --help` to get a list of available commands.
 Installing the amprsa CLI from the NPM package manager can be achieved using the following command:
 
 ```bash
-npm install -g @amp-nova/amp-rsa-cli
+npm install -g @amplience/amp-rsa-cli
 ```
 <!--TODD: Change to Amplience NPM -->
 
