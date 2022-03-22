@@ -2,6 +2,7 @@ import { ContentRepository, Hub } from 'dc-management-sdk-js';
 import { DAMService } from '../dam/dam-service';
 import _, { Dictionary } from 'lodash';
 import { InstrumentedHub } from './middleware';
+import { DemoStoreConfiguration } from '@amplience/dc-demostore-integration';
 
 export interface CommonArgs {
 }
@@ -51,7 +52,7 @@ export class ImportArgs extends LoggableArgs {
     branch: string
 
     damService: DAMService
-    config: DemoStoreConfig
+    config: DemoStoreConfiguration
     mapping: Mapping
 }
 
@@ -68,12 +69,12 @@ export interface Mapping {
     contentMap: Dictionary<string>
 }
 
-export class DemoStoreConfig {
-    url: string
-    cms: AmplienceConfig
-    algolia: AlgoliaConfig
-    environment: string // env name
-}
+// export class DemoStoreConfig {
+//     url: string
+//     cms: AmplienceConfig
+//     algolia: AlgoliaConfig
+//     environment: string // env name
+// }
 
 export class AlgoliaConfig {
     appId: string
