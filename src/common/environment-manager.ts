@@ -1,5 +1,5 @@
 import { join, dirname } from 'path';
-import { readJsonSync, existsSync, mkdirpSync, writeJsonSync } from 'fs-extra';
+import { readJsonSync, existsSync, mkdirpSync, writeJsonSync, writeFileSync } from 'fs-extra';
 import _ from 'lodash';
 import chalk from 'chalk'
 import { Arguments, Argv, env } from 'yargs';
@@ -14,7 +14,7 @@ export const CONFIG_PATH = getConfigPath()
 const ENV_FILE_PATH = `${CONFIG_PATH}/environments.json`
 
 fs.mkdirpSync(CONFIG_PATH)
-const saveConfig = () => writeJsonSync(ENV_FILE_PATH, envConfig, { encoding: 'utf-8' })
+const saveConfig = () => writeFileSync(ENV_FILE_PATH, JSON.stringify(envConfig, undefined, 4), { encoding: 'utf-8' })
 
 export const updateEnvironments = () => {
     _.each(envConfig.envs, env => {
