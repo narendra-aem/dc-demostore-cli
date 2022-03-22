@@ -89,7 +89,7 @@ export const useEnvironment = async (env: any) => {
 
 export const currentEnvironment = async () => {
     if (envConfig.envs.length === 0) {
-        logger.info(`no amprsa environments found, let's create one!`)
+        logger.info(`no demostore environments found, let's create one!`)
         logger.info('')
         await createEnvironment()
     }

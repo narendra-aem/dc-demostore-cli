@@ -59,3 +59,15 @@ export const fileIterator = (dir: any, context: ImportContext) => {
         }
     }
 }
+export const getRandomInt = (max: number) => {
+    return Math.floor(Math.random() * max);
+}
+export const getRandom = <T>(array: T[]): T => {
+    if (Array.isArray(array)) {
+        let index = getRandomInt(array.length + 1)
+        return array[index]
+    }
+    else {
+        return array
+    }
+}

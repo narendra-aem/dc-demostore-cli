@@ -27,10 +27,10 @@ import { sleep } from '../common/utils';
 export const command = 'import';
 export const desc = "Import hub data";
 
-const automationDirPath = `${CONFIG_PATH}/amp-rsa-automation`
+const automationDirPath = `${CONFIG_PATH}/dc-demostore-automation`
 
 const downloadZip = async (branch: string): Promise<void> => {
-    let url = `https://github.com/amplience/amp-rsa-automation/archive/refs/heads/${branch}.zip`
+    let url = `https://github.com/amplience/dc-demostore-automation/archive/refs/heads/${branch}.zip`
 
     logger.info(`downloading latest automation files to ${chalk.blue(automationDirPath)}...`)
     logger.info(`\t${chalk.green(url)}`)
@@ -55,8 +55,8 @@ const downloadZip = async (branch: string): Promise<void> => {
             let zip = new admZip(zipFilePath)
             zip.extractAllTo(CONFIG_PATH)
 
-            // move files from the amp-rsa-automation-${branch} folder to the automationDirPath
-            fs.moveSync(`${CONFIG_PATH}/amp-rsa-automation-${branch}`, automationDirPath)
+            // move files from the dc-demostore-automation-${branch} folder to the automationDirPath
+            fs.moveSync(`${CONFIG_PATH}/dc-demostore-automation-${branch}`, automationDirPath)
 
             // delete the zip
             fs.rmSync(zipFilePath)
@@ -89,12 +89,12 @@ export const builder = (yargs: Argv): Argv => {
         },
         branch: {
             alias: 'b',
-            describe: 'branch of amp-rsa-automation to use',
+            describe: 'branch of dc-demostore-automation to use',
             type: 'string',
             default: 'main'
         }
     }).middleware([
-        async (c: ImportContext) => await loginDAM(c),
+        loginDAM,
         async (context: ImportContext) => {
             // delete the cached automation files if --latest was used
             if (context.latest) {
@@ -104,11 +104,6 @@ export const builder = (yargs: Argv): Argv => {
             // set up the automation dir if it does not exist and download the latest automation files
             if (!fs.existsSync(automationDirPath)) {
                 await downloadZip(context.branch)
-            }
-
-            if (!_.isEmpty(context.matchingSchema)) {
-                context.matchingSchema.push('https://amprsa.net/site/config')
-                context.matchingSchema.push('https://amprsa.net/site/automation')
             }
         }
     ])

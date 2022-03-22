@@ -31,8 +31,8 @@ export class DynamicContentCredentials {
 export class AmplienceArgs {
     environment: EnvironmentConfig
     automation: {
-        contentItems: AMPRSAMapping[]
-        workflowStates: AMPRSAMapping[]
+        contentItems: DemoStoreMapping[]
+        workflowStates: DemoStoreMapping[]
     }
     hub: InstrumentedHub
     matchingSchema: string[]
@@ -51,7 +51,7 @@ export class ImportArgs extends LoggableArgs {
     branch: string
 
     damService: DAMService
-    config: AMPRSAConfig
+    config: DemoStoreConfig
     mapping: Mapping
 }
 
@@ -68,7 +68,7 @@ export interface Mapping {
     contentMap: Dictionary<string>
 }
 
-export class AMPRSAConfig {
+export class DemoStoreConfig {
     url: string
     cms: AmplienceConfig
     algolia: AlgoliaConfig
@@ -96,7 +96,7 @@ export interface DAMMapping {
     imagesMap: Dictionary<string>
 }
 
-export class AMPRSAMapping {
+export class DemoStoreMapping {
     from: string
     to: string
 }

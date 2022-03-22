@@ -3,7 +3,7 @@ import { Argv } from 'yargs';
 import _ from 'lodash';
 
 export const command = 'env'
-export const description = 'Manage amprsa environments'
+export const description = 'Manage demostore environments'
 
 export const envBuilder = (yargs: Argv): Argv =>
   yargs.positional('env', {
@@ -15,8 +15,8 @@ export const envBuilder = (yargs: Argv): Argv =>
 export const builder = (yargs: Argv): Argv =>
   yargs
     .demandCommand()
-    .command("add", "Add an amprsa environment", createEnvironment)
-    .command("delete [env]", "Delete an amprsa environment", envBuilder, deleteEnvironment)
-    .command("list", "List amprsa environments", listEnvironments)
-    .command("use [env]", "Use amprsa environment", envBuilder, useEnvironmentFromArgs)
+    .command("add", "Add an demostore environment", createEnvironment)
+    .command("delete [env]", "Delete an demostore environment", envBuilder, deleteEnvironment)
+    .command("list", "List demostore environments", listEnvironments)
+    .command("use [env]", "Use demostore environment", envBuilder, useEnvironmentFromArgs)
     .help();

@@ -1,4 +1,4 @@
-import { RepositoryContentItem } from './content-dependancy-tree';
+import { RepositoryContentItem } from './content-dependency-tree';
 import { Body } from './body';
 
 export interface MediaLink {
@@ -35,7 +35,7 @@ export class MediaLinkInjector {
   all: ItemMediaLinks[];
 
   constructor(items: RepositoryContentItem[]) {
-    // Identify all content dependancies.
+    // Identify all content dependencies.
     this.all = this.identifyMediaLinks(items);
   }
 

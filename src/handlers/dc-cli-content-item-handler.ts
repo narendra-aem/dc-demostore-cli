@@ -22,11 +22,11 @@ import {
 } from 'dc-management-sdk-js';
 import { ContentMapping } from '../common/dccli/content-mapping'
 import {
-  ContentDependancyTree,
+  ContentDependencyTree,
   RepositoryContentItem,
-  ItemContentDependancies,
-  ContentDependancyInfo
-} from '../common/dccli/content-item/content-dependancy-tree';
+  ItemContentDependencies,
+  ContentDependencyInfo
+} from '../common/dccli/content-item/content-dependency-tree';
 import { Body } from '../common/dccli/content-item/body';
 
 import { AmplienceSchemaValidator, defaultSchemaLookup } from '../common/dccli/content-item/amplience-schema-validator';
@@ -96,7 +96,7 @@ export const builder = (yargs: Argv): void => {
     .option('skipIncomplete', {
       type: 'boolean',
       boolean: true,
-      describe: 'Skip any content items that has one or more missing dependancy.'
+      describe: 'Skip any content items that has one or more missing dependency.'
     })
 
     .option('publish', {
@@ -298,7 +298,7 @@ const prepareContentForImport = async (
   mapping: ContentMapping,
   log: FileLog,
   argv: Arguments<ImportItemBuilderOptions & ConfigurationParameters>
-): Promise<ContentDependancyTree | null> => {
+): Promise<ContentDependencyTree | null> => {
   // traverse folder structure and find content items
   // replicate relative path string in target repo/folder (create if does not exist)
   // if there is an existing mapping (old id to new id), update the existing content (check all before beginning and ask user)
@@ -537,11 +537,11 @@ const prepareContentForImport = async (
     }
   }
 
-  // Step 3: Track dependancies between content items and update them to match the new content ids.
+  // Step 3: Track dependencies between content items and update them to match the new content ids.
   //         To do this, we must insert content that is depended on before inserting the replacement.
   //         Circular references cannot be resolved, so they should be handled by an insert with invalid id, then subsequent update.
 
-  const tree = new ContentDependancyTree(contentItems, mapping);
+  const tree = new ContentDependencyTree(contentItems, mapping);
 
   // Do all the content types that items use exist in the schema list?
   const missingSchema = tree.requiredSchema.filter(
@@ -586,12 +586,12 @@ const prepareContentForImport = async (
   // Do all the content items that we depend on exist either in the mapping or in the items we're importing?
   const missingIDs = new Set<string>();
   const invalidContentItems = tree.filterAny((item: any) => {
-    const missingDeps = item.dependancies.filter(
-      (dep: any) => !tree.byId.has(dep.dependancy.id as string) && mapping.getContentItem(dep.dependancy.id) == null
+    const missingDeps = item.dependencies.filter(
+      (dep: any) => !tree.byId.has(dep.dependency.id as string) && mapping.getContentItem(dep.dependency.id) == null
     );
     missingDeps.forEach((dep: any) => {
-      if (dep.dependancy.id != null) {
-        missingIDs.add(dep.dependancy.id);
+      if (dep.dependency.id != null) {
+        missingIDs.add(dep.dependency.id);
       }
     });
     return missingDeps.length > 0;
@@ -603,12 +603,12 @@ const prepareContentForImport = async (
     } else {
       const validator = new AmplienceSchemaValidator(defaultSchemaLookup(types, schemas));
 
-      const mustSkip: ItemContentDependancies[] = [];
+      const mustSkip: ItemContentDependencies[] = [];
       await Promise.all(
         invalidContentItems.map(async (item: any) => {
-          tree.removeContentDependanciesFromBody(
+          tree.removeContentDependenciesFromBody(
             item.owner.content.body,
-            item.dependancies.map((dependancy: any) => dependancy.dependancy)
+            item.dependencies.map((dependency: any) => dependency.dependency)
           );
 
           try {
@@ -624,7 +624,7 @@ const prepareContentForImport = async (
 
       if (mustSkip.length > 0) {
         log.appendLine(
-          'Required dependancies for the following content items are missing, and would cause validation errors if set null.'
+          'Required dependencies for the following content items are missing, and would cause validation errors if set null.'
         );
         log.appendLine('These items will be skipped:');
         mustSkip.forEach(item => log.appendLine(`  ${item.owner.content.label}`));
@@ -641,7 +641,7 @@ const prepareContentForImport = async (
     );
 
     if (tree.all.length === 0) {
-      log.appendLine('No content remains after removing those with missing dependancies. Aborting.');
+      log.appendLine('No content remains after removing those with missing dependencies. Aborting.');
       return null;
     }
 
@@ -661,118 +661,125 @@ const prepareContentForImport = async (
   }
 
   logUpdate(
-    `Found ${tree.levels.length} dependancy levels in ${tree.all.length} items, ${tree.circularLinks.length} referencing a circular dependancy.`
+    `Found ${tree.levels.length} dependency levels in ${tree.all.length} items, ${tree.circularLinks.length} referencing a circular dependency.`
   );
   logUpdate(`Importing ${tree.all.length} content items...`);
 
   return tree;
 };
 
-const rewriteDependancy = (dep: ContentDependancyInfo, mapping: ContentMapping, allowNull: boolean): void => {
-  let id = mapping.getContentItem(dep.dependancy.id);
+const rewriteDependency = (dep: ContentDependencyInfo, mapping: ContentMapping, allowNull: boolean): void => {
+  let id = mapping.getContentItem(dep.dependency.id);
 
   if (id == null && !allowNull) {
-    id = dep.dependancy.id;
+    id = dep.dependency.id;
   }
 
-  if (dep.dependancy._meta.schema === '_hierarchy') {
+  if (dep.dependency._meta.schema === '_hierarchy') {
     dep.owner.content.body._meta.hierarchy.parentId = id;
   } else if (dep.parent) {
     const parent = dep.parent as Body;
     if (id == null) {
       delete parent[dep.index];
     } else {
-      parent[dep.index] = dep.dependancy;
-      dep.dependancy.id = id;
+      parent[dep.index] = dep.dependency;
+      dep.dependency.id = id;
     }
   }
 };
 
-const sortDependencies = (a: ItemContentDependancies, b: ItemContentDependancies): number => {
+const sortDependencies = (a: ItemContentDependencies, b: ItemContentDependencies): number => {
   // if b depends on a, a should be sorted first, and vice versa
   if (
     _.includes(
-      _.map(a.dependants, (d: ContentDependancyInfo) => d.resolved && d.resolved.owner.content.id),
+      _.map(a.dependents, (d: ContentDependencyInfo) => d.resolved && d.resolved.owner.content.id),
       b.owner.content.id
     )
   ) {
     return -1;
   } else if (
     _.includes(
-      _.map(b.dependants, (d: ContentDependancyInfo) => d.resolved && d.resolved.owner.content.id),
+      _.map(b.dependents, (d: ContentDependencyInfo) => d.resolved && d.resolved.owner.content.id),
       a.owner.content.id
     )
   ) {
     return 1;
   }
 
-  // otherwise, create the one with the most dependants first
-  return a.dependants.length > b.dependants.length ? -1 : 1;
+  // otherwise, create the one with the most dependents first
+  return a.dependents.length > b.dependents.length ? -1 : 1;
 };
+
+const abort = (error: Error, log: FileLog): void => {
+  log.appendLine(`Importing content item failed, aborting. Error: ${error.toString()}`);
+};
+
+let dependents: Dictionary<ContentItem> = {}
+const importContentItem = async (
+  item: ItemContentDependencies,
+  mapping: ContentMapping,
+  client: DynamicContent,
+  log: FileLog,
+  shouldRewrite: boolean,
+  existing: string | ContentItem | null
+) => {
+  const content = item.owner.content;
+
+  item.dependencies.forEach((dep: any) => {
+    rewriteDependency(dep, mapping, shouldRewrite);
+  });
+
+  const originalId = content.id;
+  content.id = mapping.getContentItem(content.id as string) || '';
+
+  if (_.isEmpty(content.id)) {
+    delete (content as any).id;
+  }
+
+  let newItem: ContentItem;
+  let oldVersion: number;
+  try {
+    const result = await createOrUpdateContent(
+      client,
+      item.owner.repo,
+      existing,
+      content
+    );
+    newItem = result.newItem;
+    oldVersion = result.oldVersion;
+  } catch (e) {
+    log.error(`Failed creating ${content.label}:`, e);
+    abort(e, log);
+    return false;
+  }
+
+  const updated = oldVersion > 0;
+  log.addComment(`${updated ? 'Updated' : 'Created'} ${content.label}.`);
+  log.addAction(
+    updated ? 'UPDATE' : 'CREATE',
+    (newItem.id || 'unknown') + (updated ? ` ${oldVersion} ${newItem.version}` : '')
+  );
+
+  content.id = originalId;
+  dependents[originalId] = newItem;
+  mapping.registerContentItem(originalId as string, newItem.id as string);
+  mapping.registerContentItem(newItem.id as string, newItem.id as string);
+}
 
 const importTree = async (
   client: DynamicContent,
-  tree: ContentDependancyTree,
+  tree: ContentDependencyTree,
   mapping: ContentMapping,
   log: FileLog,
   argv: Arguments<ImportItemBuilderOptions & ConfigurationParameters>
 ): Promise<boolean> => {
-  const abort = (error: Error): void => {
-    log.appendLine(`Importing content item failed, aborting. Error: ${error.toString()}`);
-  };
-
-  let publishable: { item: ContentItem; node: ItemContentDependancies }[] = [];
+  let publishable: { item: ContentItem; node: ItemContentDependencies }[] = [];
 
   for (let i = 0; i < tree.levels.length; i++) {
     const level = tree.levels[i];
-
     for (let j = 0; j < level.items.length; j++) {
       const item = level.items[j];
-      const content = item.owner.content;
-
-      // Replace any dependancies with the existing mapping.
-      item.dependancies.forEach((dep: any) => {
-        rewriteDependancy(dep, mapping, false);
-      });
-
-      const originalId = content.id;
-      content.id = mapping.getContentItem(content.id as string) || '';
-
-      if (_.isEmpty(content.id)) {
-        delete (content as any).id;
-      }
-
-      let newItem: ContentItem;
-      let oldVersion: number;
-      try {
-        const result = await createOrUpdateContent(
-          client,
-          item.owner.repo,
-          mapping.getContentItem(originalId as string) || null,
-          content
-        );
-        newItem = result.newItem;
-        oldVersion = result.oldVersion;
-      } catch (e) {
-        log.error(`Failed creating ${content.label}:`, e);
-        abort(e);
-        return false;
-      }
-
-      content.id = originalId;
-
-      const updated = oldVersion > 0;
-      log.addComment(`${updated ? 'Updated' : 'Created'} ${content.label}.`);
-      log.addAction(
-        updated ? 'UPDATE' : 'CREATE',
-        (newItem.id || 'unknown') + (updated ? ` ${oldVersion} ${newItem.version}` : '')
-      );
-
-      if (itemShouldPublish(content, newItem, argv.republish || newItem.version != oldVersion)) {
-        publishable.push({ item: newItem, node: item });
-      }
-
-      mapping.registerContentItem(originalId as string, newItem.id as string);
+      await importContentItem(item, mapping, client, log, false, mapping.getContentItem(item.owner.content.id) || null)
     }
   }
 
@@ -783,10 +790,10 @@ const importTree = async (
   publishable = publishable.filter(entry => {
     let isTopLevel = true;
 
-    tree.traverseDependants(
+    tree.traverseDependents(
       entry.node,
-      (dependant: any) => {
-        if (dependant != entry.node && publishable.findIndex(entry => entry.node === dependant) !== -1) {
+      (dependent: any) => {
+        if (dependent != entry.node && publishable.findIndex(entry => entry.node === dependent) !== -1) {
           isTopLevel = false;
         }
       },
@@ -800,65 +807,18 @@ const importTree = async (
     return isTopLevel;
   });
 
-  // Create circular dependancies with all the mappings we have, and update the mapping.
+  // Create circular dependencies with all the mappings we have, and update the mapping.
   // Do a second pass that updates the existing assets to point to the new ones.
-  const dependents: Dictionary<ContentItem> = {};
+  // const dependents: Dictionary<ContentItem> = {};
 
   for (let pass = 0; pass < 2; pass++) {
     const mode = pass === 0 ? 'Creating' : 'Resolving';
-    logUpdate(`${mode} circular dependants.`);
+    logUpdate(`${mode} circular dependents.`);
 
     const circularLinksSorted = tree.circularLinks.sort(sortDependencies);
     for (let i = 0; i < circularLinksSorted.length; i++) {
       const item = circularLinksSorted[i];
-      const content = item.owner.content;
-
-      item.dependancies.forEach((dep: any) => {
-        rewriteDependancy(dep, mapping, pass === 0);
-      });
-
-      const originalId = content.id;
-      content.id = mapping.getContentItem(content.id) || '';
-
-      if (_.isEmpty(content.id)) {
-        delete (content as any).id;
-      }
-
-      let newItem: ContentItem;
-      let oldVersion: number;
-      try {
-        const result = await createOrUpdateContent(
-          client,
-          item.owner.repo,
-          dependents[originalId] || mapping.getContentItem(originalId as string),
-          content
-        );
-        newItem = result.newItem;
-        oldVersion = result.oldVersion;
-      } catch (e) {
-        log.error(`Failed creating ${content.label}:`, e);
-        abort(e);
-        return false;
-      }
-
-      if (pass === 0) {
-        // New mappings are created in the first pass, they are only propagated in the second.
-        const updated = oldVersion > 0;
-        log.addComment(`${updated ? 'Updated' : 'Created'} ${content.label}.`);
-        log.addAction(
-          updated ? 'UPDATE' : 'CREATE',
-          (newItem.id || 'unknown') + (updated ? ` ${oldVersion} ${newItem.version}` : '')
-        );
-
-        dependents[originalId] = newItem;
-        content.id = originalId;
-        mapping.registerContentItem(originalId as string, newItem.id as string);
-        mapping.registerContentItem(newItem.id as string, newItem.id as string);
-      } else {
-        if (itemShouldPublish(content, newItem, argv.republish || newItem.version != oldVersion)) {
-          publishable.push({ item: newItem, node: item });
-        }
-      }
+      await importContentItem(item, mapping, client, log, pass === 0, dependents[item.owner.content.id] || mapping.getContentItem(item.owner.content.id))
     }
   }
 
@@ -910,7 +870,7 @@ export const handler = async (
     logUpdate(`Creating new mapping file at '${mapFile}'.`);
   }
 
-  let tree: ContentDependancyTree | null;
+  let tree: ContentDependencyTree | null;
   if (baseFolder != null) {
     let repo: ContentRepository;
     let folder: Folder;

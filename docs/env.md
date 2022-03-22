@@ -2,9 +2,9 @@
 
 ## Description
 
-The **env** command category includes a number of interactions with amprsa environments.
+The **env** command category includes a number of interactions with demostore environments.
 
-Run `amprsa env --help` to get a list of available commands.
+Run `demostore env --help` to get a list of available commands.
 
 Return to [README.md](../README.md) for information on other commands.
 
@@ -38,7 +38,7 @@ Adds an environment via a setup wizard.
 
 ##### Create an environment
 
-```amprsa env add```
+```demostore env add```
 
 ### delete
 
@@ -54,21 +54,21 @@ Deletes an environment configuration.
 
 ##### Delete environment named 'env'
 
-```amprsa env delete [env]```
+```demostore env delete [env]```
 
 ### list
 
-List configured amprsa environments.
+List configured demostore environments.
 
 #### Examples
 
 ##### List all envs
 
-```amprsa env list```
+```demostore env list```
 
 ### use
 
-Use an amprsa environment. This also configures `@amplience/dc-cli`.
+Use an demostore environment. This also configures `@amplience/dc-cli`.
 
 #### Options
 
@@ -80,4 +80,4 @@ Use an amprsa environment. This also configures `@amplience/dc-cli`.
 
 ##### Use environment 'env'
 
-```amprsa env use [env]```
+```demostore env use [env]```

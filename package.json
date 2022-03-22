@@ -1,12 +1,12 @@
 {
-  "name": "@amplience/amp-rsa-cli",
+  "name": "@amplience/dc-demostore-cli",
   "version": "0.2.21",
-  "description": "AMP-RSA Demo Automation",
+  "description": "Amplience Demo Store CLI",
   "mainx": "node -r ts-node/register/transpile-only --preserve-symlinks -r tsconfig-paths/register src/index.ts",
   "man": "./dist/demo-cli.1",
   "binx": "node -r ts-node/register/transpile-only --preserve-symlinks -r tsconfig-paths/register src/index.ts",
   "bin": {
-    "amprsa": "./dist/index.js"
+    "demostore": "./dist/index.js"
   },
   "type": "commonjs",
   "main": "./dist/index.js",
@@ -24,7 +24,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/amplience/amp-rsa-cli.git"
+    "url": "git+https://github.com/amplience/dc-demostore-cli.git"
   },
   "files": [
     "dist/*",
@@ -38,10 +38,11 @@
   "author": "Amplience Innovation Team",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/amplience/amp-rsa-cli/issues"
+    "url": "https://github.com/amplience/dc-demostore-cli/issues"
   },
-  "homepage": "https://github.com/amplience/amp-rsa-cli#readme",
+  "homepage": "https://github.com/amplience/dc-demostore-cli#readme",
   "dependencies": {
+    "@amplience/dc-demostore-integration": "git+https://github.com/amplience/dc-demostore-integration",
     "@justindfuller/async-lodash": "^1.0.9",
     "@rauschma/stringio": "^1.4.0",
     "adm-zip": "^0.5.9",

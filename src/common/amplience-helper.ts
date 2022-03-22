@@ -1,18 +1,14 @@
-import { ContentRepository, ContentType, DynamicContent, Folder, Hub, HttpMethod, HttpRequest, FacetQuery, HttpResponse, ContentItem, WorkflowState, HalResource, ContentTypeSchema, Status } from "dc-management-sdk-js"
+import { ContentType, Folder, HttpMethod, ContentItem, Status } from "dc-management-sdk-js"
 import logger, { logComplete } from "./logger"
 import chalk from "chalk"
-import { facetPaginator, paginator, StatusQuery } from "../helpers/paginator"
+import { StatusQuery } from "../helpers/paginator"
 import { logUpdate } from "./logger"
-import async from 'async'
 import _, { Dictionary } from 'lodash'
 import { ContentItemHandler } from "../handlers/content-item-handler"
 import { AxiosHttpClient } from "dc-management-sdk-js"
 import { AmplienceContext, ImportContext, LoggableContext } from '../handlers/resource-handler';
 import fs from 'fs-extra'
 import { sleep } from "./utils"
-import { AMPRSAConfig } from './types'
-import { ContentTypeHandler } from "../handlers/content-type-handler"
-import { ContentTypeSchemaHandler } from "../handlers/content-type-schema-handler"
 import { currentEnvironment } from "./environment-manager"
 
 let dcUrl = `https://api.amplience.net/v2/content`
@@ -47,11 +43,11 @@ let ax = {
     patch: async (url: string) => await axiosClient.request({ method: HttpMethod.PATCH, url }),
     delete: async (url: string) => await axiosClient.request({ method: HttpMethod.DELETE, url })
 }
-const synchronizeContentType = async (contentType: ContentType) => await ax.patch(`/content-types/${contentType.id}/schema`)
+export const synchronizeContentType = async (contentType: ContentType) => await ax.patch(`/content-types/${contentType.id}/schema`)
 export const deleteFolder = async (folder: Folder) => await ax.delete(`/folders/${folder.id}`)
 export const get = ax.get
 
-const publishContentItem = async (item: any) => {
+export const publishContentItem = async (item: any) => {
     await ax.post(`/content-items/${item.id}/publish`)
     updateCache(item)
     return item
@@ -127,11 +123,11 @@ export const getContentItemByKey = (key: string): ContentItem => contentMap[key]
 export const getContentItemById = (id: string): ContentItem => contentMap[id]
 export const getContentMap = () => _.zipObject(_.map(contentMap, (__, key) => key.replace(/\//g, '-')), _.map(contentMap, 'deliveryId'))
 
-export const getEnvConfig = async (context: LoggableContext) => {
+export const getEnvConfig = async (context: AmplienceContext) => {
     let { hub, environment } = context
     let deliveryKey = `aria/env/default`
-    let ampRsaSchema = `https://amprsa.net/site/amprsa`
-    let restSchema = `https://amprsa.net/site/integration/rest`
+    let demoStoreConfigSchema = `https://demostore.amplience.com/site/demostoreconfig`
+    let restSchema = `https://demostore.amplience.com/site/integration/rest`
 
     logger.info(`environment lookup [ hub ${chalk.magentaBright(hub.name)} ] [ key ${chalk.blueBright(deliveryKey)} ]`)
 
@@ -147,19 +143,19 @@ export const getEnvConfig = async (context: LoggableContext) => {
                 schema: restSchema,
                 deliveryKey: `aria/integration/default`
             },
-            productURL: `https://nova-amprsa-product-catalog.s3.us-east-2.amazonaws.com/products.json`,
-            categoryURL: `https://nova-amprsa-product-catalog.s3.us-east-2.amazonaws.com/categories.json`,
-            translationsURL: `https://nova-amprsa-product-catalog.s3.us-east-2.amazonaws.com/translations.json`,
+            productURL: `https://demostore-catalog.s3.us-east-2.amazonaws.com/products.json`,
+            categoryURL: `https://demostore-catalog.s3.us-east-2.amazonaws.com/categories.json`,
+            translationsURL: `https://demostore-catalog.s3.us-east-2.amazonaws.com/translations.json`,
         }
         restCodec = await context.hub.repositories.sitestructure.related.contentItems.create(restCodec)
         await publishContentItem(restCodec)
 
         config = new ContentItem()
-        config.label = `${environment.name} AMPRSA config`
+        config.label = `${environment.name} Demo Store config`
         config.body = {
             _meta: {
-                name: `${environment.name} AMPRSA config`,
-                schema: ampRsaSchema,
+                name: `${environment.name} Demo Store config`,
+                schema: demoStoreConfigSchema,
                 deliveryKey
             },
             environment: environment.name,
@@ -178,7 +174,7 @@ export const getEnvConfig = async (context: LoggableContext) => {
                     schema: "http://bigcontent.io/cms/schema/v1/core#/definitions/content-reference"
                 },
                 id: restCodec.id,
-                contentType: "https://amprsa.net/site/integration/rest"
+                contentType: "https://demostore.amplience.com/site/integration/rest"
             },
             cms: {
                 hub: {
@@ -231,16 +227,16 @@ export const initAutomation = async (context: AmplienceContext) => {
 export const readAutomation = async (context: AmplienceContext) => {
     let { environment } = context
     let deliveryKey = `aria/automation/default`
-    let schema = `https://amprsa.net/site/automation`
+    let schema = `https://demostore.amplience.com/site/automation`
 
     let automation = await getContentItemByKey(deliveryKey)
     if (!automation) {
         logger.info(`${deliveryKey} not found, creating...`)
         automation = new ContentItem()
-        automation.label = `${environment.name} AMPRSA automation`
+        automation.label = `${environment.name} Demo Store automation`
         automation.body = {
             _meta: {
-                name: `${environment.name} AMPRSA automation`,
+                name: `${environment.name} Demo Store automation`,
                 schema,
                 deliveryKey
             },

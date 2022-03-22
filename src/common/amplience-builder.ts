@@ -20,7 +20,7 @@ export default (yargs: Argv): Argv =>
             tempDir: {
                 alias: 't',
                 describe: 'temporary directory for all run files',
-                default: `/tmp/amprsa/amprsa-${nanoid()}`
+                default: `/tmp/demostore/demostore-${nanoid()}`
             },
             matchingSchema: {
                 alias: 'm',

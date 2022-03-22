@@ -36,12 +36,11 @@ export const builder = (yargs: Argv): Argv =>
                 describe: 'cleans up contentTypes, contentTypeSchema, contentItems with no confirmation',
                 type: 'boolean'
             }
-        }).middleware([(args: Arguments) => {
+        }).middleware([async (args: Arguments): Promise<void> => {
             if (!!args.content) {
                 args.skipConfirmation = true
                 args.include = ['contentTypes', 'contentTypeSchema', 'contentItems']
             }
-            return args
         }])
 
 export const handler = contextHandler(async (context: CleanupContext): Promise<void> => {

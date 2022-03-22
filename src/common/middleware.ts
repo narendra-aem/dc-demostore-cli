@@ -100,14 +100,13 @@ export const loginDC = async (context: LoggableContext): Promise<LoggableContext
     return context
 }
 
-export const loginDAM = async (context: ImportContext): Promise<ImportContext> => {
+export const loginDAM = async (context: ImportContext): Promise<void> => {
     context.damService = new DAMService()
     await context.damService.init(context.environment.dam)
     logger.info(`connected to dam with user ${chalk.cyanBright(`[ ${context.environment.dam.username} ]`)}`)
-    return context
 }
 
-export const setupLogging = (context: LoggableContext): LoggableContext => {
+export const setupLogging = (context: LoggableContext): void => {
     setLogDirectory(context.tempDir)
     fs.rmSync(context.tempDir, { recursive: true, force: true })
     fs.mkdirpSync(context.tempDir)
@@ -139,9 +138,6 @@ export const setupLogging = (context: LoggableContext): LoggableContext => {
             throw error                
         }
     }
-
-
-    return context
 }
 
 export const contextHandler = (handler: any) => async (context: LoggableContext) => {

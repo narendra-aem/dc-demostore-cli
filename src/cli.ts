@@ -25,7 +25,7 @@ const configureYargs = (yargInstance: Argv): Promise<Arguments> => {
         }
       };
       const argv = yargInstance
-        .scriptName('amprsa')
+        .scriptName('demostore')
         .usage('Usage: $0 <command> [options]')
         .commandDir('./commands', YargsCommandBuilderOptions)
         .strict()

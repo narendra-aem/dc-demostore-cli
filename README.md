@@ -1,19 +1,19 @@
-# amprsa
+# demostore
 
 Command line interface for Amplience Reference Storefront Architecture.
 
 ## Description
 
-**amprsa** is a command line interface application to manage an installation of the Amplience Reference Storefront Architecture (amprsa).
+**demostore** is a command line interface application to manage an installation of the Amplience Reference Storefront Architecture (demostore).
 
-Run `amprsa --help` to get a list of available commands.
+Run `demostore --help` to get a list of available commands.
 
 <!-- MarkdownTOC levels="2,3" autolink="true" -->
 - [Prerequisites](#prerequisites)
 - [Installation](#installation)
 - [Configuration](#configuration)
 - [Command categories](#command-categories)
-  - [using an amprsa environment](#using-an-amprsa-environment)
+  - [using an demostore environment](#using-an-demostore-environment)
   - [env management](#env)
 - [Configure your own Automated Content](#automation-bespoke)
 
@@ -23,34 +23,34 @@ Run `amprsa --help` to get a list of available commands.
 
 ## Installation
 
-Installing the amprsa CLI from the NPM package manager can be achieved using the following command:
+Installing the demostore CLI from the NPM package manager can be achieved using the following command:
 
 ```bash
-npm install -g @amplience/amp-rsa-cli
+npm install -g @amplience/dc-demostore-cli
 ```
 <!--TODD: Change to Amplience NPM -->
 
 ## Configuration
 
-**amprsa** requires an AMPRSA environment configuration to run.
+**demostore** requires an demostore environment configuration to run.
 
 ### PreRequisites
 - Amplience account ( Think about what we say here)
 - Details and where to get then from.
   - [Hub Name](docs/screenshots.md)
-  - [App URL](docs/ForkDeploy.md) - ( link to your deployed `amp-rsa-core` app )
+  - [App URL](docs/ForkDeploy.md) - ( link to your deployed `dc-demostore-core` app )
   - Client ID / Secret - Sent via support@amplience.com - One Time Secret
   - [Hub ID](docs/screenshots.md)
   - Username & Password for Content Hub - Automate VSE details.
 
-On your first invocation of any `amprsa` command, the CLI will prompt you to create an environment:
+On your first invocation of any `demostore` command, the CLI will prompt you to create an environment:
 
 
 
 ```bash
-dave@po:~ $ amprsa env add
+dave@po:~ $ demostore env add
 ✔ env name: hub-name-from-hub-settings-properties
-✔ app deployment url: https://your-deployed-amp-rsa-core-url.com
+✔ app deployment url: https://your-deployed-dc-demostore-core-url.com
 ✔ cms client id: amplience-client-id
 ✔ cms client secret: ***********************
 ✔ cms hub id: hub-id-from-hub-settings-properties
@@ -74,7 +74,7 @@ By default the configuration is saved to a file in the directory `<HOME_DIR>/.am
 
 ## Command categories
 
-### using an amprsa environment
+### using an demostore environment
 
 - [Commands](#commands)
   - [show](#show)
@@ -119,11 +119,11 @@ Valid resource types are `contentTypeSchema`, `contentTypes`, `contentItems`, `s
 
 ##### Clean a hub
 
-```amprsa cleanup```
+```demostore cleanup```
 
 ##### Clean content types, schemas, and items without asking for confirmation
 
-```amprsa cleanup -ci contentTypes -i contentTypeSchema -i contentItems```
+```demostore cleanup -ci contentTypes -i contentTypeSchema -i contentItems```
 
 ### import
 
@@ -144,11 +144,11 @@ Import data.
 
 ##### Import the latest automation data
 
-```amprsa import -l```
+```demostore import -l```
 
 ##### Import only items matching schema 'schema'
 
-```amprsa import -m <schema>```
+```demostore import -m <schema>```
 
 ### publish
 
@@ -166,15 +166,15 @@ Publish all unpublished content items.
 
 ##### Publish
 
-```amprsa publish```
+```demostore publish```
 
 ### show
 
-Show the status of an amprsa environment.
+Show the status of an demostore environment.
 
 #### Examples
 
-```amprsa show```
+```demostore show```
 
 ### env
 
