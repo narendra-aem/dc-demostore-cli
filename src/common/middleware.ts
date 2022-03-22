@@ -75,7 +75,11 @@ export const loginDC = async (context: LoggableContext): Promise<LoggableContext
         client_secret: context.environment.dc.clientSecret
     })
 
-    context.hub = instrumentHub(await client.hubs.get(context.environment.dc.hubId) as InstrumentedHub)
+    try {
+        context.hub = instrumentHub(await client.hubs.get(context.environment.dc.hubId) as InstrumentedHub)        
+    } catch (error) {
+        throw new Error(`Error logging in to hub [ ${context.environment.dc.hubId} ]: ${error}`)
+    }
 
     context.hub.on((result) => {
         logger.debug(`[ hub ] ${result.element} ${result.operation} ${result.duration} ms`)
