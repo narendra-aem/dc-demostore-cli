@@ -1,10 +1,10 @@
 # demostore
 
-Command line interface for Amplience Reference Storefront Architecture.
+Command line interface for Amplience Demo Store.
 
 ## Description
 
-**demostore** is a command line interface application to manage an installation of the Amplience Reference Storefront Architecture (demostore).
+**demostore** is a command line interface application to manage an installation of the Amplience Demo Store (demostore).
 
 Run `demostore --help` to get a list of available commands.
 
