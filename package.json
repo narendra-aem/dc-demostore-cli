@@ -1,6 +1,6 @@
 {
   "name": "@amplience/dc-demostore-cli",
-  "version": "0.2.21",
+  "version": "0.9.0",
   "description": "Amplience Demo Store CLI",
   "mainx": "node -r ts-node/register/transpile-only --preserve-symlinks -r tsconfig-paths/register src/index.ts",
   "man": "./dist/demo-cli.1",
