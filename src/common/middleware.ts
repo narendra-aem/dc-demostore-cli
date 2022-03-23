@@ -96,7 +96,7 @@ export const loginDC = async (context: LoggableContext): Promise<LoggableContext
         throw new Error(`hubId not found: ${context.environment.dc.hubId}`)
     }
     else {
-        logger.info(`connected to hub ${chalk.blueBright(`[ ${context.hub.name} ]`)}`)
+        logger.info(`connected to hub ${chalk.bold.cyan(`[ ${context.hub.name} ]`)}`)
     }
     // end log in to DC
 

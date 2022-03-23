@@ -20,7 +20,7 @@ export const handler = contextHandler(async (context: AmplienceContext): Promise
     let megaMenu = await commerceAPI.getMegaMenu()
 
     let populated = _.sortBy(await Promise.all(megaMenu.map(async (category: Category) => {
-        return await commerceAPI.getCategory(new QueryContext({ args: { key: category.key } }))
+        return await commerceAPI.getCategory(new QueryContext({ args: { key: category.key || category.slug } }))
     })), cat => cat.products.length)
 
     let mostPopulated = _.last(populated)
