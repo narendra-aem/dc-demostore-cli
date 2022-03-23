@@ -1,6 +1,6 @@
 {
   "name": "@amplience/dc-demostore-cli",
-  "version": "0.9.0",
+  "version": "0.9.1",
   "description": "Amplience Demo Store CLI",
   "man": "./dist/demo-cli.1",
   "bin": {
