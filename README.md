@@ -1,10 +1,10 @@
 # demostore
 
-Command line interface for Amplience Demo Store.
+Demonstration Command line interface for Amplience Demo Store.
 
 ## Description
 
-**demostore** is a command line interface application to manage an installation of the Amplience Demo Store (demostore).
+**demostore** is a command line interface application to manage an installation of the Amplience Demo Store (demostore). It builds on top of the [Amplience DC CLI](https://github.com/amplience/dc-cli) and [Amplience Management APIs](https://amplience.com/docs/api/dynamic-content/management/)
 
 Run `demostore --help` to get a list of available commands.
 
