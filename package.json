@@ -4,6 +4,7 @@
   "description": "Amplience Demo Store CLI",
   "man": "./dist/demo-cli.1",
   "bin": {
+    "demostore": "./dist/index.js",
     "dc-demostore-cli": "./dist/index.js"
   },
   "type": "commonjs",
@@ -33,12 +34,16 @@
     "dist/*"
   ],
   "keywords": [
-    "CLI",
+    "cli",
     "automation",
-    "demo"
+    "amplience",
+    "headless",
+    "cms",
+    "demo",
+    "demostore"
   ],
   "author": "Amplience Innovation Team",
-  "license": "ISC",
+  "license": "Apache-2.0",
   "bugs": {
     "url": "https://github.com/amplience/dc-demostore-cli/issues"
   },

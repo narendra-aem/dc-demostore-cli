@@ -99,7 +99,7 @@ export const PublishingQueue = (postProcess: (item: ContentItem) => Promise<void
     }
 }
 
-export const publishAll = async (context: ImportContext) => {
+export const publishAll = async (context: AmplienceContext) => {
     const publishingQueue = PublishingQueue()
     await context.hub.contentItemIterator(contentItem => {
         if (contentItem.version !== (contentItem as any).lastPublishedVersion) {

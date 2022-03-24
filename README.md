@@ -1,4 +1,4 @@
-# demostore
+# @amplience/dc-demostore-cli
 
 Demonstration Command line interface for Amplience Demo Store.
 
@@ -181,3 +181,4 @@ Show the status of an demostore environment.
 This category includes interactions with environments.
 
 [View commands for **env**](docs/env.md)
+ 
