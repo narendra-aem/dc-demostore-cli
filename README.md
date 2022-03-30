@@ -28,7 +28,6 @@ Installing the demostore CLI from the NPM package manager can be achieved using 
 ```bash
 npm install -g @amplience/dc-demostore-cli
 ```
-<!--TODD: Change to Amplience NPM -->
 
 ## Configuration
 
@@ -38,10 +37,10 @@ npm install -g @amplience/dc-demostore-cli
 - Amplience account
 - Details and where to get then from.
   - [Hub Name](docs/screenshots.md)
-  - [App URL](docs/ForkDeploy.md) - ( link to your deployed `dc-demostore-core` app )
+  - [App URL](https://github.com/amplience/dc-demostore-core/blob/main/docs/ForkDeploy.md) - ( link to your deployed `dc-demostore-core` app )
   - Client ID / Secret - Sent via support@amplience.com - One Time Secret
   - [Hub ID](docs/screenshots.md)
-  - Username & Password for Content Hub - Automate VSE details.
+  - Username & Password for Content Hub
 
 On your first invocation of any `demostore` command, the CLI will prompt you to create an environment:
 
