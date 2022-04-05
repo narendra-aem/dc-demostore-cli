@@ -141,7 +141,7 @@ export const getEnvConfig = async (context: AmplienceContext) => {
             _meta: {
                 name: `generic rest commerce configuration`,
                 schema: restSchema,
-                deliveryKey: `aria/integration/default`
+                deliveryKey: `aria/config/rest`
             },
             productURL: `https://demostore-catalog.s3.us-east-2.amazonaws.com/products.json`,
             categoryURL: `https://demostore-catalog.s3.us-east-2.amazonaws.com/categories.json`,
