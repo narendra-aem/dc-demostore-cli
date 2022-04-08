@@ -69,13 +69,6 @@ export interface Mapping {
     contentMap: Dictionary<string>
 }
 
-// export class DemoStoreConfig {
-//     url: string
-//     cms: AmplienceConfig
-//     algolia: AlgoliaConfig
-//     environment: string // env name
-// }
-
 export class AlgoliaConfig {
     appId: string
     apiKey: string

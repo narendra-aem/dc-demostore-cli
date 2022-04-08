@@ -20,7 +20,7 @@
 //     let megaMenu = await commerceAPI.getMegaMenu()
 
 //     let populated = _.sortBy(await Promise.all(megaMenu.map(async (category: Category) => {
-//         return await commerceAPI.getCategory(new QueryContext({ args: { key: category.key || category.slug } }))
+//         return await commerceAPI.getCategory(qc({ args: { key: category.key || category.slug } }))
 //     })), cat => cat.products.length)
 
 //     let mostPopulated = _.last(populated)
@@ -30,7 +30,7 @@
 //         if (contentItem.body._meta.schema === 'https://demostore.amplience.com/content/curated-product-grid') {
 //             logger.info(`Updating content items`)
 //             contentItem.body.products = await Promise.all(contentItem.body.products.map(async (productId: string) => {
-//                 let product = await commerceAPI.getProduct(new QueryContext({ args: { id: productId } }))
+//                 let product = await commerceAPI.getProduct(qc({ args: { id: productId } }))
 //                 if (!product && mostPopulated) {
 //                     let randomProduct = getRandom<Product>(mostPopulated.products)
 //                     logger.info(`mapped product [ ${chalk.gray(productId)} ] to [ ${chalk.green(randomProduct.name)} ]`)
