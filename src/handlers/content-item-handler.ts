@@ -1,6 +1,6 @@
 import { ResourceHandler, Cleanable, ImportContext, CleanupContext } from "./resource-handler"
 import { ContentItem, ContentRepository, Folder } from "dc-management-sdk-js"
-import { paginator } from "../helpers/paginator"
+import { paginator } from "@amplience/dc-demostore-integration"
 import chalk from 'chalk'
 import { prompts } from "../common/prompts"
 import fs from 'fs-extra'

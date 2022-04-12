@@ -17,12 +17,12 @@ import { copyTemplateFilesToTempDir } from '../helpers/import-helper';
 import { contextHandler, loginDAM } from '../common/middleware';
 import amplienceBuilder from '../common/amplience-builder';
 import { WorkflowState } from 'dc-management-sdk-js';
-import { paginator } from '../helpers/paginator';
 import fs from 'fs-extra'
 import { CONFIG_PATH } from '../common/environment-manager';
 import axios from 'axios';
 import admZip from 'adm-zip'
 import { sleep } from '../common/utils';
+import { paginator } from '@amplience/dc-demostore-integration';
 
 export const command = 'import';
 export const desc = "Import hub data";

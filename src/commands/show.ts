@@ -1,4 +1,4 @@
-import { paginator, searchIndexPaginator } from '../helpers/paginator';
+import { paginator, searchIndexPaginator } from '@amplience/dc-demostore-integration';
 import _ from 'lodash';
 import Table from 'cli-table'
 import chalk from 'chalk';

@@ -3,8 +3,7 @@ import _ from 'lodash'
 import { contextHandler } from '../common/middleware';
 import amplienceBuilder from '../common/amplience-builder';
 import amplienceHelper, { getContentItemById, getContentItemFromCDN, getEnvConfig, synchronizeContentType, publishContentItem } from '../common/amplience-helper';
-import { Category, Product, QueryContext, CryptKeeper } from '@amplience/dc-demostore-integration'
-import { paginator } from '../helpers/paginator';
+import { Category, Product, QueryContext, CryptKeeper, paginator } from '@amplience/dc-demostore-integration'
 import { getRandom } from '../common/utils';
 import logger from '../common/logger';
 import { ContentItem } from 'dc-management-sdk-js';

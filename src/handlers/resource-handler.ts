@@ -1,4 +1,4 @@
-import { paginator } from "../helpers/paginator"
+import { paginator } from "@amplience/dc-demostore-integration"
 import _ from 'lodash'
 import chalk from 'chalk'
 import { Arguments } from "yargs"

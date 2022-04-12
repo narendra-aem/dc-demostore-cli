@@ -1,6 +1,6 @@
 import { CleanableResourceHandler, Context, CleanupContext, ImportContext, Cleanable } from "./resource-handler"
 import { ContentType, ContentRepository, HalResource } from "dc-management-sdk-js"
-import { paginator } from "../helpers/paginator"
+import { paginator } from "@amplience/dc-demostore-integration"
 import _ from 'lodash'
 import logger, { logHeadline, logSubheading } from "../common/logger"
 import chalk from 'chalk'

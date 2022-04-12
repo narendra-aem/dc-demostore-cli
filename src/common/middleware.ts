@@ -8,7 +8,7 @@ import fs from 'fs-extra'
 import chalk from 'chalk'
 import { prompts } from './prompts';
 import { ImportContext, LoggableContext } from '../handlers/resource-handler';
-import { paginator, StatusQuery } from '../helpers/paginator';
+import { paginator, StatusQuery } from '@amplience/dc-demostore-integration';
 import { AugmentedHub } from './types';
 import { timed } from "../handlers/typed-result";
 import { nanoid } from 'nanoid';

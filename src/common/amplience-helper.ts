@@ -1,7 +1,7 @@
 import { ContentType, Folder, HttpMethod, ContentItem, Status } from "dc-management-sdk-js"
 import logger, { logComplete } from "./logger"
 import chalk from "chalk"
-import { StatusQuery } from "../helpers/paginator"
+import { StatusQuery } from "@amplience/dc-demostore-integration"
 import { logUpdate } from "./logger"
 import _, { Dictionary } from 'lodash'
 import { ContentItemHandler } from "../handlers/content-item-handler"

@@ -1,6 +1,6 @@
 import { Cleanable, ResourceHandler, Context, ImportContext, CleanupContext } from "./resource-handler"
 import { SearchIndex, Webhook } from "dc-management-sdk-js"
-import { paginator, searchIndexPaginator, replicaPaginator } from "../helpers/paginator"
+import { paginator, searchIndexPaginator, replicaPaginator } from "@amplience/dc-demostore-integration"
 import _ from 'lodash'
 import logger, { logComplete, logUpdate } from "../common/logger"
 import chalk from 'chalk'

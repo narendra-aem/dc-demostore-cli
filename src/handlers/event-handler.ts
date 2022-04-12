@@ -1,6 +1,6 @@
 import { CleanupContext, ResourceHandler } from "./resource-handler"
 import { Event, PublishingStatus } from "dc-management-sdk-js"
-import { paginator } from "../helpers/paginator"
+import { paginator } from "@amplience/dc-demostore-integration"
 import _ from 'lodash'
 import logger from "../common/logger"
 import chalk from 'chalk'

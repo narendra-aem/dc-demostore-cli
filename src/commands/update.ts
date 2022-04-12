@@ -4,7 +4,7 @@
 // import amplienceBuilder from '../common/amplience-builder';
 // import { getContentItemById, getContentItemFromCDN, getEnvConfig, synchronizeContentType, publishContentItem } from '../common/amplience-helper';
 // import { Category, getCommerceAPIFromCodecConfig, Product, QueryContext } from '@amplience/dc-demostore-integration'
-// import { paginator } from '../helpers/paginator';
+// import { paginator } from '@amplience/dc-demostore-integration';
 // import { getRandom } from '../common/utils';
 // import logger from '../common/logger';
 // import chalk from 'chalk'
