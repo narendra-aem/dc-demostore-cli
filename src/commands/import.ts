@@ -1,7 +1,7 @@
 import _ from 'lodash'
 import { Argv } from 'yargs';
 import chalk from 'chalk'
-import logger, { logHeadline, logUpdate } from '../common/logger';
+import logger, { logHeadline } from '../common/logger';
 
 import { ContentTypeSchemaHandler } from '../handlers/content-type-schema-handler';
 import { ContentTypeHandler } from '../handlers/content-type-handler';

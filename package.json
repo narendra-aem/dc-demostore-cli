@@ -11,7 +11,7 @@
   "main": "./dist/index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "clean": "rimraf dist packages",
+    "clean": "rimraf node_modules yarn.lock dist packages && yarn",
     "build": "npm run clean && tsc && cross-os osbuild",
     "osbuild": {
       "darwin": "chmod +x dist/index.js",
@@ -57,7 +57,7 @@
     "axios": "^0.26.1",
     "chalk": "^4.1.2",
     "cli-table": "^0.3.11",
-    "dc-management-sdk-js": "^1.14.0",
+    "dc-management-sdk-js": "^1.16.2",
     "enquirer": "^2.3.6",
     "fs-extra": "^10.0.1",
     "handlebars": "^4.7.6",

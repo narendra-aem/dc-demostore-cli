@@ -82,6 +82,7 @@ export const logComplete = (message: string) => {
 
 import { LoggableContext } from "../handlers/resource-handler";
 import _ from 'lodash';
+import { Dictionary } from 'async';
 
 export const logRunEnd = (context: LoggableContext) => {
   let duration = new Date().valueOf() - context.startTime.valueOf()
@@ -90,6 +91,16 @@ export const logRunEnd = (context: LoggableContext) => {
   logger.info(`logs and temp files stored in ${chalk.blueBright(context.tempDir)}`)
   logger.info(`run completed in [ ${chalk.green(`${minutes}m${seconds}s`)} ]`)
   process.exit(0)
+}
+
+let timers: Dictionary<Date> = {}
+export const time = (key: string) => {
+  timers[key] = new Date()
+}
+
+export const timeEnd = (key: string) => {
+  let end = new Date().valueOf() - timers[key].valueOf()
+  logger.info(`${key} took ${end}ms`)
 }
 
 export default logger

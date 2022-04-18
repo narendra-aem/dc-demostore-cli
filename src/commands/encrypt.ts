@@ -2,12 +2,8 @@ import { AmplienceContext } from '../handlers/resource-handler';
 import _ from 'lodash'
 import { contextHandler } from '../common/middleware';
 import amplienceBuilder from '../common/amplience-builder';
-import amplienceHelper, { getContentItemById, getContentItemFromCDN, getEnvConfig, synchronizeContentType, publishContentItem } from '../common/amplience-helper';
-import { Category, Product, QueryContext, CryptKeeper, paginator } from '@amplience/dc-demostore-integration'
-import { getRandom } from '../common/utils';
-import logger from '../common/logger';
-import { ContentItem } from 'dc-management-sdk-js';
-import chalk from 'chalk'
+import amplienceHelper from '../common/amplience-helper';
+import { CryptKeeper, paginator } from '@amplience/dc-demostore-integration'
 
 export const command = 'encrypt';
 export const desc = "Encrypt credentials";
@@ -39,9 +35,7 @@ export const handler = contextHandler(async (context: AmplienceContext): Promise
                 let encryptables = _.filter(_.map(schema.properties, (v, k) => ({ ...v, key: k })), prop => prop.maxLength === 200)
                 if (encryptables.length > 0) {
                     _.each(encryptables, encryptable => {
-                        let x = keeper.encrypt(ci.body[encryptable.key])
-                        console.log(`encrypt ${ci.body[encryptable.key]} = '${x}'`)
-                        ci.body[encryptable.key] = x
+                        ci.body[encryptable.key] = keeper.encrypt(ci.body[encryptable.key])
                     })
                     ci = await ci.related.update(ci)
                 }
