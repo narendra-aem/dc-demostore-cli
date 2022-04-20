@@ -24,11 +24,7 @@ export const handler = contextHandler(async (context: AmplienceContext): Promise
                 }
             }
 
-            let keeper = CryptKeeper({
-                ...ci.body,
-                locator: `${context.hub.name}:`
-            })
-
+            let keeper = CryptKeeper(ci.body, hub.name)
             let schemaObject = contentTypeSchemas.find(schema => schema.schemaId === ci.body._meta.schema)
             if (schemaObject?.body) {
                 let schema = JSON.parse(schemaObject.body)

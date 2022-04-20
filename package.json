@@ -1,5 +1,5 @@
 {
-  "name": "@amplience/dc-demostore-cli",
+  "name": "@amp-nova/dc-demostore-cli",
   "version": "0.10.1",
   "description": "Amplience Demo Store CLI",
   "man": "./dist/demo-cli.1",
@@ -11,7 +11,7 @@
   "main": "./dist/index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "clean": "rimraf node_modules yarn.lock dist packages && yarn",
+    "clean": "rimraf dist packages",
     "build": "npm run clean && tsc && cross-os osbuild",
     "osbuild": {
       "darwin": "chmod +x dist/index.js",

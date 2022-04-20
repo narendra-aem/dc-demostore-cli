@@ -25,16 +25,21 @@ export const builder = (yargs: Argv): Argv =>
                 alias: 'a',
                 describe: 'check all integration types',
                 type: 'boolean'
+            },
+            showMegaMenu: {
+                alias: 'm',
+                describe: 'show the mega menu structure',
+                type: 'boolean'
             }
         })
 
 export const handler = contextHandler(async (context: CleanupContext): Promise<void> => {
-    let { hub } = context
+    let { hub, showMegaMenu } = context
     let siteStructureContentItems = await paginator(hub.repositories['sitestructure'].related.contentItems.list, { status: 'ACTIVE' })
     let integrationItems = siteStructureContentItems.filter(ci => ci.body._meta.schema.indexOf('/site/integration') > -1)
 
     let choices: string[] = context.all ? integrationItems.map(i => i.body._meta.schema.split('/').pop()) : context.include
-    if (choices.length === 0) {
+    if (_.isEmpty(choices)) {
         let selected = await new MultiSelect({
             message: 'select integrations to test',
             choices: integrationItems.map(i => ({ name: i.body._meta.name, value: i.body._meta.schema.split('/').pop() })),
@@ -50,17 +55,13 @@ export const handler = contextHandler(async (context: CleanupContext): Promise<v
         }
 
         await async.eachSeries(integrationItems, async (item, cb) => {
-            item.body = {
-                ...item.body,
-                _meta: {
-                    ...item.body._meta,
-                    deliveryId: item.deliveryId
-                },
-                locator: hub.name
+            item.body._meta = {
+                ...item.body._meta,
+                deliveryId: item.deliveryId
             }
 
             try {
-                let commerceAPI = await getCommerceAPIFromConfig(CryptKeeper(item.body).decryptAll())
+                let commerceAPI = await getCommerceAPIFromConfig(CryptKeeper(item.body, hub.name).decryptAll())
                 logger.info(`getting integration for [ ${item.body._meta.schema} ]: ${chalk.green('success')}`)
 
                 let mainTag = '⏰  test run'
@@ -79,33 +80,35 @@ export const handler = contextHandler(async (context: CleanupContext): Promise<v
 
                 let category: Category = megaMenu[0]
                 let flattenedCategories = flattenCategories(second)
-                while (category.products.length === 0) {
+                while (_.isEmpty(category.products)) {
                     let randomCategory = getRandom(flattenedCategories)
 
                     let categorySectionTag = `🧰  get category ${chalk.green(randomCategory.slug)}`
                     time(categorySectionTag)
                     category = await commerceAPI.getCategory(randomCategory)
 
-                    logger.info(`${categorySectionTag} found category [ ${chalk.yellow(category.name)} ] with [ ${category.products.length} ] products`)
+                    logger.info(`${categorySectionTag} found category [ ${chalk.yellow(category.name)} ]`)
                     timeEnd(categorySectionTag)
                 }
 
-                // console.log(`megaMenu ->`)
-                // _.each(megaMenu, tlc => {
-                //     console.log(`${tlc.name} [ ${tlc.slug} ]`)
-                //     _.each(tlc.children, cat => {
-                //         console.log(`|- ${cat.name} [ ${cat.slug} ]`)
-                //         _.each(cat.children, c => {
-                //             console.log(`|- |- ${c.name} [ ${c.slug} ]`)
-                //         })    
-                //     })    
-                // })
+                if (showMegaMenu) {
+                    console.log(`megaMenu ->`)
+                    _.each(megaMenu, tlc => {
+                        console.log(`${tlc.name} [ ${tlc.slug} ]`)
+                        _.each(tlc.children, cat => {
+                            console.log(`|- ${cat.name} [ ${cat.slug} ]`)
+                            _.each(cat.children, c => {
+                                console.log(`|- |- ${c.name} [ ${c.slug} ]`)
+                            })    
+                        })    
+                    })    
+                }
 
-                if (category) {
+                if (category && category.products?.length > 0) {
                     let randomProduct = getRandom(category.products)
                     let randomProduct2 = getRandom(category.products)
 
-                    // let productId = 133
+                    // get product section
                     let productSectionTag = `💰  get product [ ${chalk.blue(_.last(randomProduct.id.split('-')))} ]`
                     time(productSectionTag)
                     let product = await commerceAPI.getProduct({ id: randomProduct.id })
