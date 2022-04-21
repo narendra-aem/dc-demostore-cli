@@ -145,6 +145,7 @@ export const getEnvConfig = async (context: AmplienceContext) => {
             },
             productURL: `https://demostore-catalog.s3.us-east-2.amazonaws.com/products.json`,
             categoryURL: `https://demostore-catalog.s3.us-east-2.amazonaws.com/categories.json`,
+            customerGroupURL: `https://demostore-catalog.s3.us-east-2.amazonaws.com/customerGroups.json`,
             translationsURL: `https://demostore-catalog.s3.us-east-2.amazonaws.com/translations.json`,
         }
         restCodec = await context.hub.repositories.sitestructure.related.contentItems.create(restCodec)

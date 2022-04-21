@@ -99,9 +99,9 @@ export const handler = contextHandler(async (context: CleanupContext): Promise<v
                             console.log(`|- ${cat.name} [ ${cat.slug} ]`)
                             _.each(cat.children, c => {
                                 console.log(`|- |- ${c.name} [ ${c.slug} ]`)
-                            })    
-                        })    
-                    })    
+                            })
+                        })
+                    })
                 }
 
                 if (category && category.products?.length > 0) {
@@ -127,6 +127,14 @@ export const handler = contextHandler(async (context: CleanupContext): Promise<v
                 } else {
                     logger.error(`couldn't find a category with products in it`)
                 }
+
+                // get customer groups section
+                let customerGroupsSectionTag = '👨‍👩‍👧‍👦  get customer groups'
+                time(customerGroupsSectionTag)
+                let customerGroups = await commerceAPI.getCustomerGroups({})
+                logger.info(`${customerGroupsSectionTag} got [ ${chalk.green(customerGroups.length)} ]: ${_.map(customerGroups, 'name').join(', ')}`)
+                timeEnd(customerGroupsSectionTag)
+                // end get products section
             } catch (error) {
                 logger.error(`testing integration for [ ${item.body._meta.schema} ]: ${chalk.red('failed')}: ${error}`)
                 console.log(error.stack)
