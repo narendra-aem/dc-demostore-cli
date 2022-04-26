@@ -1,12 +1,13 @@
-import { CleanupContext } from '../handlers/resource-handler';
+import { AmplienceContext, CleanupContext, LoggableContext } from '../handlers/resource-handler';
 import _ from 'lodash'
-import { contextHandler } from '../common/middleware';
+import { contextHandler, loginDC, setupLogging } from '../common/middleware';
 import amplienceBuilder from '../common/amplience-builder';
 import { Category, CryptKeeper, flattenCategories, getCommerceAPIFromConfig, paginator } from '@amplience/dc-demostore-integration'
 import logger, { time, timeEnd } from '../common/logger';
 import chalk from 'chalk';
 import async from 'async';
 import { Argv } from 'yargs';
+import { useEnvironment } from '../common/environment-manager';
 const { MultiSelect } = require('enquirer');
 
 export const command = 'check';
@@ -14,24 +15,23 @@ export const desc = "Check integration content quality";
 
 const getRandom = array => array[Math.floor(Math.random() * array.length)]
 export const builder = (yargs: Argv): Argv =>
-    amplienceBuilder(yargs)
-        .options({
-            include: {
-                alias: 'i',
-                describe: 'types to include',
-                type: 'array'
-            },
-            all: {
-                alias: 'a',
-                describe: 'check all integration types',
-                type: 'boolean'
-            },
-            showMegaMenu: {
-                alias: 'm',
-                describe: 'show the mega menu structure',
-                type: 'boolean'
-            }
-        })
+    amplienceBuilder(yargs).options({
+        include: {
+            alias: 'i',
+            describe: 'types to include',
+            type: 'array'
+        },
+        all: {
+            alias: 'a',
+            describe: 'check all integration types',
+            type: 'boolean'
+        },
+        showMegaMenu: {
+            alias: 'm',
+            describe: 'show the mega menu structure',
+            type: 'boolean'
+        }
+    })
 
 export const handler = contextHandler(async (context: CleanupContext): Promise<void> => {
     let { hub, showMegaMenu } = context
@@ -71,6 +71,7 @@ export const handler = contextHandler(async (context: CleanupContext): Promise<v
                 let megaMenuSectionTag = '☯️  get megamenu'
                 time(megaMenuSectionTag)
                 let megaMenu = await commerceAPI.getMegaMenu({})
+
                 let second = _.reduce(megaMenu, (sum, n) => { return _.concat(sum, n.children) }, [])
                 let third = _.reduce(_.flatMap(megaMenu, 'children'), (sum, n) => { return _.concat(sum, n.children) }, [])
                 let categories = _.concat(megaMenu, second, third)
@@ -79,7 +80,7 @@ export const handler = contextHandler(async (context: CleanupContext): Promise<v
                 // end megamenu section
 
                 let category: Category = megaMenu[0]
-                let flattenedCategories = flattenCategories(second)
+                let flattenedCategories = flattenCategories(categories)
                 while (_.isEmpty(category.products)) {
                     let randomCategory = getRandom(flattenedCategories)
 

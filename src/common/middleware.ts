@@ -68,7 +68,7 @@ export const instrumentHub = (hub: InstrumentedHub): InstrumentedHub => {
     return hub
 }
 
-export const loginDC = async (context: LoggableContext): Promise<LoggableContext> => {
+export const loginDC = async (context: LoggableContext): Promise<void> => {
     // log in to Dynamic Content
     let client = new DynamicContent({
         client_id: context.environment.dc.clientId,
@@ -101,7 +101,7 @@ export const loginDC = async (context: LoggableContext): Promise<LoggableContext
     // end log in to DC
 
     await amplienceHelper.login(context)
-    return context
+    // return context
 }
 
 export const loginDAM = async (context: ImportContext): Promise<void> => {
