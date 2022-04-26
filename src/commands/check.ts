@@ -88,7 +88,7 @@ export const handler = contextHandler(async (context: CleanupContext): Promise<v
                     time(categorySectionTag)
                     category = await commerceAPI.getCategory(randomCategory)
 
-                    logger.info(`${categorySectionTag} found category [ ${chalk.yellow(category.name)} ]`)
+                    logger.info(`${categorySectionTag} found category [ ${chalk.yellow(category.name)} ] with [ ${category.products.length} ] products`)
                     timeEnd(categorySectionTag)
                 }
 
