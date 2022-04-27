@@ -2,8 +2,8 @@ import { AmplienceContext } from '../handlers/resource-handler';
 import _ from 'lodash'
 import { contextHandler } from '../common/middleware';
 import amplienceBuilder from '../common/amplience-builder';
-import { getContentItemById, getEnvConfig, synchronizeContentType, publishContentItem } from '../common/amplience-helper';
-import { Category, Product, getCommerceAPIFromConfig } from '@amplience/dc-demostore-integration'
+import { getEnvConfig, synchronizeContentType, publishContentItem } from '../common/amplience-helper';
+import { Category, Product, getCommerceAPI } from '@amplience/dc-demostore-integration'
 import { paginator } from '@amplience/dc-demostore-integration';
 import { getRandom } from '../common/utils';
 import logger from '../common/logger';
@@ -15,8 +15,7 @@ export const desc = "Update hub retail pointers";
 export const builder = amplienceBuilder
 export const handler = contextHandler(async (context: AmplienceContext): Promise<void> => {
     let envConfig = await getEnvConfig(context)
-    let commerceConfig = await getContentItemById(envConfig.commerce.id).body
-    let commerceAPI = await getCommerceAPIFromConfig(commerceConfig)
+    let commerceAPI = await getCommerceAPI(envConfig.commerce)
     let megaMenu = await commerceAPI.getMegaMenu({})
 
     let populated = _.sortBy(await Promise.all(megaMenu.map(async (category: Category) => {
