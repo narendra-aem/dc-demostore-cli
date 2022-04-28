@@ -19,7 +19,7 @@
       "linux": "chmod +x dist/index.js",
       "win32": "cd ."
     },
-    "prepare": "npm run build",
+    "prepack": "npm run build",
     "version:patch": "standard-version",
     "version:minor": "standard-version --release-as minor",
     "version:major": "standard-version --release-as major",
