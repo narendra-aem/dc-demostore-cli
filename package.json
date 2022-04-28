@@ -4,7 +4,7 @@
   "description": "Amplience Demo Store CLI",
   "man": "./dist/demo-cli.1",
   "bin": {
-    "demostoretoo": "./dist/index.js",
+    "demostore": "./dist/index.js",
     "dc-demostore-cli": "./dist/index.js"
   },
   "type": "commonjs",
