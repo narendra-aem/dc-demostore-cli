@@ -4,7 +4,6 @@ repositories.*
 repositories
 node_modules
 /packages
-dist
 *.log
 package-lock.json
 yarn.lock

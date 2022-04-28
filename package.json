@@ -12,14 +12,12 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "clean": "rimraf dist",
-    "buildfoo": "npm run clean && tsc",
     "build": "npm run clean && tsc && cross-os osbuild",
     "osbuild": {
       "darwin": "chmod +x dist/index.js",
       "linux": "chmod +x dist/index.js",
       "win32": "cd ."
     },
-    "prepack": "npm run build",
     "version:patch": "standard-version",
     "version:minor": "standard-version --release-as minor",
     "version:major": "standard-version --release-as major",
