@@ -1,5 +1,5 @@
 {
-  "name": "@amp-nova/dc-demostore-cli",
+  "name": "@amplience/dc-demostore-cli",
   "version": "0.10.1",
   "description": "Amplience Demo Store CLI",
   "man": "./dist/demo-cli.1",
