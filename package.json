@@ -4,21 +4,22 @@
   "description": "Amplience Demo Store CLI",
   "man": "./dist/demo-cli.1",
   "bin": {
-    "demostore": "./dist/index.js",
+    "demostoretoo": "./dist/index.js",
     "dc-demostore-cli": "./dist/index.js"
   },
   "type": "commonjs",
   "main": "./dist/index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "clean": "rimraf dist packages",
+    "clean": "rimraf dist",
+    "buildfoo": "npm run clean && tsc",
     "build": "npm run clean && tsc && cross-os osbuild",
     "osbuild": {
       "darwin": "chmod +x dist/index.js",
       "linux": "chmod +x dist/index.js",
       "win32": "cd ."
     },
-    "postinstall": "npm run build",
+    "prepare": "npm run build",
     "version:patch": "standard-version",
     "version:minor": "standard-version --release-as minor",
     "version:major": "standard-version --release-as major",
@@ -49,7 +50,7 @@
   },
   "homepage": "https://github.com/amplience/dc-demostore-cli#readme",
   "dependencies": {
-    "@amplience/dc-demostore-integration": "git+https://github.com/amplience/dc-demostore-integration",
+    "@amplience/dc-demostore-integration": "git+https://github.com/amplience/dc-demostore-integration.git",
     "@justindfuller/async-lodash": "^1.0.9",
     "@rauschma/stringio": "^1.4.0",
     "adm-zip": "^0.5.9",
@@ -91,6 +92,7 @@
     "npm-run-all": "^4.1.5",
     "standard-version": "^9.3.2",
     "ts-node": "^10.7.0",
+    "tsconfig-paths": "^3.14.1",
     "typescript": "^4.6.2"
   }
 }
