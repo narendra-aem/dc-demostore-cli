@@ -1,7 +1,6 @@
 import { ContentType, Folder, HttpMethod, ContentItem, Status } from "dc-management-sdk-js"
 import logger, { logComplete } from "./logger"
 import chalk from "chalk"
-import { StatusQuery } from "@amplience/dc-demostore-integration"
 import { logUpdate } from "./logger"
 import _, { Dictionary } from 'lodash'
 import { ContentItemHandler } from "../handlers/content-item-handler"
@@ -294,37 +293,6 @@ export const readDAMMapping = async (context: ImportContext) => {
         mediaEndpoint: endpoint.tag,
         imagesMap: _.zipObject(_.map(assets, x => _.camelCase(x.name)), _.map(assets, 'id'))
     }
-}
-
-export const purgeDeliveryKeys = async (context: AmplienceContext) => {
-    let publishingQueue = PublishingQueue(async item => {
-        await item.related.archive()
-    })
-
-    const purge = async (status: StatusQuery) => await context.hub.contentItemIterator(async item => {
-        // logUpdate(`checking item '${chalk.blueBright(item.label)}'...`)
-
-        if (item.body._meta?.deliveryKey) {
-            console.log(item.body._meta?.deliveryKey)
-        }
-
-        // let cached: any = await getContentItemFromCDN(item.id)
-        // let key = item.body._meta?.deliveryKey || cached?.content?._meta?.deliveryKey
-        // if (key) {
-        //     item = await item.related.unarchive()
-        //     item.body._meta.deliveryKey = null
-        //     item = await item.related.update(item)
-        //     publishingQueue.add(item)
-        // }
-    }, status)
-
-    logger.info(`purging archived items...`)
-    await purge({ status: Status.ARCHIVED })
-
-    console.log(`queue: ${publishingQueue.length()}`)
-
-    let count = await publishingQueue.publish()
-    logComplete(`purged ${count} items`)
 }
 
 export default {
