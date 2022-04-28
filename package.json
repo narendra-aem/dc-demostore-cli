@@ -18,7 +18,7 @@
       "linux": "chmod +x dist/index.js",
       "win32": "cd ."
     },
-    "preinstall": "npm i && npm run build",
+    "postinstall": "npm run build",
     "version:patch": "standard-version",
     "version:minor": "standard-version --release-as minor",
     "version:major": "standard-version --release-as major",
