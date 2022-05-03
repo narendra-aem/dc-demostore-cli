@@ -20,11 +20,10 @@ const async_1 = __importDefault(require("async"));
 const middleware_1 = require("../common/middleware");
 const amplience_builder_1 = __importDefault(require("../common/amplience-builder"));
 const typed_result_1 = require("../handlers/typed-result");
-const amplience_helper_1 = require("../common/amplience-helper");
 const { Confirm, MultiSelect } = require('enquirer');
 exports.command = 'cleanup';
 exports.desc = "Clean up hub";
-const builder = (yargs) => (0, amplience_builder_1.default)(yargs)
+const builder = (yargs) => amplience_builder_1.default(yargs)
     .options({
     include: {
         alias: 'i',
@@ -52,8 +51,7 @@ const builder = (yargs) => (0, amplience_builder_1.default)(yargs)
         }
     })]);
 exports.builder = builder;
-exports.handler = (0, middleware_1.contextHandler)((context) => __awaiter(void 0, void 0, void 0, function* () {
-    var _a;
+exports.handler = middleware_1.contextHandler((context) => __awaiter(void 0, void 0, void 0, function* () {
     let choices = [];
     if (context.all) {
         choices = handlers_1.Cleanables;
@@ -73,10 +71,9 @@ exports.handler = (0, middleware_1.contextHandler)((context) => __awaiter(void 0
         console.log(`${chalk_1.default.redBright('warning:')} this will perform the following actions on hub [ ${chalk_1.default.cyanBright(context.hub.name)} ]`);
         lodash_1.default.each(choices, (choice) => { console.log(`\t* ${choice.getLongDescription()}`); });
     }
-    context.automation = yield ((_a = (0, amplience_helper_1.getContentItemByKey)(`aria/automation/default`)) === null || _a === void 0 ? void 0 : _a.body);
     if (context.skipConfirmation || (yield new Confirm({ message: `${chalk_1.default.bold(chalk_1.default.greenBright('proceed?'))}` }).run())) {
         yield async_1.default.eachSeries(choices, (choice, callback) => __awaiter(void 0, void 0, void 0, function* () {
-            (0, typed_result_1.timed)(`[ cleanup ] ${choice.resourceTypeDescription}`, () => __awaiter(void 0, void 0, void 0, function* () {
+            typed_result_1.timed(`[ cleanup ] ${choice.resourceTypeDescription}`, () => __awaiter(void 0, void 0, void 0, function* () {
                 yield choice.cleanup(context);
                 callback();
             }));

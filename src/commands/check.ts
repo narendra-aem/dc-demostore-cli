@@ -68,7 +68,7 @@ const Operation = operation => {
 
 export const handler = contextHandler(async (context: CleanupContext): Promise<void> => {
     let { hub, showMegaMenu } = context
-    let siteStructureContentItems = await paginator(hub.repositories['sitestructure'].related.contentItems.list, { status: 'ACTIVE' })
+    let siteStructureContentItems = await context.amplienceHelper.getContentItemsInRepository('sitestructure')
     let integrationItems = siteStructureContentItems.filter(ci => ci.body._meta.schema.indexOf('/site/integration') > -1)
 
     let choices: string[] = context.all ? integrationItems.map(i => i.body._meta.schema.split('/').pop()) : context.include

@@ -41,7 +41,7 @@ const configureYargs = (yargInstance) => {
             .middleware([(context) => __awaiter(void 0, void 0, void 0, function* () {
                 context.startTime = new Date();
                 logger_1.default.info(`run [ ${chalk_1.default.green(context._)} ]: started at ${context.startTime}`);
-                context.environment = yield (0, environment_manager_1.currentEnvironment)();
+                context.environment = yield environment_manager_1.currentEnvironment();
                 const childProcess = require('child_process');
                 if (!childProcess._execSync) {
                     let _execSync = childProcess.execSync;
@@ -55,6 +55,6 @@ const configureYargs = (yargInstance) => {
         resolve(argv);
     }));
 };
-exports.default = (yargInstance = (0, yargs_1.default)(process.argv.slice(2))) => __awaiter(void 0, void 0, void 0, function* () {
+exports.default = (yargInstance = yargs_1.default(process.argv.slice(2))) => __awaiter(void 0, void 0, void 0, function* () {
     return yield configureYargs(yargInstance);
 });

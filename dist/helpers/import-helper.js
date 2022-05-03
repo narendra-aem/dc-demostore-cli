@@ -15,12 +15,13 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.copyTemplateFilesToTempDir = void 0;
 const fs_extra_1 = __importDefault(require("fs-extra"));
 const utils_1 = require("../common/utils");
+const types_1 = require("../common/types");
 const copyTemplateFilesToTempDir = (context) => __awaiter(void 0, void 0, void 0, function* () {
     let contentFolder = `${context.tempDir}/content`;
     let folder = `${context.automationDir}/content`;
     fs_extra_1.default.mkdirpSync(contentFolder);
     fs_extra_1.default.copySync(folder, contentFolder);
-    yield (0, utils_1.fileIterator)(contentFolder, context).iterate((file) => __awaiter(void 0, void 0, void 0, function* () {
+    yield utils_1.fileIterator(contentFolder, yield types_1.getMapping(context)).iterate(() => __awaiter(void 0, void 0, void 0, function* () {
     }));
 });
 exports.copyTemplateFilesToTempDir = copyTemplateFilesToTempDir;

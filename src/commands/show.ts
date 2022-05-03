@@ -3,7 +3,7 @@ import _ from 'lodash';
 import Table from 'cli-table'
 import chalk from 'chalk';
 import { logComplete, logUpdate } from '../common/logger';
-import { AmplienceContext, Context } from '../handlers/resource-handler';
+import { AmplienceContext } from '../handlers/resource-handler';
 import { contextHandler } from '../common/middleware';
 import amplienceBuilder from '../common/amplience-builder';
 

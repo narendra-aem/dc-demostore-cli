@@ -1,11 +1,7 @@
 "use strict";
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
 }) : (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     o[k2] = m[k];
@@ -35,88 +31,22 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.contextHandler = exports.setupLogging = exports.loginDAM = exports.loginDC = exports.instrumentHub = void 0;
+exports.contextHandler = exports.setupLogging = exports.loginDC = void 0;
 const logger_1 = __importStar(require("./logger"));
 const dc_management_sdk_js_1 = require("dc-management-sdk-js");
-const dam_service_1 = require("../dam/dam-service");
 const amplience_helper_1 = __importDefault(require("./amplience-helper"));
 const lodash_1 = __importDefault(require("lodash"));
 const fs_extra_1 = __importDefault(require("fs-extra"));
 const chalk_1 = __importDefault(require("chalk"));
 const prompts_1 = require("./prompts");
-const dc_demostore_integration_1 = require("@amplience/dc-demostore-integration");
-const typed_result_1 = require("../handlers/typed-result");
 const http_status_codes_1 = require("http-status-codes");
-const instrumentHub = (hub) => {
-    let listeners = [];
-    const instrument = (object, name) => {
-        lodash_1.default.each(object, (fn, op) => {
-            object[op] = (args) => __awaiter(void 0, void 0, void 0, function* () {
-                let { duration, result } = yield (0, typed_result_1.timed)(`${name} ${op}`, () => __awaiter(void 0, void 0, void 0, function* () {
-                    let page = yield fn.call(object, args);
-                    if (page instanceof dc_management_sdk_js_1.Page) {
-                        lodash_1.default.each(page.getItems(), resource => {
-                            lodash_1.default.each(resource.related, instrument);
-                        });
-                    }
-                    return page;
-                }));
-                lodash_1.default.each(listeners, l => l({
-                    element: name,
-                    operation: op,
-                    duration,
-                    result
-                }));
-                return result;
-            });
-        });
-    };
-    lodash_1.default.each(hub.related, instrument);
-    hub.on = (fn) => { listeners.push(fn); };
-    hub.contentItemIterator = (fn, opts = { status: dc_management_sdk_js_1.Status.ACTIVE }) => __awaiter(void 0, void 0, void 0, function* () {
-        yield Promise.all((yield (0, dc_demostore_integration_1.paginator)(hub.related.contentRepositories.list)).map((repo) => __awaiter(void 0, void 0, void 0, function* () {
-            yield Promise.all((yield (0, dc_demostore_integration_1.paginator)(repo.related.contentItems.list, opts)).map(fn));
-        })));
-    });
-    return hub;
-};
-exports.instrumentHub = instrumentHub;
 const loginDC = (context) => __awaiter(void 0, void 0, void 0, function* () {
-    let client = new dc_management_sdk_js_1.DynamicContent({
-        client_id: context.environment.dc.clientId,
-        client_secret: context.environment.dc.clientSecret
-    });
-    try {
-        context.hub = (0, exports.instrumentHub)(yield client.hubs.get(context.environment.dc.hubId));
-    }
-    catch (error) {
-        throw new Error(`Error logging in to hub [ ${context.environment.dc.hubId} ]: ${error}`);
-    }
-    context.hub.on((result) => {
-        logger_1.default.debug(`[ hub ] ${result.element} ${result.operation} ${result.duration} ms`);
-    });
-    let repositories = yield (0, dc_demostore_integration_1.paginator)(context.hub.related.contentRepositories.list);
-    context.hub.repositories = lodash_1.default.keyBy(repositories, 'name');
-    context.hub.repositoryIdMap = lodash_1.default.zipObject(lodash_1.default.map(repositories, r => r.name), lodash_1.default.map(repositories, 'id'));
-    let workflowStates = yield (0, dc_demostore_integration_1.paginator)(context.hub.related.workflowStates.list);
-    context.hub.workflowStatesMap = lodash_1.default.zipObject(lodash_1.default.map(workflowStates, ws => lodash_1.default.camelCase(ws.label)), lodash_1.default.map(workflowStates, 'id'));
-    if (!context.hub) {
-        throw new Error(`hubId not found: ${context.environment.dc.hubId}`);
-    }
-    else {
-        logger_1.default.info(`connected to hub ${chalk_1.default.bold.cyan(`[ ${context.hub.name} ]`)}`);
-    }
-    yield amplience_helper_1.default.login(context);
+    context.amplienceHelper = amplience_helper_1.default(context);
+    context.hub = yield context.amplienceHelper.login();
 });
 exports.loginDC = loginDC;
-const loginDAM = (context) => __awaiter(void 0, void 0, void 0, function* () {
-    context.damService = new dam_service_1.DAMService();
-    yield context.damService.init(context.environment.dam);
-    logger_1.default.info(`connected to dam with user ${chalk_1.default.cyanBright(`[ ${context.environment.dam.username} ]`)}`);
-});
-exports.loginDAM = loginDAM;
 const setupLogging = (context) => {
-    (0, logger_1.setLogDirectory)(context.tempDir);
+    logger_1.setLogDirectory(context.tempDir);
     fs_extra_1.default.rmSync(context.tempDir, { recursive: true, force: true });
     fs_extra_1.default.mkdirpSync(context.tempDir);
     logger_1.default.info(`${prompts_1.prompts.created} temp dir: ${chalk_1.default.blue(context.tempDir)}`);
@@ -162,12 +92,11 @@ const contextHandler = (handler) => (context) => __awaiter(void 0, void 0, void 
         }
     }
     finally {
-        (0, logger_1.logRunEnd)(context);
+        logger_1.logRunEnd(context);
     }
 });
 exports.contextHandler = contextHandler;
 exports.default = {
-    loginDAM: exports.loginDAM,
     loginDC: exports.loginDC,
     contextHandler: exports.contextHandler
 };

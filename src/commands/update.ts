@@ -2,20 +2,25 @@ import { AmplienceContext } from '../handlers/resource-handler';
 import _ from 'lodash'
 import { contextHandler } from '../common/middleware';
 import amplienceBuilder from '../common/amplience-builder';
-import { getEnvConfig, synchronizeContentType, publishContentItem } from '../common/amplience-helper';
 import { Category, Product, getCommerceAPI } from '@amplience/dc-demostore-integration'
 import { paginator } from '@amplience/dc-demostore-integration';
 import { getRandom } from '../common/utils';
 import logger from '../common/logger';
 import chalk from 'chalk'
+import { ContentType, ContentTypeSchema } from 'dc-management-sdk-js';
 
 export const command = 'update';
 export const desc = "Update hub retail pointers";
 
 export const builder = amplienceBuilder
 export const handler = contextHandler(async (context: AmplienceContext): Promise<void> => {
-    let envConfig = await getEnvConfig(context)
-    let commerceAPI = await getCommerceAPI(envConfig.commerce)
+    let demoStoreConfig = await (await context.amplienceHelper.getDemoStoreConfig()).body
+
+    if (!demoStoreConfig.commerce) {
+        throw new Error(`commerce integration not found!`)
+    }
+
+    let commerceAPI = await getCommerceAPI(demoStoreConfig.commerce)
     let megaMenu = await commerceAPI.getMegaMenu({})
 
     let populated = _.sortBy(await Promise.all(megaMenu.map(async (category: Category) => {
@@ -24,7 +29,8 @@ export const handler = contextHandler(async (context: AmplienceContext): Promise
 
     let mostPopulated = _.last(populated)
     let { hub } = context
-    await hub.contentItemIterator(async contentItem => {
+    let contentItems = await context.amplienceHelper.getContentItemsInRepository('content')
+    await Promise.all(contentItems.map(async contentItem => {
         // curated product grid
         if (contentItem.body._meta.schema === 'https://demostore.amplience.com/content/curated-product-grid') {
             logger.info(`Updating content items`)
@@ -38,15 +44,15 @@ export const handler = contextHandler(async (context: AmplienceContext): Promise
                 return productId
             }))
             contentItem = await contentItem.related.update(contentItem)
-            await publishContentItem(contentItem)
+            await context.amplienceHelper.publishContentItem(contentItem)
         }
 
         if (contentItem.body._meta.schema === 'https://demostore.amplience.com/site/pages') {
         }
-    })
+    }))
 
-    let contentTypeSchemas = await paginator(hub.related.contentTypeSchema.list)
-    let contentTypes = await paginator(hub.related.contentTypes.list)
+    let contentTypeSchemas: ContentTypeSchema[] = await paginator(hub.related.contentTypeSchema.list)
+    let contentTypes: ContentType[] = await paginator(hub.related.contentTypes.list)
     await Promise.all(contentTypeSchemas.map(async schema => {
         if (schema.schemaId === 'https://demostore.amplience.com/content/product-grid' && schema.body) {
             let jsonBody = JSON.parse(schema.body)
@@ -59,7 +65,7 @@ export const handler = contextHandler(async (context: AmplienceContext): Promise
             // then sync the content type
             let contentType = _.find(contentTypes, type => type.contentTypeUri === 'https://demostore.amplience.com/content/product-grid')
             if (contentType) {
-                await synchronizeContentType(contentType)
+                await context.amplienceHelper.synchronizeContentType(contentType)
             }
             else {
                 logger.error(`failed to synchronize content type [ https://demostore.amplience.com/content/product-grid ], content type not found`)

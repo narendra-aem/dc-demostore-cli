@@ -11,8 +11,7 @@
   "main": "./dist/index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "clean": "rimraf dist",
-    "build": "npm run clean && tsc && cross-os osbuild",
+    "build": "rimraf dist && tsc && cross-os osbuild",
     "osbuild": {
       "darwin": "chmod +x dist/index.js",
       "linux": "chmod +x dist/index.js",

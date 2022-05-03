@@ -7,7 +7,7 @@ import { Arguments, Argv } from 'yargs';
 import { contextHandler } from '../common/middleware';
 import amplienceBuilder from '../common/amplience-builder';
 import { timed } from "../handlers/typed-result";
-import { getContentItemByKey } from '../common/amplience-helper';
+import { AmplienceHelper } from '../common/amplience-helper';
 
 const { Confirm, MultiSelect } = require('enquirer');
 
@@ -67,7 +67,8 @@ export const handler = contextHandler(async (context: CleanupContext): Promise<v
         _.each(choices, (choice: Cleanable) => { console.log(`\t* ${choice.getLongDescription()}`) })
     }
 
-    context.automation = await getContentItemByKey(`aria/automation/default`)?.body
+    // todo: wtf?
+    // context.automation = context.amplienceHelper.getContentItem(`demostore/automation`)
     if (context.skipConfirmation || await new Confirm({ message: `${chalk.bold(chalk.greenBright('proceed?'))}` }).run()) {
         await async.eachSeries(choices, async (choice, callback) => {
             timed(`[ cleanup ] ${choice.resourceTypeDescription}`, async() => {

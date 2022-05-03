@@ -15,7 +15,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const middleware_1 = require("./middleware");
 const lodash_1 = __importDefault(require("lodash"));
 const nanoid_1 = require("nanoid");
-const amplience_helper_1 = require("./amplience-helper");
 const environment_manager_1 = require("./environment-manager");
 exports.default = (yargs) => yargs
     .options({
@@ -28,7 +27,7 @@ exports.default = (yargs) => yargs
     tempDir: {
         alias: 't',
         describe: 'temporary directory for all run files',
-        default: `/tmp/demostore/demostore-${(0, nanoid_1.nanoid)()}`
+        default: `/tmp/demostore/demostore-${nanoid_1.nanoid()}`
     },
     matchingSchema: {
         alias: 'm',
@@ -38,11 +37,11 @@ exports.default = (yargs) => yargs
 })
     .middleware([
     middleware_1.setupLogging,
-    (c) => __awaiter(void 0, void 0, void 0, function* () { return yield (0, middleware_1.loginDC)(c); }),
+    (c) => __awaiter(void 0, void 0, void 0, function* () { return yield middleware_1.loginDC(c); }),
     (context) => __awaiter(void 0, void 0, void 0, function* () {
         if (!lodash_1.default.includes(context._, 'show')) {
-            yield (0, environment_manager_1.useEnvironment)(context.environment);
-            yield (0, amplience_helper_1.cacheContentMap)(context);
+            yield environment_manager_1.useEnvironment(context.environment);
+            yield context.amplienceHelper.cacheContentMap();
         }
     }),
 ]);

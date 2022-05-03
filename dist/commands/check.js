@@ -1,11 +1,7 @@
 "use strict";
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
 }) : (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     o[k2] = m[k];
@@ -58,7 +54,7 @@ const formatPercentage = (a, b) => {
     return `[ ${colorFn(`${a.length} (${percentage}%)`)} ]`;
 };
 const getRandom = array => array[Math.floor(Math.random() * array.length)];
-const builder = (yargs) => (0, amplience_builder_1.default)(yargs).options({
+const builder = (yargs) => amplience_builder_1.default(yargs).options({
     include: {
         alias: 'i',
         describe: 'types to include',
@@ -85,9 +81,9 @@ const Operation = operation => {
         })
     };
 };
-exports.handler = (0, middleware_1.contextHandler)((context) => __awaiter(void 0, void 0, void 0, function* () {
+exports.handler = middleware_1.contextHandler((context) => __awaiter(void 0, void 0, void 0, function* () {
     let { hub, showMegaMenu } = context;
-    let siteStructureContentItems = yield (0, dc_demostore_integration_1.paginator)(hub.repositories['sitestructure'].related.contentItems.list, { status: 'ACTIVE' });
+    let siteStructureContentItems = yield context.amplienceHelper.getContentItemsInRepository('sitestructure');
     let integrationItems = siteStructureContentItems.filter(ci => ci.body._meta.schema.indexOf('/site/integration') > -1);
     let choices = context.all ? integrationItems.map(i => i.body._meta.schema.split('/').pop()) : context.include;
     if (lodash_1.default.isEmpty(choices)) {
@@ -106,7 +102,7 @@ exports.handler = (0, middleware_1.contextHandler)((context) => __awaiter(void 0
         yield async_1.default.eachSeries(integrationItems, (item, cb) => __awaiter(void 0, void 0, void 0, function* () {
             item.body._meta = Object.assign(Object.assign({}, item.body._meta), { deliveryId: item.deliveryId });
             try {
-                let commerceAPI = yield (0, dc_demostore_integration_1.getCodec)((0, dc_demostore_integration_1.CryptKeeper)(item.body, hub.name).decryptAll());
+                let commerceAPI = yield dc_demostore_integration_1.getCodec(dc_demostore_integration_1.CryptKeeper(item.body, hub.name).decryptAll());
                 let allProducts = [];
                 let megaMenu = [];
                 let categories = [];
@@ -120,7 +116,7 @@ exports.handler = (0, middleware_1.contextHandler)((context) => __awaiter(void 0
                     categories = lodash_1.default.concat(megaMenu, second, third);
                     return `[ ${chalk_1.default.green(megaMenu.length)} top level ] [ ${chalk_1.default.green(second.length)} second level ] [ ${chalk_1.default.green(third.length)} third level ]`;
                 });
-                let flattenedCategories = (0, dc_demostore_integration_1.flattenCategories)(categories);
+                let flattenedCategories = dc_demostore_integration_1.flattenCategories(categories);
                 let categoryOperation = yield Operation({
                     tag: '🧰  get category',
                     execute: () => __awaiter(void 0, void 0, void 0, function* () { return yield commerceAPI.getCategory(flattenedCategories[0]); })
@@ -134,9 +130,9 @@ exports.handler = (0, middleware_1.contextHandler)((context) => __awaiter(void 0
                     cat.products = category.products;
                     allProducts = lodash_1.default.concat(allProducts, cat.products);
                     categoryCount++;
-                    (0, logger_1.logUpdate)(`🧰  got [ ${categoryCount}/${flattenedCategories.length} ] categories and ${chalk_1.default.yellow(allProducts.length)} products`);
+                    logger_1.logUpdate(`🧰  got [ ${categoryCount}/${flattenedCategories.length} ] categories and ${chalk_1.default.yellow(allProducts.length)} products`);
                 })));
-                (0, logger_1.logComplete)(`🧰  read ${chalk_1.default.green(flattenedCategories.length)} categories, ${chalk_1.default.yellow(allProducts.length)} products in ${chalk_1.default.cyan(`${new Date().valueOf() - categoryReadStart} ms`)}`);
+                logger_1.logComplete(`🧰  read ${chalk_1.default.green(flattenedCategories.length)} categories, ${chalk_1.default.yellow(allProducts.length)} products in ${chalk_1.default.cyan(`${new Date().valueOf() - categoryReadStart} ms`)}`);
                 let randomProduct = getRandom(allProducts);
                 let randomProduct2 = getRandom(allProducts);
                 let productOperation = yield Operation({

@@ -1,11 +1,7 @@
 "use strict";
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
 }) : (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     o[k2] = m[k];
@@ -46,7 +42,7 @@ const fs_extra_1 = __importDefault(require("fs-extra"));
 const prompts_1 = require("../common/prompts");
 const nanoid_1 = require("nanoid");
 const nanoid_dictionary_1 = require("nanoid-dictionary");
-const nanoid = (0, nanoid_1.customAlphabet)(nanoid_dictionary_1.lowercase, 50);
+const nanoid = nanoid_1.customAlphabet(nanoid_dictionary_1.lowercase, 50);
 class ExtensionHandler extends resource_handler_1.ResourceHandler {
     constructor() {
         super(dc_management_sdk_js_1.Extension, 'extensions');
@@ -56,19 +52,19 @@ class ExtensionHandler extends resource_handler_1.ResourceHandler {
     import(context) {
         return __awaiter(this, void 0, void 0, function* () {
             const { hub } = context;
-            (0, logger_1.logSubheading)(`[ import ] extensions`);
+            logger_1.logSubheading(`[ import ] extensions`);
             let extensionsFile = `${context.tempDir}/content/extensions/extensions.json`;
             if (!fs_extra_1.default.existsSync(extensionsFile)) {
                 logger_1.default.info(`skipped, content/extensions/extensions.json not found`);
                 return;
             }
             let extensions = fs_extra_1.default.readJsonSync(extensionsFile);
-            const existingExtensions = yield (0, dc_demostore_integration_1.paginator)(hub.related.extensions.list);
+            const existingExtensions = yield dc_demostore_integration_1.paginator(hub.related.extensions.list);
             let createCount = 0;
             yield Promise.all(extensions.map((ext) => __awaiter(this, void 0, void 0, function* () {
                 try {
                     if (!lodash_1.default.includes(lodash_1.default.map(existingExtensions, 'name'), ext.name)) {
-                        (0, logger_1.logUpdate)(`${prompts_1.prompts.import} extension [ ${ext.name} ]`);
+                        logger_1.logUpdate(`${prompts_1.prompts.import} extension [ ${ext.name} ]`);
                         let extension = yield hub.related.extensions.create(ext);
                         createCount++;
                     }
@@ -82,24 +78,24 @@ class ExtensionHandler extends resource_handler_1.ResourceHandler {
                     }
                 }
             })));
-            (0, logger_1.logComplete)(`${this.getDescription()}: [ ${chalk_1.default.green(createCount)} created ]`);
+            logger_1.logComplete(`${this.getDescription()}: [ ${chalk_1.default.green(createCount)} created ]`);
         });
     }
     cleanup(context) {
         return __awaiter(this, void 0, void 0, function* () {
-            (0, logger_1.logSubheading)(`[ cleanup ] extensions`);
+            logger_1.logSubheading(`[ cleanup ] extensions`);
             try {
                 let deleteCount = 0;
-                let extensions = yield (0, dc_demostore_integration_1.paginator)(context.hub.related.extensions.list);
+                let extensions = yield dc_demostore_integration_1.paginator(context.hub.related.extensions.list);
                 yield Promise.all(extensions.map((ext) => __awaiter(this, void 0, void 0, function* () {
                     let oldName = ext.name;
                     ext.name = nanoid();
                     ext = yield ext.related.update(ext);
                     deleteCount++;
                     yield ext.related.delete();
-                    (0, logger_1.logUpdate)(`${chalk_1.default.red('delete')} extension [ ${oldName} ]`);
+                    logger_1.logUpdate(`${chalk_1.default.red('delete')} extension [ ${oldName} ]`);
                 })));
-                (0, logger_1.logComplete)(`${this.getDescription()}: [ ${chalk_1.default.red(deleteCount)} deleted ]`);
+                logger_1.logComplete(`${this.getDescription()}: [ ${chalk_1.default.red(deleteCount)} deleted ]`);
             }
             catch (error) {
                 logger_1.default.error(error.message || error);

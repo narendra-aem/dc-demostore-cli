@@ -1,17 +1,17 @@
 import { ResourceHandler, Cleanable, ImportContext, CleanupContext } from "./resource-handler"
-import { ContentItem, ContentRepository, Folder } from "dc-management-sdk-js"
+import { ContentItem, ContentRepository, ContentType, Folder } from "dc-management-sdk-js"
 import { paginator } from "@amplience/dc-demostore-integration"
 import chalk from 'chalk'
 import { prompts } from "../common/prompts"
 import fs from 'fs-extra'
-import amplienceHelper, { get, deleteFolder, publishAll, updateAutomationContentItems, PublishingQueue } from '../common/amplience-helper'
-import { logUpdate, logComplete } from "../common/logger"
-import { CLIJob } from "../helpers/exec-helper"
+import { AmplienceHelper } from '../common/amplience-helper'
+import logger, { logUpdate, logComplete } from "../common/logger"
 import _ from "lodash"
 import { fileIterator } from "../common/utils"
 import { nanoid } from "nanoid"
 import DCCLIContentItemHandler from './dc-cli-content-item-handler'
-import { createLog, openRevertLog } from '../common/dccli/log-helpers'
+import { createLog } from '../common/dccli/log-helpers'
+import { getMapping, Mapping } from "../common/types"
 
 export class ContentItemHandler extends ResourceHandler implements Cleanable {
     sortPriority = 0.03
@@ -22,15 +22,26 @@ export class ContentItemHandler extends ResourceHandler implements Cleanable {
     }
 
     async import(context: ImportContext) {
+        const automation = await (await context.amplienceHelper.getAutomation()).body
+        fs.writeJsonSync(`${context.tempDir}/mapping.json`, {
+            contentItems: _.map(automation.contentItems, ci => [ci.from, ci.to]),
+            workflowStates: _.map(automation.workflowStates, ws => [ws.from, ws.to])
+        })
+        context.automation = automation
+
+        // copy so we can compare later after we do an import
+        fs.copyFileSync(`${context.tempDir}/mapping.json`, `${context.tempDir}/old_mapping.json`)
+        logger.info(`wrote mapping file at ${context.tempDir}/mapping.json`)
+
         let sourceDir = `${context.tempDir}/content/content-items`
         if (!fs.existsSync(sourceDir)) {
             throw new Error(`source dir not found: ${sourceDir}`)
         }
 
-        await fileIterator(sourceDir, context).iterate(async file => {
+        await fileIterator(sourceDir, await getMapping(context)).iterate(async file => {
             let mapping = _.find(context.automation?.contentItems, map => map.from === file.object.id)
             if (mapping) {
-                let contentItem = await amplienceHelper.getContentItemById(mapping.to)
+                let contentItem = await context.amplienceHelper.getContentItem(mapping.to)
                 if (_.isEqual(contentItem.body, file.object.body)) {
                     fs.unlinkSync(file.path)
                 }
@@ -38,9 +49,6 @@ export class ContentItemHandler extends ResourceHandler implements Cleanable {
         })
 
         let importLogFile = `${context.tempDir}/item-import.log`
-        // let importJob = new CLIJob(`npx @dlillyatx/dc-cli@latest content-item import ${sourceDir} --force --mapFile ${context.tempDir}/mapping.json --logFile ${importLogFile}`)
-        // await importJob.exec()
-
         await DCCLIContentItemHandler({
             dir: sourceDir,
             logFile: createLog(importLogFile),
@@ -56,7 +64,10 @@ export class ContentItemHandler extends ResourceHandler implements Cleanable {
         let updatedCount = _.filter(logFile.split('\n'), l => l.startsWith('UPDATE ')).length
 
         logComplete(`${this.getDescription()}: [ ${chalk.green(createdCount)} created ] [ ${chalk.blue(updatedCount)} updated ]`)
-        await publishAll(context)
+        await context.amplienceHelper.publishAll()
+
+        // recache
+        await context.amplienceHelper.cacheContentMap()
     }
 
     shouldCleanUpItem(item: ContentItem, context: CleanupContext): boolean {
@@ -69,8 +80,7 @@ export class ContentItemHandler extends ResourceHandler implements Cleanable {
 
         let archiveCount = 0
         let folderCount = 0
- 
-        let publishingQueue = PublishingQueue()
+
         await Promise.all(repositories.map(async (repository: ContentRepository) => {
             logUpdate(`${prompts.archive} content items in repository ${chalk.cyanBright(repository.name)}...`)
             let contentItems: ContentItem[] = _.filter(await paginator(repository.related.contentItems.list, { status: 'ACTIVE' }), ci => this.shouldCleanUpItem(ci, context))
@@ -84,11 +94,11 @@ export class ContentItemHandler extends ResourceHandler implements Cleanable {
                     return
                 }
 
-                let effectiveContentType: any = await (await get(effectiveContentTypeLink)).data
-                if (effectiveContentType.properties?.filterActive) {
+                let effectiveContentType: any = await context.amplienceHelper.get(effectiveContentTypeLink)
+                if (effectiveContentType?.properties?.filterActive) {
                     contentItem.body.filterActive = false
                     contentItem = await contentItem.related.update(contentItem)
-                    await amplienceHelper.publishContentItem(contentItem)
+                    await context.amplienceHelper.publishContentItem(contentItem)
                 }
 
                 if (contentItem.body._meta.deliveryKey?.length > 0) {
@@ -108,14 +118,12 @@ export class ContentItemHandler extends ResourceHandler implements Cleanable {
                 _.remove(context.automation?.contentItems, ci => contentItem.id === ci.to)
             }))
 
-            await publishingQueue.publish()
-
             const cleanupFolder = (async (folder: Folder) => {
                 let subfolders = await paginator(folder.related.folders.list)
                 await Promise.all(subfolders.map(cleanupFolder))
                 logUpdate(`${prompts.delete} folder ${folder.name}`)
                 folderCount++
-                return await deleteFolder(folder)
+                return await context.amplienceHelper.deleteFolder(folder)
             })
 
             // also clean up folders
@@ -123,9 +131,6 @@ export class ContentItemHandler extends ResourceHandler implements Cleanable {
             await Promise.all(folders.map(cleanupFolder))
         }))
 
-        if (!_.isEmpty(context.matchingSchema)) {
-            await updateAutomationContentItems(context)
-        }
         logComplete(`${this.getDescription()}: [ ${chalk.yellow(archiveCount)} items archived ] [ ${chalk.red(folderCount)} folders deleted ]`)
     }
 }

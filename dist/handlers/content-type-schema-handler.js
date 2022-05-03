@@ -30,7 +30,7 @@ class ContentTypeSchemaHandler extends resource_handler_1.CleanableResourceHandl
     }
     import(context) {
         return __awaiter(this, void 0, void 0, function* () {
-            (0, logger_1.logSubheading)(`[ import ] content-type-schemas`);
+            logger_1.logSubheading(`[ import ] content-type-schemas`);
             let { hub } = context;
             let baseDir = `${context.tempDir}/content`;
             let sourceDir = `${baseDir}/content-type-schemas`;
@@ -38,8 +38,10 @@ class ContentTypeSchemaHandler extends resource_handler_1.CleanableResourceHandl
             if (!fs_extra_1.default.existsSync(sourceDir)) {
                 return;
             }
-            const schemas = (0, importer_1.loadJsonFromDirectory)(sourceDir, dc_management_sdk_js_1.ContentTypeSchema);
-            const [resolvedSchemas, resolveSchemaErrors] = yield (0, schema_helper_1.resolveSchemaBody)(schemas, sourceDir);
+            let codecs = dc_demostore_integration_1.getCodecs();
+            const schemas = importer_1.loadJsonFromDirectory(sourceDir, dc_management_sdk_js_1.ContentTypeSchema);
+            const [resolvedSchemas, resolveSchemaErrors] = yield schema_helper_1.resolveSchemaBody(schemas, sourceDir);
+            const installSchemas = Object.values(resolvedSchemas);
             if (Object.keys(resolveSchemaErrors).length > 0) {
                 const errors = Object.entries(resolveSchemaErrors)
                     .map(value => {
@@ -52,30 +54,30 @@ class ContentTypeSchemaHandler extends resource_handler_1.CleanableResourceHandl
             let archiveCount = 0;
             let updateCount = 0;
             let createCount = 0;
-            const storedSchemas = yield (0, dc_demostore_integration_1.paginator)(hub.related.contentTypeSchema.list);
+            const storedSchemas = yield dc_demostore_integration_1.paginator(hub.related.contentTypeSchema.list);
             yield Promise.all(Object.values(resolvedSchemas).map((schema) => __awaiter(this, void 0, void 0, function* () {
                 let stored = lodash_1.default.find(storedSchemas, s => s.schemaId === schema.schemaId);
                 if (stored) {
                     if (stored.status === 'ARCHIVED') {
                         archiveCount++;
                         stored = yield stored.related.unarchive();
-                        (0, logger_1.logUpdate)(`${chalk_1.default.green('unarch')} schema [ ${chalk_1.default.gray(schema.schemaId)} ]`);
+                        logger_1.logUpdate(`${chalk_1.default.green('unarch')} schema [ ${chalk_1.default.gray(schema.schemaId)} ]`);
                     }
                     if (schema.body && stored.body !== schema.body) {
                         updateCount++;
                         schema.body = JSON.stringify(JSON.parse(schema.body), undefined, 4);
                         stored = yield stored.related.update(schema);
-                        (0, logger_1.logUpdate)(`${chalk_1.default.green('update')} schema [ ${chalk_1.default.gray(schema.schemaId)} ]`);
+                        logger_1.logUpdate(`${chalk_1.default.green('update')} schema [ ${chalk_1.default.gray(schema.schemaId)} ]`);
                     }
                 }
                 else if (schema.body) {
                     createCount++;
                     schema.body = JSON.stringify(JSON.parse(schema.body), undefined, 4);
                     stored = yield hub.related.contentTypeSchema.create(schema);
-                    (0, logger_1.logUpdate)(`${chalk_1.default.green('create')} schema [ ${chalk_1.default.gray(schema.schemaId)} ]`);
+                    logger_1.logUpdate(`${chalk_1.default.green('create')} schema [ ${chalk_1.default.gray(schema.schemaId)} ]`);
                 }
             })));
-            (0, logger_1.logComplete)(`${this.getDescription()}: [ ${chalk_1.default.green(archiveCount)} unarchived ] [ ${chalk_1.default.green(updateCount)} updated ] [ ${chalk_1.default.green(createCount)} created ]`);
+            logger_1.logComplete(`${this.getDescription()}: [ ${chalk_1.default.green(archiveCount)} unarchived ] [ ${chalk_1.default.green(updateCount)} updated ] [ ${chalk_1.default.green(createCount)} created ]`);
         });
     }
 }

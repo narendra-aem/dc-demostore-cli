@@ -1,11 +1,7 @@
 "use strict";
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
 }) : (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     o[k2] = m[k];
@@ -35,155 +31,104 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.readDAMMapping = exports.updateAutomation = exports.updateAutomationContentItems = exports.readAutomation = exports.initAutomation = exports.updateEnvConfig = exports.getEnvConfig = exports.getContentMap = exports.getContentItemById = exports.getContentItemByKey = exports.cacheContentMap = exports.contentMap = exports.publishAll = exports.PublishingQueue = exports.getContentItemFromCDN = exports.publishContentItem = exports.get = exports.deleteFolder = exports.synchronizeContentType = void 0;
 const dc_management_sdk_js_1 = require("dc-management-sdk-js");
 const logger_1 = __importStar(require("./logger"));
 const chalk_1 = __importDefault(require("chalk"));
 const logger_2 = require("./logger");
 const lodash_1 = __importDefault(require("lodash"));
 const content_item_handler_1 = require("../handlers/content-item-handler");
-const dc_management_sdk_js_2 = require("dc-management-sdk-js");
 const fs_extra_1 = __importDefault(require("fs-extra"));
 const utils_1 = require("./utils");
-const environment_manager_1 = require("./environment-manager");
-let dcUrl = `https://api.amplience.net/v2/content`;
-let accessToken = undefined;
-let axiosClient = new dc_management_sdk_js_2.AxiosHttpClient({});
-const login = (context) => __awaiter(void 0, void 0, void 0, function* () {
-    let oauthResponse = yield axiosClient.request({
-        method: dc_management_sdk_js_1.HttpMethod.POST,
-        url: `https://auth.amplience.net/oauth/token?client_id=${context.environment.dc.clientId}&client_secret=${context.environment.dc.clientSecret}&grant_type=client_credentials`,
+const dc_demostore_integration_1 = require("@amplience/dc-demostore-integration");
+const dam_service_1 = require("../dam/dam-service");
+const deliveryKeys = {
+    config: `demostore/config/default`,
+    automation: `demostore/automation`,
+    rest: `demostore/integration/rest`
+};
+const labels = {
+    config: `demostore config`,
+    automation: `demostore automation`,
+    rest: `generic rest commerce configuration`
+};
+const schemas = {
+    config: `https://demostore.amplience.com/site/demostoreconfig`,
+    automation: `https://demostore.amplience.com/site/automation`,
+    rest: `https://demostore.amplience.com/site/integration/rest`
+};
+const baseURL = `https://demostore-catalog.s3.us-east-2.amazonaws.com`;
+const restMap = {};
+const damServiceMap = {};
+let contentMap = {};
+const AmplienceHelperGenerator = (context) => {
+    const rest = restMap[context.environment.dc.clientId] = restMap[context.environment.dc.clientId] || dc_demostore_integration_1.OAuthRestClient({
+        api_url: `https://api.amplience.net/v2/content`,
+        auth_url: `https://auth.amplience.net/oauth/token?client_id=${context.environment.dc.clientId}&client_secret=${context.environment.dc.clientSecret}&grant_type=client_credentials`
+    }, {}, {
         headers: {
             'content-type': 'application/x-www-form-urlencoded'
         }
     });
-    accessToken = oauthResponse.data.access_token;
-    axiosClient = new dc_management_sdk_js_2.AxiosHttpClient({
-        baseURL: dcUrl,
-        headers: { authorization: `bearer ${accessToken}`, 'content-type': 'application/json' }
+    const getContentItems = (hub, opts) => __awaiter(void 0, void 0, void 0, function* () {
+        return lodash_1.default.flatMap(yield Promise.all((yield dc_demostore_integration_1.paginator(hub.related.contentRepositories.list)).map((repo) => __awaiter(void 0, void 0, void 0, function* () {
+            return yield dc_demostore_integration_1.paginator(repo.related.contentItems.list, opts);
+        }))));
     });
-    logger_1.default.debug(`${chalk_1.default.green('logged in')} to dynamic content at ${chalk_1.default.yellow(new Date().valueOf())}`);
-    setTimeout(() => { accessToken = undefined; }, oauthResponse.data.expires_in * 1000);
-});
-let ax = {
-    get: (url) => __awaiter(void 0, void 0, void 0, function* () { return yield axiosClient.request({ method: dc_management_sdk_js_1.HttpMethod.GET, url }); }),
-    post: (url) => __awaiter(void 0, void 0, void 0, function* () { return yield axiosClient.request({ method: dc_management_sdk_js_1.HttpMethod.POST, url }); }),
-    patch: (url) => __awaiter(void 0, void 0, void 0, function* () { return yield axiosClient.request({ method: dc_management_sdk_js_1.HttpMethod.PATCH, url }); }),
-    delete: (url) => __awaiter(void 0, void 0, void 0, function* () { return yield axiosClient.request({ method: dc_management_sdk_js_1.HttpMethod.DELETE, url }); })
-};
-const synchronizeContentType = (contentType) => __awaiter(void 0, void 0, void 0, function* () { return yield ax.patch(`/content-types/${contentType.id}/schema`); });
-exports.synchronizeContentType = synchronizeContentType;
-const deleteFolder = (folder) => __awaiter(void 0, void 0, void 0, function* () { return yield ax.delete(`/folders/${folder.id}`); });
-exports.deleteFolder = deleteFolder;
-exports.get = ax.get;
-const publishContentItem = (item) => __awaiter(void 0, void 0, void 0, function* () {
-    yield ax.post(`/content-items/${item.id}/publish`);
-    updateCache(item);
-    return item;
-});
-exports.publishContentItem = publishContentItem;
-const getContentItemFromCDN = (id) => __awaiter(void 0, void 0, void 0, function* () {
-    const environment = yield (0, environment_manager_1.currentEnvironment)();
-    return yield (yield ax.get(`https://${environment.name}.cdn.content.amplience.net/content/id/${id}`)).data;
-});
-exports.getContentItemFromCDN = getContentItemFromCDN;
-const PublishingQueue = (postProcess = (x) => __awaiter(void 0, void 0, void 0, function* () { })) => {
-    let queue = [];
-    return {
-        add: (item) => queue.push(item),
-        length: () => queue.length,
-        publish: () => __awaiter(void 0, void 0, void 0, function* () {
-            let count = 0;
-            let chunks = lodash_1.default.reverse(lodash_1.default.chunk(queue, 100));
-            while (chunks.length > 0) {
-                let chunk = chunks.pop();
-                if (chunk) {
-                    const start = new Date().valueOf();
-                    (0, logger_2.logUpdate)(`publishing ${chalk_1.default.blueBright(chunk.length)} items...`);
-                    yield Promise.all(chunk.map((item) => __awaiter(void 0, void 0, void 0, function* () {
-                        yield (0, exports.publishContentItem)(item);
-                        yield postProcess(item);
-                        count++;
-                    })));
-                    if (chunks.length > 0) {
-                        const current = new Date().valueOf();
-                        const remainder = Math.ceil((60000 - (current - start)) / 1000);
-                        for (let index = remainder; index > 0; index--) {
-                            (0, logger_2.logUpdate)(`sleeping ${chalk_1.default.blueBright(index)} seconds before next chunk...`, false);
-                            yield (0, utils_1.sleep)(1000);
-                        }
-                    }
-                }
-            }
-            return count;
-        })
-    };
-};
-exports.PublishingQueue = PublishingQueue;
-const publishAll = (context) => __awaiter(void 0, void 0, void 0, function* () {
-    const publishingQueue = (0, exports.PublishingQueue)();
-    yield context.hub.contentItemIterator(contentItem => {
-        if (contentItem.version !== contentItem.lastPublishedVersion) {
-            publishingQueue.add(contentItem);
+    const login = () => __awaiter(void 0, void 0, void 0, function* () {
+        let client = new dc_management_sdk_js_1.DynamicContent({
+            client_id: context.environment.dc.clientId,
+            client_secret: context.environment.dc.clientSecret
+        });
+        let hub = yield client.hubs.get(context.environment.dc.hubId);
+        if (hub) {
+            logger_1.default.info(`connected to hub ${chalk_1.default.bold.cyan(`[ ${hub.name} ]`)}`);
+            return hub;
         }
+        throw new Error(`hubId not found: ${context.environment.dc.hubId}`);
     });
-    const publishedCount = yield publishingQueue.publish();
-    (0, logger_1.logComplete)(`${new content_item_handler_1.ContentItemHandler().getDescription()}: [ ${chalk_1.default.green(publishedCount)} published ]`);
-});
-exports.publishAll = publishAll;
-exports.contentMap = {};
-const cacheContentMap = (context) => __awaiter(void 0, void 0, void 0, function* () { return yield context.hub.contentItemIterator(updateCache); });
-exports.cacheContentMap = cacheContentMap;
-const updateCache = (item) => {
-    exports.contentMap[item.body._meta.deliveryKey] = item;
-    exports.contentMap[item.id] = item;
-};
-const getContentItemByKey = (key) => exports.contentMap[key];
-exports.getContentItemByKey = getContentItemByKey;
-const getContentItemById = (id) => exports.contentMap[id];
-exports.getContentItemById = getContentItemById;
-const getContentMap = () => lodash_1.default.zipObject(lodash_1.default.map(exports.contentMap, (__, key) => key.replace(/\//g, '-')), lodash_1.default.map(exports.contentMap, 'deliveryId'));
-exports.getContentMap = getContentMap;
-const getEnvConfig = (context) => __awaiter(void 0, void 0, void 0, function* () {
-    var _a, _b;
-    let { hub, environment } = context;
-    let deliveryKey = `aria/env/default`;
-    let demoStoreConfigSchema = `https://demostore.amplience.com/site/demostoreconfig`;
-    let restSchema = `https://demostore.amplience.com/site/integration/rest`;
-    logger_1.default.info(`environment lookup [ hub ${chalk_1.default.magentaBright(hub.name)} ] [ key ${chalk_1.default.blueBright(deliveryKey)} ]`);
-    let config = yield (0, exports.getContentItemByKey)(deliveryKey);
-    if (!config || !config.body) {
-        logger_1.default.info(`${deliveryKey} not found, creating...`);
-        let restCodec = new dc_management_sdk_js_1.ContentItem();
-        restCodec.label = `generic rest commerce configuration`;
-        restCodec.body = {
-            _meta: {
-                name: `generic rest commerce configuration`,
-                schema: restSchema,
-                deliveryKey: `aria/config/rest`
-            },
-            productURL: `https://demostore-catalog.s3.us-east-2.amazonaws.com/products.json`,
-            categoryURL: `https://demostore-catalog.s3.us-east-2.amazonaws.com/categories.json`,
-            customerGroupURL: `https://demostore-catalog.s3.us-east-2.amazonaws.com/customerGroups.json`,
-            translationsURL: `https://demostore-catalog.s3.us-east-2.amazonaws.com/translations.json`,
+    const synchronizeContentType = (contentType) => __awaiter(void 0, void 0, void 0, function* () { return yield rest.patch(`/content-types/${contentType.id}/schema`); });
+    const deleteFolder = (folder) => __awaiter(void 0, void 0, void 0, function* () { return yield rest.delete(`/folders/${folder.id}`); });
+    const get = rest.get;
+    const updateContentMap = (item) => {
+        contentMap[item.body._meta.deliveryKey] = item;
+        contentMap[item.id] = item;
+    };
+    const cacheContentMap = () => __awaiter(void 0, void 0, void 0, function* () { return (yield getContentItems(context.hub, { status: dc_management_sdk_js_1.Status.ACTIVE })).forEach(updateContentMap); });
+    const getContentMap = () => lodash_1.default.zipObject(lodash_1.default.map(contentMap, (__, key) => key.replace(/\//g, '-')), lodash_1.default.map(contentMap, 'deliveryId'));
+    const getContentItem = (keyOrId) => contentMap[keyOrId];
+    const getDAMMapping = () => __awaiter(void 0, void 0, void 0, function* () {
+        const damService = damServiceMap[context.environment.dam.username] = damServiceMap[context.environment.dam.username] || (yield new dam_service_1.DAMService().init(context.environment.dam));
+        let assets = lodash_1.default.filter(yield damService.getAssetsListForBucket('Assets'), asset => asset.status === 'active');
+        let endpoint = lodash_1.default.first(yield damService.getEndpoints());
+        return {
+            mediaEndpoint: endpoint === null || endpoint === void 0 ? void 0 : endpoint.tag,
+            imagesMap: lodash_1.default.zipObject(lodash_1.default.map(assets, x => lodash_1.default.camelCase(x.name)), lodash_1.default.map(assets, 'id'))
         };
-        restCodec = yield context.hub.repositories.sitestructure.related.contentItems.create(restCodec);
-        yield (0, exports.publishContentItem)(restCodec);
-        config = new dc_management_sdk_js_1.ContentItem();
-        config.label = `${environment.name} Demo Store config`;
-        config.body = {
-            _meta: {
-                name: `${environment.name} Demo Store config`,
-                schema: demoStoreConfigSchema,
-                deliveryKey
-            },
-            environment: environment.name,
-            url: environment.url,
+    });
+    const getAutomation = () => __awaiter(void 0, void 0, void 0, function* () {
+        return yield ensureContentItem('automation', {
+            contentItems: [],
+            workflowStates: []
+        });
+    });
+    const getRestConfig = () => __awaiter(void 0, void 0, void 0, function* () {
+        return yield ensureContentItem('rest', {
+            productURL: `${baseURL}/products.json`,
+            categoryURL: `${baseURL}/categories.json`,
+            customerGroupURL: `${baseURL}/customerGroups.json`,
+            translationsURL: `${baseURL}/translations.json`
+        });
+    });
+    const getDemoStoreConfig = () => __awaiter(void 0, void 0, void 0, function* () {
+        var _a, _b;
+        return yield ensureContentItem('config', {
+            environment: context.environment.name,
+            url: context.environment.url,
             algolia: {
                 indexes: [{
                         key: 'blog',
-                        prod: `${environment.name}.blog-production`,
-                        staging: `${environment.name}.blog-staging`
+                        prod: `${context.environment.name}.blog-production`,
+                        staging: `${context.environment.name}.blog-staging`
                     }],
                 appId: '',
                 apiKey: ''
@@ -192,118 +137,110 @@ const getEnvConfig = (context) => __awaiter(void 0, void 0, void 0, function* ()
                 _meta: {
                     schema: "http://bigcontent.io/cms/schema/v1/core#/definitions/content-reference"
                 },
-                id: restCodec.id,
-                contentType: "https://demostore.amplience.com/site/integration/rest"
+                id: (yield getRestConfig()).id,
+                contentType: schemas.rest
             },
             cms: {
                 hub: {
-                    name: environment.name,
-                    stagingApi: (yield ((_b = (_a = hub.settings) === null || _a === void 0 ? void 0 : _a.virtualStagingEnvironment) === null || _b === void 0 ? void 0 : _b.hostname)) || ''
+                    name: context.environment.name,
+                    stagingApi: ((_b = (_a = context.hub.settings) === null || _a === void 0 ? void 0 : _a.virtualStagingEnvironment) === null || _b === void 0 ? void 0 : _b.hostname) || ''
                 },
                 hubs: [{
                         key: 'productImages',
                         name: 'willow'
                     }]
             }
-        };
-        config = yield context.hub.repositories.sitestructure.related.contentItems.create(config);
-        yield (0, exports.publishContentItem)(config);
-    }
-    return config.body;
-});
-exports.getEnvConfig = getEnvConfig;
-const updateEnvConfig = (context) => __awaiter(void 0, void 0, void 0, function* () {
-    let { config } = context;
-    let envConfig = yield (0, exports.getContentItemByKey)(`aria/env/default`);
-    if (!envConfig) {
-        throw new Error('aria/env/default not found when trying to update environment config');
-    }
-    envConfig.body = config;
-    envConfig = yield envConfig.related.update(envConfig);
-    yield (0, exports.publishContentItem)(envConfig);
-});
-exports.updateEnvConfig = updateEnvConfig;
-const initAutomation = (context) => __awaiter(void 0, void 0, void 0, function* () {
-    let automation = yield (0, exports.readAutomation)(context);
-    fs_extra_1.default.writeJsonSync(`${context.tempDir}/mapping.json`, {
-        contentItems: lodash_1.default.map(automation.body.contentItems, ci => [ci.from, ci.to]),
-        workflowStates: lodash_1.default.map(automation.body.workflowStates, ws => [ws.from, ws.to])
+        });
     });
-    context.automation = {
-        contentItems: automation.body.contentItems,
-        workflowStates: automation.body.workflowStates
-    };
-    fs_extra_1.default.copyFileSync(`${context.tempDir}/mapping.json`, `${context.tempDir}/old_mapping.json`);
-    logger_1.default.info(`wrote mapping file at ${context.tempDir}/mapping.json`);
-});
-exports.initAutomation = initAutomation;
-const readAutomation = (context) => __awaiter(void 0, void 0, void 0, function* () {
-    let { environment } = context;
-    let deliveryKey = `aria/automation/default`;
-    let schema = `https://demostore.amplience.com/site/automation`;
-    let automation = yield (0, exports.getContentItemByKey)(deliveryKey);
-    if (!automation) {
-        logger_1.default.info(`${deliveryKey} not found, creating...`);
-        automation = new dc_management_sdk_js_1.ContentItem();
-        automation.label = `${environment.name} Demo Store automation`;
-        automation.body = {
-            _meta: {
-                name: `${environment.name} Demo Store automation`,
-                schema,
-                deliveryKey
-            },
-            contentItems: [],
-            workflowStates: []
-        };
-        automation = yield context.hub.repositories.sitestructure.related.contentItems.create(automation);
-        yield (0, exports.publishContentItem)(automation);
-    }
-    return automation;
-});
-exports.readAutomation = readAutomation;
-const updateAutomationContentItems = (context) => __awaiter(void 0, void 0, void 0, function* () {
-    let automation = yield (0, exports.readAutomation)(context);
-    automation.body = Object.assign(Object.assign({}, automation.body), { contentItems: context.automation.contentItems });
-    automation = yield automation.related.update(automation);
-    yield (0, exports.publishContentItem)(automation);
-});
-exports.updateAutomationContentItems = updateAutomationContentItems;
-const updateAutomation = (context) => __awaiter(void 0, void 0, void 0, function* () {
-    let mappingStats = fs_extra_1.default.statSync(`${context.tempDir}/old_mapping.json`);
-    let newMappingStats = fs_extra_1.default.statSync(`${context.tempDir}/mapping.json`);
-    if (newMappingStats.size !== mappingStats.size) {
-        logger_1.default.info(`updating mapping...`);
-        let newMapping = fs_extra_1.default.readJsonSync(`${context.tempDir}/mapping.json`);
-        logger_1.default.info(`saving mapping...`);
-        let automation = yield (0, exports.readAutomation)(context);
-        automation.body = Object.assign(Object.assign({}, automation.body), { contentItems: lodash_1.default.map(newMapping.contentItems, x => ({ from: x[0], to: x[1] })), workflowStates: lodash_1.default.map(newMapping.workflowStates, x => ({ from: x[0], to: x[1] })) });
-        automation = yield automation.related.update(automation);
-        yield (0, exports.publishContentItem)(automation);
-    }
-});
-exports.updateAutomation = updateAutomation;
-const readDAMMapping = (context) => __awaiter(void 0, void 0, void 0, function* () {
-    let assets = lodash_1.default.filter(yield context.damService.getAssetsListForBucket('Assets'), asset => asset.status === 'active');
-    let endpoints = yield context.damService.getEndpoints();
-    let endpoint = lodash_1.default.first(endpoints);
+    const updateDemoStoreConfig = () => __awaiter(void 0, void 0, void 0, function* () {
+        yield updateContentItem('config', context.config);
+    });
+    const updateAutomation = () => __awaiter(void 0, void 0, void 0, function* () {
+        let mappingStats = fs_extra_1.default.statSync(`${context.tempDir}/old_mapping.json`);
+        let newMappingStats = fs_extra_1.default.statSync(`${context.tempDir}/mapping.json`);
+        if (newMappingStats.size !== mappingStats.size) {
+            logger_1.default.info(`updating mapping...`);
+            let newMapping = fs_extra_1.default.readJsonSync(`${context.tempDir}/mapping.json`);
+            logger_1.default.info(`saving mapping...`);
+            let automation = yield getAutomation();
+            yield updateContentItem('automation', Object.assign(Object.assign({}, automation.body), { contentItems: lodash_1.default.map(newMapping.contentItems, x => ({ from: x[0], to: x[1] })), workflowStates: lodash_1.default.map(newMapping.workflowStates, x => ({ from: x[0], to: x[1] })) }));
+        }
+    });
+    const ensureContentItem = (key, body) => __awaiter(void 0, void 0, void 0, function* () {
+        let item = yield getContentItem(deliveryKeys[key]);
+        if (!item) {
+            logger_1.default.info(`${deliveryKeys[key]} not found, creating...`);
+            item = new dc_management_sdk_js_1.ContentItem();
+            item.label = labels[key];
+            item.body = Object.assign({ _meta: {
+                    name: labels[key],
+                    schema: schemas[key],
+                    deliveryKey: deliveryKeys[key]
+                } }, body);
+            item = yield (yield getContentRepository('sitestructure')).related.contentItems.create(item);
+            yield publishContentItem(item);
+        }
+        return item;
+    });
+    const getContentRepository = (key) => __awaiter(void 0, void 0, void 0, function* () {
+        let repositories = yield dc_demostore_integration_1.paginator(context.hub.related.contentRepositories.list);
+        let repo = repositories.find(repo => repo.name === key);
+        if (!repo) {
+            throw new Error(`repository [ ${key} ] not found`);
+        }
+        return repo;
+    });
+    const getContentItemsInRepository = (key) => __awaiter(void 0, void 0, void 0, function* () {
+        return yield dc_demostore_integration_1.paginator((yield getContentRepository(key)).related.contentItems.list, { status: 'ACTIVE' });
+    });
+    const updateContentItem = (key, body) => __awaiter(void 0, void 0, void 0, function* () {
+        let item = yield ensureContentItem(key, body);
+        item.body = body;
+        item = yield item.related.update(item);
+        yield publishContentItem(item);
+    });
+    const publishContentItem = (item) => __awaiter(void 0, void 0, void 0, function* () {
+        yield rest.post(`/content-items/${item.id}/publish`);
+        updateContentMap(item);
+    });
+    const publishAll = () => __awaiter(void 0, void 0, void 0, function* () {
+        let unpublished = (yield getContentItems(context.hub, { status: dc_management_sdk_js_1.Status.ACTIVE })).filter(ci => ci.version !== ci.lastPublishedVersion);
+        let chunks = lodash_1.default.reverse(lodash_1.default.chunk(unpublished, 100));
+        while (chunks.length > 0) {
+            let chunk = chunks.pop();
+            if (chunk) {
+                const start = new Date().valueOf();
+                logger_2.logUpdate(`publishing ${chalk_1.default.blueBright(chunk.length)} items...`);
+                yield Promise.all(chunk.map(publishContentItem));
+                if (chunks.length > 0) {
+                    const current = new Date().valueOf();
+                    const remainder = Math.ceil((60000 - (current - start)) / 1000);
+                    for (let index = remainder; index > 0; index--) {
+                        logger_2.logUpdate(`sleeping ${chalk_1.default.blueBright(index)} seconds before next chunk...`, false);
+                        yield utils_1.sleep(1000);
+                    }
+                }
+            }
+        }
+        logger_1.logComplete(`${new content_item_handler_1.ContentItemHandler().getDescription()}: [ ${chalk_1.default.green(unpublished.length)} published ]`);
+    });
     return {
-        mediaEndpoint: endpoint.tag,
-        imagesMap: lodash_1.default.zipObject(lodash_1.default.map(assets, x => lodash_1.default.camelCase(x.name)), lodash_1.default.map(assets, 'id'))
+        getContentItem,
+        getDemoStoreConfig,
+        updateDemoStoreConfig,
+        get,
+        getAutomation,
+        updateAutomation,
+        cacheContentMap,
+        getContentMap,
+        getContentRepository,
+        getContentItemsInRepository,
+        getDAMMapping,
+        publishContentItem,
+        publishAll,
+        deleteFolder,
+        synchronizeContentType,
+        login
     };
-});
-exports.readDAMMapping = readDAMMapping;
-exports.default = {
-    login,
-    publishContentItem: exports.publishContentItem,
-    synchronizeContentType: exports.synchronizeContentType,
-    publishAll: exports.publishAll,
-    getContentItemByKey: exports.getContentItemByKey,
-    getContentItemById: exports.getContentItemById,
-    getEnvConfig: exports.getEnvConfig,
-    cacheContentMap: exports.cacheContentMap,
-    updateEnvConfig: exports.updateEnvConfig,
-    getContentMap: exports.getContentMap,
-    initAutomation: exports.initAutomation,
-    updateAutomation: exports.updateAutomation,
-    contentMap: exports.contentMap
 };
+exports.default = AmplienceHelperGenerator;

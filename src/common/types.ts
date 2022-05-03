@@ -1,19 +1,14 @@
 import { ContentRepository, Hub } from 'dc-management-sdk-js';
 import { DAMService } from '../dam/dam-service';
 import _, { Dictionary } from 'lodash';
-import { InstrumentedHub } from './middleware';
-import { DemoStoreConfiguration } from '@amplience/dc-demostore-integration';
+import { DemoStoreConfiguration, paginator } from '@amplience/dc-demostore-integration';
+import { AmplienceHelper } from './amplience-helper';
+import { ImportContext } from '../handlers/resource-handler';
 
 export interface CommonArgs {
 }
 
-export class AugmentedHub extends Hub {
-    repositories: Dictionary<ContentRepository>
-    repositoryIdMap: Dictionary<string | undefined>
-    workflowStatesMap: Dictionary<string | undefined>
-}
-
-export class EnvironmentConfig {
+export interface EnvironmentConfig {
     name: string
     url: string
     dc: DynamicContentCredentials
@@ -23,59 +18,57 @@ export class EnvironmentConfig {
     }
 }
 
-export class DynamicContentCredentials {
+export interface DynamicContentCredentials {
     clientId: string
     clientSecret: string
     hubId: string
 }
 
-export class AmplienceArgs {
+export interface AmplienceArgs {
     environment: EnvironmentConfig
     automation: {
         contentItems: DemoStoreMapping[]
         workflowStates: DemoStoreMapping[]
     }
-    hub: InstrumentedHub
+    hub: Hub
     matchingSchema: string[]
+    amplienceHelper: AmplienceHelper
 }
 
-export class LoggableArgs extends AmplienceArgs {
+export interface LoggableArgs extends AmplienceArgs {
     startTime: Date
     logRequests: boolean
     tempDir: string
 }
 
-export class ImportArgs extends LoggableArgs {
+export interface ImportArgs extends LoggableArgs {
     skipContentImport: boolean
     automationDir: string
     latest: boolean
     branch: string
-
-    damService: DAMService
     config: DemoStoreConfiguration
-    mapping: Mapping
 }
 
-export class CleanupArgs extends LoggableArgs {
+export interface CleanupArgs extends LoggableArgs {
     skipConfirmation: boolean
     include: string[]
 }
 
 export interface Mapping {
     url: string
-    cms: CMSMapping
-    algolia: AlgoliaConfig
-    dam: DAMMapping
-    contentMap: Dictionary<string>
+    cms?: CMSMapping
+    algolia?: AlgoliaConfig
+    dam?: DAMMapping
+    contentMap?: Dictionary<string>
 }
 
-export class AlgoliaConfig {
+export interface AlgoliaConfig {
     appId: string
     apiKey: string
     indexes: AlgoliaIndexSet[]
 }
 
-export class AmplienceConfig {
+export interface AmplienceConfig {
     hub: AmplienceHub
     hubs: AmplienceHubPointer[]
 }
@@ -90,37 +83,44 @@ export interface DAMMapping {
     imagesMap: Dictionary<string>
 }
 
-export class DemoStoreMapping {
+export interface DemoStoreMapping {
     from: string
     to: string
 }
 
-export class AppConfig {
+export interface AppConfig {
     url: string
 }
 
-export class AlgoliaIndexSet {
+export interface AlgoliaIndexSet {
     key: string
     prod: string
     staging: string
 }
 
-export class AmplienceHub {
+export interface AmplienceHub {
     name: string
     stagingApi: string
 }
 
-export class AmplienceHubPointer {
+export interface AmplienceHubPointer {
     key: string
     name: string
 }
 
-export type ContentTypeSchemaPointer = {
-    body: string
-    schemaId: string
-    validationLevel: string
-}
-
-export type ContentTypeSchemaDescriptor = {
-    ['$id']: string
+export const getMapping = async (context: ImportContext): Promise<Mapping> => {
+    let repositories = await paginator(context.hub.related.contentRepositories.list)
+    let workflowStates = await paginator(context.hub.related.workflowStates.list)
+    return {
+        url: context.environment.url,
+        cms: {
+            hub: context.config?.cms.hub,
+            hubs: context.config?.cms.hubs,
+            repositories: _.zipObject(_.map(repositories, r => r.name!), _.map(repositories, 'id')),
+            workflowStates: _.zipObject(_.map(workflowStates, ws => _.camelCase(ws.label)), _.map(workflowStates, 'id'))
+        },
+        algolia: context.config?.algolia,
+        dam: await context.amplienceHelper.getDAMMapping(),
+        contentMap: context.amplienceHelper.getContentMap()
+    }
 }

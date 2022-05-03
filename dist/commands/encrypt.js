@@ -16,19 +16,18 @@ exports.handler = exports.builder = exports.desc = exports.command = void 0;
 const lodash_1 = __importDefault(require("lodash"));
 const middleware_1 = require("../common/middleware");
 const amplience_builder_1 = __importDefault(require("../common/amplience-builder"));
-const amplience_helper_1 = __importDefault(require("../common/amplience-helper"));
 const dc_demostore_integration_1 = require("@amplience/dc-demostore-integration");
 exports.command = 'encrypt';
 exports.desc = "Encrypt credentials";
 exports.builder = amplience_builder_1.default;
-exports.handler = (0, middleware_1.contextHandler)((context) => __awaiter(void 0, void 0, void 0, function* () {
+exports.handler = middleware_1.contextHandler((context) => __awaiter(void 0, void 0, void 0, function* () {
     let { hub } = context;
-    let siteStructureContentItems = yield (0, dc_demostore_integration_1.paginator)(hub.repositories['sitestructure'].related.contentItems.list, { status: 'ACTIVE' });
-    let contentTypeSchemas = yield (0, dc_demostore_integration_1.paginator)(hub.related.contentTypeSchema.list, { status: 'ACTIVE' });
+    let siteStructureContentItems = yield context.amplienceHelper.getContentItemsInRepository('sitestructure');
+    let contentTypeSchemas = yield dc_demostore_integration_1.paginator(hub.related.contentTypeSchema.list, { status: 'ACTIVE' });
     yield Promise.all(siteStructureContentItems.map((ci) => __awaiter(void 0, void 0, void 0, function* () {
         if (ci.body._meta.schema.indexOf('/site/integration') > -1) {
             ci.body = Object.assign(Object.assign({}, ci.body), { _meta: Object.assign(Object.assign({}, ci.body._meta), { deliveryId: ci.deliveryId }) });
-            let keeper = (0, dc_demostore_integration_1.CryptKeeper)(ci.body, hub.name);
+            let keeper = dc_demostore_integration_1.CryptKeeper(ci.body, hub.name);
             let schemaObject = contentTypeSchemas.find(schema => schema.schemaId === ci.body._meta.schema);
             if (schemaObject === null || schemaObject === void 0 ? void 0 : schemaObject.body) {
                 let schema = JSON.parse(schemaObject.body);
@@ -42,5 +41,5 @@ exports.handler = (0, middleware_1.contextHandler)((context) => __awaiter(void 0
             }
         }
     })));
-    yield amplience_helper_1.default.publishAll(context);
+    yield context.amplienceHelper.publishAll();
 }));

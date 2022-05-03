@@ -2,7 +2,7 @@ import { AmplienceContext } from '../handlers/resource-handler';
 import _ from 'lodash'
 import { contextHandler } from '../common/middleware';
 import amplienceBuilder from '../common/amplience-builder';
-import amplienceHelper from '../common/amplience-helper';
+import { AmplienceHelper } from '../common/amplience-helper';
 import { CryptKeeper, paginator } from '@amplience/dc-demostore-integration'
 
 export const command = 'encrypt';
@@ -11,7 +11,7 @@ export const desc = "Encrypt credentials";
 export const builder = amplienceBuilder
 export const handler = contextHandler(async (context: AmplienceContext): Promise<void> => {
     let { hub } = context
-    let siteStructureContentItems = await paginator(hub.repositories['sitestructure'].related.contentItems.list, { status: 'ACTIVE' })
+    let siteStructureContentItems = await context.amplienceHelper.getContentItemsInRepository('sitestructure')
     let contentTypeSchemas = await paginator(hub.related.contentTypeSchema.list, { status: 'ACTIVE' })
 
     await Promise.all(siteStructureContentItems.map(async ci => {
@@ -39,5 +39,5 @@ export const handler = contextHandler(async (context: AmplienceContext): Promise
         }
     }))
 
-    await amplienceHelper.publishAll(context)
+    await context.amplienceHelper.publishAll()
 })

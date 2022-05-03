@@ -11,10 +11,10 @@ import { ExtensionHandler } from '../handlers/extension-handler';
 import { SearchIndexHandler } from '../handlers/search-index-handler';
 import { SettingsHandler } from '../handlers/settings-handler';
 
-import amplience, { getEnvConfig, initAutomation, readDAMMapping } from '../common/amplience-helper';
+import { AmplienceHelper } from '../common/amplience-helper';
 import { ImportContext } from '../handlers/resource-handler';
 import { copyTemplateFilesToTempDir } from '../helpers/import-helper';
-import { contextHandler, loginDAM } from '../common/middleware';
+import { contextHandler } from '../common/middleware';
 import amplienceBuilder from '../common/amplience-builder';
 import { WorkflowState } from 'dc-management-sdk-js';
 import fs from 'fs-extra'
@@ -23,6 +23,7 @@ import axios from 'axios';
 import admZip from 'adm-zip'
 import { sleep } from '../common/utils';
 import { paginator } from '@amplience/dc-demostore-integration';
+import { Mapping } from '../common/types';
 
 export const command = 'import';
 export const desc = "Import hub data";
@@ -94,7 +95,6 @@ export const builder = (yargs: Argv): Argv => {
             default: 'main'
         }
     }).middleware([
-        loginDAM,
         async (context: ImportContext) => {
             // delete the cached automation files if --latest was used
             if (context.latest) {
@@ -114,33 +114,12 @@ export const handler = contextHandler(async (context: ImportContext): Promise<vo
 
     logHeadline(`Phase 1: preparation`)
 
-    context.mapping = {
-        ...context.mapping,
-        url: context.environment.url
-    }
-
     await copyTemplateFilesToTempDir(context)
-    await timed('content-type-schema import', async () => { await new ContentTypeSchemaHandler().import(context) })
-    await timed('content-type import', async () => { await new ContentTypeHandler().import(context) })
-    context.config = await getEnvConfig(context)
-    await copyTemplateFilesToTempDir(context)
+    await new ContentTypeSchemaHandler().import(context)
+    await new ContentTypeHandler().import(context)
 
-    // create mapping
-    let workflowStates: WorkflowState[] = await paginator(context.hub.related.workflowStates.list)
-    context.mapping = {
-        ...context.mapping,
-        cms: {
-            hub: context.config.cms.hub,
-            hubs: context.config.cms.hubs,
-            repositories: _.zipObject(_.map(Object.keys(context.hub.repositories)), _.map(Object.values(context.hub.repositories), 'id')),
-            workflowStates: _.zipObject(_.map(workflowStates, ws => _.camelCase(ws.label)), _.map(workflowStates, 'id'))
-        },
-        algolia: context.config.algolia,
-        dam: await readDAMMapping(context)
-    }
-
-    // await timed('content-type-schema import', async () => { await new CLIContentTypeSchemaHandler().import(context) })
-    // await timed('content-type import', async () => { await new CLIContentTypeHandler().import(context) })
+    // this call must be after the schema and type import because it's creating objects if they don't exist
+    context.config = await (await context.amplienceHelper.getDemoStoreConfig()).body
 
     logHeadline(`Phase 2: import/update`)
 
@@ -153,44 +132,25 @@ export const handler = contextHandler(async (context: ImportContext): Promise<vo
     await new ExtensionHandler().import(context)
 
     // process step 5: npm run automate:indexes
-    let algolia = await new SearchIndexHandler().import(context)
-
-    if (algolia) {
-        context.config.algolia.appId = algolia.appId
-        context.config.algolia.apiKey = algolia.apiKey
-        context.mapping.algolia = algolia
-    }
-
-    // save the env config here, since we've just gotten the app id and api key from algolia
-    await amplience.updateEnvConfig(context)
+    await new SearchIndexHandler().import(context)
 
     if (!context.skipContentImport) {
-        await initAutomation(context)
-        logger.debug(JSON.stringify(context.mapping, null, 4))
-
         // process step 6: npm run automate:content-with-republish
         await new ContentItemHandler().import(context)
-
-        // recache
-        await amplience.cacheContentMap(context)
-        context.mapping.contentMap = amplience.getContentMap()
 
         logHeadline(`Phase 3: update automation`)
 
         // update the automation content item with any new mapping content generated
-        await amplience.updateAutomation(context)
+        await context.amplienceHelper.updateAutomation()
 
         logHeadline(`Phase 4: reentrant import`)
-
-        // process step 7: npm run automate:schemas
-        // now that we've installed the core content, we need to go through again for content types
-        // that point to a specific hierarchy node
-        logger.debug(JSON.stringify(context.mapping, null, 4))
 
         // recopy template files with new mappings
         await copyTemplateFilesToTempDir(context)
 
         // reimport content types that have been updated
+        // now that we've installed the core content, we need to go through again for content types
+        // that point to a specific hierarchy node
         await new ContentTypeSchemaHandler().import(context)
         await new ContentTypeHandler().import(context)
     }

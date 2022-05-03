@@ -1,11 +1,7 @@
 "use strict";
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
 }) : (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     o[k2] = m[k];
@@ -42,13 +38,13 @@ const dc_demostore_integration_1 = require("@amplience/dc-demostore-integration"
 const chalk_1 = __importDefault(require("chalk"));
 const prompts_1 = require("../common/prompts");
 const fs_extra_1 = __importDefault(require("fs-extra"));
-const amplience_helper_1 = __importStar(require("../common/amplience-helper"));
-const logger_1 = require("../common/logger");
+const logger_1 = __importStar(require("../common/logger"));
 const lodash_1 = __importDefault(require("lodash"));
 const utils_1 = require("../common/utils");
 const nanoid_1 = require("nanoid");
 const dc_cli_content_item_handler_1 = __importDefault(require("./dc-cli-content-item-handler"));
 const log_helpers_1 = require("../common/dccli/log-helpers");
+const types_1 = require("../common/types");
 class ContentItemHandler extends resource_handler_1.ResourceHandler {
     constructor() {
         super(dc_management_sdk_js_1.ContentItem, 'contentItems');
@@ -57,24 +53,32 @@ class ContentItemHandler extends resource_handler_1.ResourceHandler {
     }
     import(context) {
         return __awaiter(this, void 0, void 0, function* () {
+            const automation = yield (yield context.amplienceHelper.getAutomation()).body;
+            fs_extra_1.default.writeJsonSync(`${context.tempDir}/mapping.json`, {
+                contentItems: lodash_1.default.map(automation.contentItems, ci => [ci.from, ci.to]),
+                workflowStates: lodash_1.default.map(automation.workflowStates, ws => [ws.from, ws.to])
+            });
+            context.automation = automation;
+            fs_extra_1.default.copyFileSync(`${context.tempDir}/mapping.json`, `${context.tempDir}/old_mapping.json`);
+            logger_1.default.info(`wrote mapping file at ${context.tempDir}/mapping.json`);
             let sourceDir = `${context.tempDir}/content/content-items`;
             if (!fs_extra_1.default.existsSync(sourceDir)) {
                 throw new Error(`source dir not found: ${sourceDir}`);
             }
-            yield (0, utils_1.fileIterator)(sourceDir, context).iterate((file) => __awaiter(this, void 0, void 0, function* () {
+            yield utils_1.fileIterator(sourceDir, yield types_1.getMapping(context)).iterate((file) => __awaiter(this, void 0, void 0, function* () {
                 var _a;
                 let mapping = lodash_1.default.find((_a = context.automation) === null || _a === void 0 ? void 0 : _a.contentItems, map => map.from === file.object.id);
                 if (mapping) {
-                    let contentItem = yield amplience_helper_1.default.getContentItemById(mapping.to);
+                    let contentItem = yield context.amplienceHelper.getContentItem(mapping.to);
                     if (lodash_1.default.isEqual(contentItem.body, file.object.body)) {
                         fs_extra_1.default.unlinkSync(file.path);
                     }
                 }
             }));
             let importLogFile = `${context.tempDir}/item-import.log`;
-            yield (0, dc_cli_content_item_handler_1.default)({
+            yield dc_cli_content_item_handler_1.default({
                 dir: sourceDir,
-                logFile: (0, log_helpers_1.createLog)(importLogFile),
+                logFile: log_helpers_1.createLog(importLogFile),
                 clientId: context.environment.dc.clientId,
                 clientSecret: context.environment.dc.clientSecret,
                 hubId: context.environment.dc.hubId,
@@ -83,8 +87,9 @@ class ContentItemHandler extends resource_handler_1.ResourceHandler {
             let logFile = fs_extra_1.default.readFileSync(importLogFile, { encoding: "utf-8" });
             let createdCount = lodash_1.default.filter(logFile.split('\n'), l => l.startsWith('CREATE ')).length;
             let updatedCount = lodash_1.default.filter(logFile.split('\n'), l => l.startsWith('UPDATE ')).length;
-            (0, logger_1.logComplete)(`${this.getDescription()}: [ ${chalk_1.default.green(createdCount)} created ] [ ${chalk_1.default.blue(updatedCount)} updated ]`);
-            yield (0, amplience_helper_1.publishAll)(context);
+            logger_1.logComplete(`${this.getDescription()}: [ ${chalk_1.default.green(createdCount)} created ] [ ${chalk_1.default.blue(updatedCount)} updated ]`);
+            yield context.amplienceHelper.publishAll();
+            yield context.amplienceHelper.cacheContentMap();
         });
     }
     shouldCleanUpItem(item, context) {
@@ -92,14 +97,13 @@ class ContentItemHandler extends resource_handler_1.ResourceHandler {
     }
     cleanup(context) {
         return __awaiter(this, void 0, void 0, function* () {
-            let repositories = yield (0, dc_demostore_integration_1.paginator)(context.hub.related.contentRepositories.list);
-            let contentTypes = yield (0, dc_demostore_integration_1.paginator)(context.hub.related.contentTypes.list);
+            let repositories = yield dc_demostore_integration_1.paginator(context.hub.related.contentRepositories.list);
+            let contentTypes = yield dc_demostore_integration_1.paginator(context.hub.related.contentTypes.list);
             let archiveCount = 0;
             let folderCount = 0;
-            let publishingQueue = (0, amplience_helper_1.PublishingQueue)();
             yield Promise.all(repositories.map((repository) => __awaiter(this, void 0, void 0, function* () {
-                (0, logger_1.logUpdate)(`${prompts_1.prompts.archive} content items in repository ${chalk_1.default.cyanBright(repository.name)}...`);
-                let contentItems = lodash_1.default.filter(yield (0, dc_demostore_integration_1.paginator)(repository.related.contentItems.list, { status: 'ACTIVE' }), ci => this.shouldCleanUpItem(ci, context));
+                logger_1.logUpdate(`${prompts_1.prompts.archive} content items in repository ${chalk_1.default.cyanBright(repository.name)}...`);
+                let contentItems = lodash_1.default.filter(yield dc_demostore_integration_1.paginator(repository.related.contentItems.list, { status: 'ACTIVE' }), ci => this.shouldCleanUpItem(ci, context));
                 yield Promise.all(contentItems.map((contentItem) => __awaiter(this, void 0, void 0, function* () {
                     var _a, _b, _c;
                     let contentType = lodash_1.default.find(contentTypes, ct => ct.contentTypeUri === contentItem.body._meta.schema);
@@ -107,18 +111,18 @@ class ContentItemHandler extends resource_handler_1.ResourceHandler {
                     if (!effectiveContentTypeLink) {
                         return;
                     }
-                    let effectiveContentType = yield (yield (0, amplience_helper_1.get)(effectiveContentTypeLink)).data;
-                    if ((_a = effectiveContentType.properties) === null || _a === void 0 ? void 0 : _a.filterActive) {
+                    let effectiveContentType = yield context.amplienceHelper.get(effectiveContentTypeLink);
+                    if ((_a = effectiveContentType === null || effectiveContentType === void 0 ? void 0 : effectiveContentType.properties) === null || _a === void 0 ? void 0 : _a.filterActive) {
                         contentItem.body.filterActive = false;
                         contentItem = yield contentItem.related.update(contentItem);
-                        yield amplience_helper_1.default.publishContentItem(contentItem);
+                        yield context.amplienceHelper.publishContentItem(contentItem);
                     }
                     if (((_b = contentItem.body._meta.deliveryKey) === null || _b === void 0 ? void 0 : _b.length) > 0) {
                         if (contentItem.status === 'ARCHIVED') {
                             contentItem = yield contentItem.related.unarchive();
                         }
                         if (!lodash_1.default.isEmpty(contentItem.body._meta.deliveryKey)) {
-                            contentItem.body._meta.deliveryKey = `${contentItem.body._meta.deliveryKey}-${(0, nanoid_1.nanoid)()}`;
+                            contentItem.body._meta.deliveryKey = `${contentItem.body._meta.deliveryKey}-${nanoid_1.nanoid()}`;
                         }
                         contentItem = yield contentItem.related.update(contentItem);
                     }
@@ -126,21 +130,17 @@ class ContentItemHandler extends resource_handler_1.ResourceHandler {
                     yield contentItem.related.archive();
                     lodash_1.default.remove((_c = context.automation) === null || _c === void 0 ? void 0 : _c.contentItems, ci => contentItem.id === ci.to);
                 })));
-                yield publishingQueue.publish();
                 const cleanupFolder = ((folder) => __awaiter(this, void 0, void 0, function* () {
-                    let subfolders = yield (0, dc_demostore_integration_1.paginator)(folder.related.folders.list);
+                    let subfolders = yield dc_demostore_integration_1.paginator(folder.related.folders.list);
                     yield Promise.all(subfolders.map(cleanupFolder));
-                    (0, logger_1.logUpdate)(`${prompts_1.prompts.delete} folder ${folder.name}`);
+                    logger_1.logUpdate(`${prompts_1.prompts.delete} folder ${folder.name}`);
                     folderCount++;
-                    return yield (0, amplience_helper_1.deleteFolder)(folder);
+                    return yield context.amplienceHelper.deleteFolder(folder);
                 }));
-                let folders = yield (0, dc_demostore_integration_1.paginator)(repository.related.folders.list);
+                let folders = yield dc_demostore_integration_1.paginator(repository.related.folders.list);
                 yield Promise.all(folders.map(cleanupFolder));
             })));
-            if (!lodash_1.default.isEmpty(context.matchingSchema)) {
-                yield (0, amplience_helper_1.updateAutomationContentItems)(context);
-            }
-            (0, logger_1.logComplete)(`${this.getDescription()}: [ ${chalk_1.default.yellow(archiveCount)} items archived ] [ ${chalk_1.default.red(folderCount)} folders deleted ]`);
+            logger_1.logComplete(`${this.getDescription()}: [ ${chalk_1.default.yellow(archiveCount)} items archived ] [ ${chalk_1.default.red(folderCount)} folders deleted ]`);
         });
     }
 }

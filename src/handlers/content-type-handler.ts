@@ -1,17 +1,14 @@
-import { CleanableResourceHandler, Context, CleanupContext, ImportContext, Cleanable } from "./resource-handler"
-import { ContentType, ContentRepository, HalResource } from "dc-management-sdk-js"
+import { CleanableResourceHandler, CleanupContext, ImportContext } from "./resource-handler"
+import { ContentType, ContentRepository } from "dc-management-sdk-js"
 import { paginator } from "@amplience/dc-demostore-integration"
 import _ from 'lodash'
-import logger, { logHeadline, logSubheading } from "../common/logger"
+import logger, { logSubheading } from "../common/logger"
 import chalk from 'chalk'
 import { loadJsonFromDirectory } from "../helpers/importer"
 import { ContentTypeWithRepositoryAssignments } from '../helpers/schema-helper'
 import fs from 'fs-extra'
 import { logUpdate, logComplete } from '../common/logger'
 import { prompts } from '../common/prompts'
-import { ContentTypeSchemaHandler } from "./content-type-schema-handler"
-import { CLIJob } from "../helpers/exec-helper"
-import { AnnotatedFile, fileIterator } from "../common/utils"
 
 export const validateNoDuplicateContentTypeUris = (importedContentTypes: { [filename: string]: ContentType }): void | never => {
     const uriToFilenameMap = new Map<string, string[]>(); // map: uri x filenames

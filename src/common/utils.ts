@@ -2,6 +2,7 @@ import _ from "lodash"
 import fs from 'fs-extra'
 import { ImportContext } from "../handlers/resource-handler"
 import { compile as handlebarsCompile } from 'handlebars';
+import { getMapping, Mapping } from "./types";
 
 export const sleep = (delay: number) => new Promise((resolve) => setTimeout(resolve, delay))
 
@@ -10,64 +11,41 @@ export type AnnotatedFile = {
     object: any
 }
 
-export const fileIterator = (dir: any, context: ImportContext) => {
-    return {
-        iterate: async (fn: (file: AnnotatedFile) => Promise<any>): Promise<any[]> => {
-            let files = _.reject(fs.readdirSync(dir), dir => dir.startsWith('.'))
-            return _.compact(_.flatten(await Promise.all(files.map(async file => {
-                let path = `${dir}/${file}`
-                let stats = fs.statSync(path)
+export const fileIterator = (dir: any, mapping: Mapping) => ({
+    iterate: async (fn: (file: AnnotatedFile) => Promise<any>): Promise<any[]> => {
+        return _.compact(_.flatten(await Promise.all(_.reject(fs.readdirSync(dir), dir => dir.startsWith('.')).map(async file => {
+            let path = `${dir}/${file}`
+            let stats = fs.statSync(path)
 
-                if (stats.isDirectory()) {
-                    return await fileIterator(path, context).iterate(fn)
+            if (stats.isDirectory()) {
+                return await fileIterator(path, mapping).iterate(fn)
+            }
+            else {
+                let contents: any = {}
+                if (path.endsWith('.hbs')) {
+                    let fileContents = fs.readFileSync(path, 'utf-8')
+                    const template = handlebarsCompile(fileContents)
+                    contents = JSON.parse(template(mapping))
+
+                    // delete the hbs template
+                    fs.unlinkSync(path)
+
+                    // update the path and write the json to file
+                    path = path.replace('.hbs', '')
+
+                    fs.writeJsonSync(path, contents)
                 }
                 else {
-                    let contents: any = {}
-                    if (path.endsWith('.hbs')) {
-                        let fileContents = fs.readFileSync(path, 'utf-8')
-                        const template = handlebarsCompile(fileContents)
-                        contents = JSON.parse(template(context.mapping))
-    
-                        // delete the hbs template
-                        fs.unlinkSync(path)
-    
-                        // update the path and write the json to file
-                        path = path.replace('.hbs', '')
-    
-                        fs.writeJsonSync(path, contents)
-                    }
-                    else {
-                        contents = fs.readJsonSync(path)
-                    }
-    
-                    let schemaId = contents.body?._meta?.schema || 
-                        contents.schemaId || 
-                        contents['$id'] || 
-                        contents.contentTypeUri
-
-                    if (!_.isEmpty(schemaId) && !_.isEmpty(context.matchingSchema) && 
-                        !_.includes(context.matchingSchema, schemaId)) {
-                        fs.unlinkSync(path)
-                    }
-    
-                    return await fn({
-                        path,
-                        object: contents
-                    })
+                    contents = fs.readJsonSync(path)
                 }
-            }))))
-        }
+
+                return await fn({
+                    path,
+                    object: contents
+                })
+            }
+        }))))
     }
-}
-export const getRandomInt = (max: number) => {
-    return Math.floor(Math.random() * max);
-}
-export const getRandom = <T>(array: T[]): T => {
-    if (Array.isArray(array)) {
-        let index = getRandomInt(array.length + 1)
-        return array[index]
-    }
-    else {
-        return array
-    }
-}
+})
+
+export const getRandom = <T>(array: T[]): T => array[Math.floor(Math.random() * array.length + 1)]

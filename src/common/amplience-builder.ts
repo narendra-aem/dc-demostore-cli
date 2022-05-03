@@ -5,7 +5,7 @@ import { loginDC, setupLogging } from './middleware';
 import _ from "lodash";
 
 import { nanoid } from 'nanoid'
-import { cacheContentMap } from "./amplience-helper";
+import { AmplienceHelper } from "./amplience-helper";
 import { useEnvironment } from "./environment-manager";
 
 export default (yargs: Argv): Argv =>
@@ -37,7 +37,7 @@ export default (yargs: Argv): Argv =>
 
                     // caching a map of current content items. this appears to obviate the issue of archived items
                     // hanging out on published delivery keys
-                    await cacheContentMap(context)
+                    await context.amplienceHelper.cacheContentMap()
                 }
             },
         ])

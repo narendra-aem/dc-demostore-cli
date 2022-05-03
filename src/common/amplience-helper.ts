@@ -1,312 +1,280 @@
-import { ContentType, Folder, HttpMethod, ContentItem, Status } from "dc-management-sdk-js"
+import { ContentType, Folder, ContentItem, DynamicContent, Status, Pageable, Sortable, Hub, ContentRepository } from "dc-management-sdk-js"
 import logger, { logComplete } from "./logger"
 import chalk from "chalk"
 import { logUpdate } from "./logger"
 import _, { Dictionary } from 'lodash'
 import { ContentItemHandler } from "../handlers/content-item-handler"
-import { AxiosHttpClient } from "dc-management-sdk-js"
-import { AmplienceContext, ImportContext, LoggableContext } from '../handlers/resource-handler';
+import { AmplienceContext } from '../handlers/resource-handler';
 import fs from 'fs-extra'
 import { sleep } from "./utils"
-import { currentEnvironment } from "./environment-manager"
+import { OAuthRestClient, paginator, StatusQuery } from "@amplience/dc-demostore-integration"
+import { OAuthRestClientInterface } from "@amplience/dc-demostore-integration/dist/common/rest-client"
+import { DAMMapping } from "./types"
+import { DAMService } from "../dam/dam-service"
 
-let dcUrl = `https://api.amplience.net/v2/content`
+// constants
+const deliveryKeys = {
+    config: `demostore/config/default`,
+    automation: `demostore/automation`,
+    rest: `demostore/integration/rest`
+}
 
-let accessToken: any = undefined
-let axiosClient = new AxiosHttpClient({})
+const labels = {
+    config: `demostore config`,
+    automation: `demostore automation`,
+    rest: `generic rest commerce configuration`
+}
 
-const login = async (context: LoggableContext) => {
-    let oauthResponse = await axiosClient.request({
-        method: HttpMethod.POST,
-        url: `https://auth.amplience.net/oauth/token?client_id=${context.environment.dc.clientId}&client_secret=${context.environment.dc.clientSecret}&grant_type=client_credentials`,
-        headers: {
-            'content-type': 'application/x-www-form-urlencoded'
+const schemas = {
+    config: `https://demostore.amplience.com/site/demostoreconfig`,
+    automation: `https://demostore.amplience.com/site/automation`,
+    rest: `https://demostore.amplience.com/site/integration/rest`
+}
+
+const baseURL = `https://demostore-catalog.s3.us-east-2.amazonaws.com`
+const restMap: Dictionary<OAuthRestClientInterface> = {}
+const damServiceMap: Dictionary<DAMService> = {}
+
+let contentMap: Dictionary<ContentItem> = {}
+const AmplienceHelperGenerator = (context: AmplienceContext): AmplienceHelper => {
+    const rest = restMap[context.environment.dc.clientId] = restMap[context.environment.dc.clientId] || OAuthRestClient({
+        api_url: `https://api.amplience.net/v2/content`,
+        auth_url: `https://auth.amplience.net/oauth/token?client_id=${context.environment.dc.clientId}&client_secret=${context.environment.dc.clientSecret}&grant_type=client_credentials`
+    },
+        {},
+        {
+            headers: {
+                'content-type': 'application/x-www-form-urlencoded'
+            }
+        })
+
+    const getContentItems = async (hub: Hub, opts?: Pageable & Sortable & StatusQuery): Promise<ContentItem[]> => {
+        return _.flatMap(await Promise.all((await paginator(hub.related.contentRepositories.list)).map(async repo => {
+            return await paginator(repo.related.contentItems.list, opts)
+        })))
+    }
+
+    const login = async (): Promise<Hub> => {
+        // log in to Dynamic Content
+        let client = new DynamicContent({
+            client_id: context.environment.dc.clientId,
+            client_secret: context.environment.dc.clientSecret
+        })
+
+        let hub: Hub = await client.hubs.get(context.environment.dc.hubId)
+        if (hub) {
+            logger.info(`connected to hub ${chalk.bold.cyan(`[ ${hub.name} ]`)}`)
+            return hub
+        }
+        throw new Error(`hubId not found: ${context.environment.dc.hubId}`)
+    }
+
+    const synchronizeContentType = async (contentType: ContentType) => await rest.patch(`/content-types/${contentType.id}/schema`)
+    const deleteFolder = async (folder: Folder) => await rest.delete(`/folders/${folder.id}`)
+    const get = rest.get
+
+    const updateContentMap = (item: ContentItem) => {
+        contentMap[item.body._meta.deliveryKey] = item
+        contentMap[item.id] = item
+    }
+
+    const cacheContentMap = async () => (await getContentItems(context.hub, { status: Status.ACTIVE })).forEach(updateContentMap)
+    const getContentMap = () => _.zipObject(_.map(contentMap, (__, key) => key.replace(/\//g, '-')), _.map(contentMap, 'deliveryId'))
+    const getContentItem = (keyOrId: string): ContentItem => contentMap[keyOrId]
+
+    const getDAMMapping = async (): Promise<DAMMapping> => {
+        const damService = damServiceMap[context.environment.dam.username] = damServiceMap[context.environment.dam.username] || await new DAMService().init(context.environment.dam)
+        let assets = _.filter(await damService.getAssetsListForBucket('Assets'), asset => asset.status === 'active')
+        let endpoint: any = _.first(await damService.getEndpoints())
+        return {
+            mediaEndpoint: endpoint?.tag,
+            imagesMap: _.zipObject(_.map(assets, x => _.camelCase(x.name)), _.map(assets, 'id'))
+        }
+    }
+
+    const getAutomation = async () => await ensureContentItem('automation', {
+        contentItems: [],
+        workflowStates: []
+    })
+
+    const getRestConfig = async (): Promise<ContentItem> => await ensureContentItem('rest', {
+        productURL: `${baseURL}/products.json`,
+        categoryURL: `${baseURL}/categories.json`,
+        customerGroupURL: `${baseURL}/customerGroups.json`,
+        translationsURL: `${baseURL}/translations.json`
+    })
+
+    const getDemoStoreConfig = async (): Promise<ContentItem> => await ensureContentItem('config', {
+        environment: context.environment.name,
+        url: context.environment.url,
+        algolia: {
+            indexes: [{
+                key: 'blog',
+                prod: `${context.environment.name}.blog-production`,
+                staging: `${context.environment.name}.blog-staging`
+            }],
+            appId: '',
+            apiKey: ''
+        },
+        commerce: {
+            _meta: {
+                schema: "http://bigcontent.io/cms/schema/v1/core#/definitions/content-reference"
+            },
+            id: (await getRestConfig()).id,
+            contentType: schemas.rest
+        },
+        cms: {
+            hub: {
+                name: context.environment.name,
+                stagingApi: context.hub.settings?.virtualStagingEnvironment?.hostname || ''
+            },
+            hubs: [{
+                key: 'productImages',
+                name: 'willow'
+            }]
         }
     })
 
-    accessToken = (oauthResponse.data as any).access_token
+    const updateDemoStoreConfig = async () => {
+        await updateContentItem('config', context.config)
+    }
 
-    axiosClient = new AxiosHttpClient({
-        baseURL: dcUrl,
-        headers: { authorization: `bearer ${accessToken}`, 'content-type': 'application/json' }
-    })
+    const updateAutomation = async () => {
+        // read the mapping file and update if necessary
+        let mappingStats = fs.statSync(`${context.tempDir}/old_mapping.json`)
+        let newMappingStats = fs.statSync(`${context.tempDir}/mapping.json`)
 
-    logger.debug(`${chalk.green('logged in')} to dynamic content at ${chalk.yellow(new Date().valueOf())}`)
-    setTimeout(() => { accessToken = undefined }, (oauthResponse.data as any).expires_in * 1000)
-}
+        if (newMappingStats.size !== mappingStats.size) {
+            logger.info(`updating mapping...`)
 
+            // update the object
+            let newMapping = fs.readJsonSync(`${context.tempDir}/mapping.json`)
 
-let ax = {
-    get: async (url: string) => await axiosClient.request({ method: HttpMethod.GET, url }),
-    post: async (url: string) => await axiosClient.request({ method: HttpMethod.POST, url }),
-    patch: async (url: string) => await axiosClient.request({ method: HttpMethod.PATCH, url }),
-    delete: async (url: string) => await axiosClient.request({ method: HttpMethod.DELETE, url })
-}
-export const synchronizeContentType = async (contentType: ContentType) => await ax.patch(`/content-types/${contentType.id}/schema`)
-export const deleteFolder = async (folder: Folder) => await ax.delete(`/folders/${folder.id}`)
-export const get = ax.get
+            logger.info(`saving mapping...`)
 
-export const publishContentItem = async (item: any) => {
-    await ax.post(`/content-items/${item.id}/publish`)
-    updateCache(item)
-    return item
-}
+            let automation = await getAutomation()
+            await updateContentItem('automation', {
+                ...automation.body,
+                contentItems: _.map(newMapping.contentItems, x => ({ from: x[0], to: x[1] })),
+                workflowStates: _.map(newMapping.workflowStates, x => ({ from: x[0], to: x[1] }))
+            })
+        }
+    }
 
-export const getContentItemFromCDN = async (id: string): Promise<any> => {
-    const environment = await currentEnvironment()
-    return await (await ax.get(`https://${environment.name}.cdn.content.amplience.net/content/id/${id}`)).data
-}
+    const ensureContentItem = async (key: string, body: any): Promise<ContentItem> => {
+        let item = await getContentItem(deliveryKeys[key])
+        if (!item) {
+            logger.info(`${deliveryKeys[key]} not found, creating...`)
+            item = new ContentItem()
+            item.label = labels[key]
+            item.body = {
+                _meta: {
+                    name: labels[key],
+                    schema: schemas[key],
+                    deliveryKey: deliveryKeys[key]
+                },
+                ...body
+            }
+            item = await (await getContentRepository('sitestructure')).related.contentItems.create(item)
+            await publishContentItem(item)
+        }
+        return item
+    }
 
-export const PublishingQueue = (postProcess: (item: ContentItem) => Promise<void> = async x => { }) => {
-    let queue: ContentItem[] = []
+    const getContentRepository = async (key: string): Promise<ContentRepository> => {
+        let repositories: ContentRepository[] = await paginator(context.hub.related.contentRepositories.list)
+        let repo = repositories.find(repo => repo.name === key)
+        if (!repo) {
+            throw new Error(`repository [ ${key} ] not found`)
+        }
+        return repo
+    }
 
-    return {
-        add: (item: ContentItem) => queue.push(item),
-        length: () => queue.length,
-        publish: async (): Promise<number> => {
-            let count = 0
+    const getContentItemsInRepository = async (key: string): Promise<ContentItem[]> => {
+        return await paginator((await getContentRepository(key)).related.contentItems.list, { status: 'ACTIVE' })
+    }
 
-            // we are rate limited to 100 publish requests per minute. so once we've flushed through all of the publishes for each
-            // 100-item chunk, we'll have to wait to publish more
-            let chunks = _.reverse(_.chunk(queue, 100))
-            while (chunks.length > 0) {
-                let chunk = chunks.pop()
-                if (chunk) {
-                    // set timer for one minute
-                    const start = new Date().valueOf()
+    const updateContentItem = async (key: string, body: any): Promise<void> => {
+        let item = await ensureContentItem(key, body)
+        item.body = body
+        item = await item.related.update(item)
+        await publishContentItem(item)
+    }
 
-                    logUpdate(`publishing ${chalk.blueBright(chunk.length)} items...`)
-                    await Promise.all(chunk.map(async item => {
-                        await publishContentItem(item)
-                        await postProcess(item)
-                        count++
-                    }))
+    const publishContentItem = async (item: ContentItem) => {
+        await rest.post(`/content-items/${item.id}/publish`)
+        updateContentMap(item)
+    }
 
-                    if (chunks.length > 0) {
-                        const current = new Date().valueOf()
-                        const remainder = Math.ceil((60000 - (current - start)) / 1000)
-                        for (let index = remainder; index > 0; index--) {
-                            logUpdate(`sleeping ${chalk.blueBright(index)} seconds before next chunk...`, false)
-                            await sleep(1000)
-                        }
+    const publishAll = async (): Promise<void> => {
+        let unpublished = (await getContentItems(context.hub, { status: Status.ACTIVE })).filter(ci => ci.version !== (ci as any).lastPublishedVersion)
+
+        // we are rate limited to 100 publish requests per minute. so once we've flushed through all of the publishes for each
+        // 100-item chunk, we'll have to wait to publish more
+        let chunks = _.reverse(_.chunk(unpublished, 100))
+        while (chunks.length > 0) {
+            let chunk = chunks.pop()
+            if (chunk) {
+                // set timer for one minute
+                const start = new Date().valueOf()
+
+                logUpdate(`publishing ${chalk.blueBright(chunk.length)} items...`)
+                await Promise.all(chunk.map(publishContentItem))
+
+                if (chunks.length > 0) {
+                    const current = new Date().valueOf()
+                    const remainder = Math.ceil((60000 - (current - start)) / 1000)
+                    for (let index = remainder; index > 0; index--) {
+                        logUpdate(`sleeping ${chalk.blueBright(index)} seconds before next chunk...`, false)
+                        await sleep(1000)
                     }
                 }
             }
-
-            return count
         }
-    }
-}
-
-export const publishAll = async (context: AmplienceContext) => {
-    const publishingQueue = PublishingQueue()
-    await context.hub.contentItemIterator(contentItem => {
-        if (contentItem.version !== (contentItem as any).lastPublishedVersion) {
-            publishingQueue.add(contentItem)
-        }
-    })
-
-    const publishedCount = await publishingQueue.publish()
-    logComplete(`${new ContentItemHandler().getDescription()}: [ ${chalk.green(publishedCount)} published ]`)
-}
-
-export const contentMap: Dictionary<ContentItem> = {}
-export const cacheContentMap = async (context: AmplienceContext) => await context.hub.contentItemIterator(updateCache)
-
-const updateCache = (item: ContentItem) => {
-    contentMap[item.body._meta.deliveryKey] = item
-    contentMap[item.id] = item
-}
-
-export const getContentItemByKey = (key: string): ContentItem => contentMap[key]
-export const getContentItemById = (id: string): ContentItem => contentMap[id]
-export const getContentMap = () => _.zipObject(_.map(contentMap, (__, key) => key.replace(/\//g, '-')), _.map(contentMap, 'deliveryId'))
-
-export const getEnvConfig = async (context: AmplienceContext) => {
-    let { hub, environment } = context
-    let deliveryKey = `aria/env/default`
-    let demoStoreConfigSchema = `https://demostore.amplience.com/site/demostoreconfig`
-    let restSchema = `https://demostore.amplience.com/site/integration/rest`
-
-    logger.info(`environment lookup [ hub ${chalk.magentaBright(hub.name)} ] [ key ${chalk.blueBright(deliveryKey)} ]`)
-
-    let config = await getContentItemByKey(deliveryKey)
-    if (!config || !config.body) {
-        logger.info(`${deliveryKey} not found, creating...`)
-
-        let restCodec = new ContentItem()
-        restCodec.label = `generic rest commerce configuration`
-        restCodec.body = {
-            _meta: {
-                name: `generic rest commerce configuration`,
-                schema: restSchema,
-                deliveryKey: `aria/config/rest`
-            },
-            productURL: `https://demostore-catalog.s3.us-east-2.amazonaws.com/products.json`,
-            categoryURL: `https://demostore-catalog.s3.us-east-2.amazonaws.com/categories.json`,
-            customerGroupURL: `https://demostore-catalog.s3.us-east-2.amazonaws.com/customerGroups.json`,
-            translationsURL: `https://demostore-catalog.s3.us-east-2.amazonaws.com/translations.json`,
-        }
-        restCodec = await context.hub.repositories.sitestructure.related.contentItems.create(restCodec)
-        await publishContentItem(restCodec)
-
-        config = new ContentItem()
-        config.label = `${environment.name} Demo Store config`
-        config.body = {
-            _meta: {
-                name: `${environment.name} Demo Store config`,
-                schema: demoStoreConfigSchema,
-                deliveryKey
-            },
-            environment: environment.name,
-            url: environment.url,
-            algolia: {
-                indexes: [{
-                    key: 'blog',
-                    prod: `${environment.name}.blog-production`,
-                    staging: `${environment.name}.blog-staging`
-                }],
-                appId: '',
-                apiKey: ''
-            },
-            commerce: {
-                _meta: {
-                    schema: "http://bigcontent.io/cms/schema/v1/core#/definitions/content-reference"
-                },
-                id: restCodec.id,
-                contentType: "https://demostore.amplience.com/site/integration/rest"
-            },
-            cms: {
-                hub: {
-                    name: environment.name,
-                    stagingApi: await hub.settings?.virtualStagingEnvironment?.hostname || ''
-                },
-                hubs: [{
-                    key: 'productImages',
-                    name: 'willow'
-                }]
-            }
-        }
-            
-        config = await context.hub.repositories.sitestructure.related.contentItems.create(config)
-        await publishContentItem(config)
-    }
-    return config.body
-}
-
-export const updateEnvConfig = async (context: ImportContext) => {
-    let { config } = context
-    let envConfig = await getContentItemByKey(`aria/env/default`)
-
-    if (!envConfig) {
-        throw new Error('aria/env/default not found when trying to update environment config')
+        logComplete(`${new ContentItemHandler().getDescription()}: [ ${chalk.green(unpublished.length)} published ]`)
     }
 
-    envConfig.body = config
-    envConfig = await envConfig.related.update(envConfig)
-    await publishContentItem(envConfig)
-}
-
-export const initAutomation = async (context: AmplienceContext) => {
-    let automation = await readAutomation(context)
-    fs.writeJsonSync(`${context.tempDir}/mapping.json`, {
-        contentItems: _.map(automation.body.contentItems, ci => [ci.from, ci.to]),
-        workflowStates: _.map(automation.body.workflowStates, ws => [ws.from, ws.to])
-    })
-
-    context.automation = {
-        contentItems: automation.body.contentItems,
-        workflowStates: automation.body.workflowStates
-    }
-
-    // copy so we can compare later after we do an import
-    fs.copyFileSync(`${context.tempDir}/mapping.json`, `${context.tempDir}/old_mapping.json`)
-    logger.info(`wrote mapping file at ${context.tempDir}/mapping.json`)
-}
-
-export const readAutomation = async (context: AmplienceContext) => {
-    let { environment } = context
-    let deliveryKey = `aria/automation/default`
-    let schema = `https://demostore.amplience.com/site/automation`
-
-    let automation = await getContentItemByKey(deliveryKey)
-    if (!automation) {
-        logger.info(`${deliveryKey} not found, creating...`)
-        automation = new ContentItem()
-        automation.label = `${environment.name} Demo Store automation`
-        automation.body = {
-            _meta: {
-                name: `${environment.name} Demo Store automation`,
-                schema,
-                deliveryKey
-            },
-            contentItems: [],
-            workflowStates: []
-        }
-
-        automation = await context.hub.repositories.sitestructure.related.contentItems.create(automation)
-        await publishContentItem(automation)
-    }
-    return automation
-}
-
-export const updateAutomationContentItems = async (context: AmplienceContext) => {
-    let automation = await readAutomation(context)
-    automation.body = {
-        ...automation.body,
-        contentItems: context.automation.contentItems
-    }
-    automation = await automation.related.update(automation)
-    await publishContentItem(automation)
-}
-
-export const updateAutomation = async (context: ImportContext) => {
-    // read the mapping file and update if necessary
-    let mappingStats = fs.statSync(`${context.tempDir}/old_mapping.json`)
-    let newMappingStats = fs.statSync(`${context.tempDir}/mapping.json`)
-
-    if (newMappingStats.size !== mappingStats.size) {
-        logger.info(`updating mapping...`)
-
-        // update the object
-        let newMapping = fs.readJsonSync(`${context.tempDir}/mapping.json`)
-
-        logger.info(`saving mapping...`)
-
-        let automation = await readAutomation(context)
-        automation.body = {
-            ...automation.body,
-            contentItems: _.map(newMapping.contentItems, x => ({ from: x[0], to: x[1] })),
-            workflowStates: _.map(newMapping.workflowStates, x => ({ from: x[0], to: x[1] }))
-        }
-
-        automation = await automation.related.update(automation)
-        await publishContentItem(automation)
-    }
-}
-
-export const readDAMMapping = async (context: ImportContext) => {
-    let assets = _.filter(await context.damService.getAssetsListForBucket('Assets'), asset => asset.status === 'active')
-    let endpoints = await context.damService.getEndpoints()
-    let endpoint: any = _.first(endpoints)!
     return {
-        mediaEndpoint: endpoint.tag,
-        imagesMap: _.zipObject(_.map(assets, x => _.camelCase(x.name)), _.map(assets, 'id'))
+        getContentItem,
+        getDemoStoreConfig,
+        updateDemoStoreConfig,
+
+        get,
+        getAutomation,
+        updateAutomation,
+
+        cacheContentMap,
+        getContentMap,
+        getContentRepository,
+        getContentItemsInRepository,
+
+        getDAMMapping,
+
+        publishContentItem,
+        publishAll,
+
+        deleteFolder,
+        synchronizeContentType,
+        login
     }
 }
+export default AmplienceHelperGenerator
 
-export default {
-    login,
-    publishContentItem,
-    synchronizeContentType,
-    publishAll,
-    getContentItemByKey,
-    getContentItemById,
-    getEnvConfig,
-    cacheContentMap,
-    updateEnvConfig,
-    getContentMap,
-    initAutomation,
-    updateAutomation,
-    contentMap
+export type AmplienceHelper = {
+    getContentItem: (keyOrId: string) => ContentItem
+    publishAll: () => Promise<void>
+    getDemoStoreConfig: () => Promise<ContentItem>
+    updateDemoStoreConfig: () => Promise<void>
+    getAutomation: () => Promise<ContentItem>
+    updateAutomation: () => Promise<void>
+    cacheContentMap: () => Promise<void>
+    getContentMap: () => Dictionary<string>
+    getContentRepository: (key: string) => Promise<ContentRepository>
+    getContentItemsInRepository: (key: string) => Promise<ContentItem[]>
+    getDAMMapping: () => Promise<DAMMapping>
+    get: (url: string) => Promise<any>
+    publishContentItem: (ContentItem: any) => Promise<void>
+    deleteFolder: (folder: Folder) => Promise<void>
+    synchronizeContentType: (contentType: ContentType) => Promise<void>
+    login: () => Promise<Hub>
 }

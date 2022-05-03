@@ -123,19 +123,21 @@ export class SearchIndexHandler extends ResourceHandler implements Cleanable {
         }
 
         publishedIndexes = await paginator(searchIndexPaginator(hub))
-        let algolia: any = {}
 
         // grab the algolia app key and id off of a search index
         const index = _.first(publishedIndexes)
+
         if (index) {
             let key = await index!.related.keys.get()
-            context.config.algolia.appId = key.applicationId!
-            context.config.algolia.apiKey = key.key!
-
-            algolia.appId = key.applicationId
-            algolia.apiKey = key.key
+            context.config.algolia = {
+                ...context.config.algolia,
+                appId: key.applicationId!,
+                key: key.key!
+            }
         }
-        return algolia
+
+        // save the env config here, since we've just gotten the app id and api key from algolia
+        await context.amplienceHelper.updateDemoStoreConfig()
     }
 
     async cleanup(context: CleanupContext): Promise<any> {
