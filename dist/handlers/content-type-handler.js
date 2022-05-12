@@ -99,6 +99,11 @@ class ContentTypeHandler extends resource_handler_1.CleanableResourceHandler {
         super(dc_management_sdk_js_1.ContentType, 'contentTypes');
         this.sortPriority = 1.1;
         this.icon = '🗂';
+        synchronizedCount = 0;
+        archiveCount = 0;
+        updateCount = 0;
+        createCount = 0;
+        assignedCount = 0;
     }
     import(context) {
         return __awaiter(this, void 0, void 0, function* () {

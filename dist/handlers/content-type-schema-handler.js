@@ -55,6 +55,9 @@ class ContentTypeSchemaHandler extends resource_handler_1.CleanableResourceHandl
         super(dc_management_sdk_js_1.ContentTypeSchema, 'contentTypeSchema');
         this.sortPriority = 1.09;
         this.icon = '🗄';
+        archiveCount = 0;
+        updateCount = 0;
+        createCount = 0;
     }
     import(context) {
         return __awaiter(this, void 0, void 0, function* () {

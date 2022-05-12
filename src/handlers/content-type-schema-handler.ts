@@ -45,6 +45,9 @@ export class ContentTypeSchemaHandler extends CleanableResourceHandler {
 
     constructor() {
         super(ContentTypeSchema, 'contentTypeSchema')
+        archiveCount = 0
+        updateCount = 0
+        createCount = 0
     }
 
     async import(context: ImportContext): Promise<any> {

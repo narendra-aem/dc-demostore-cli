@@ -98,6 +98,11 @@ export class ContentTypeHandler extends CleanableResourceHandler {
 
     constructor() {
         super(ContentType, 'contentTypes')
+        synchronizedCount = 0
+        archiveCount = 0
+        updateCount = 0
+        createCount = 0
+        assignedCount = 0
     }
 
     async import(context: ImportContext): Promise<any> {
