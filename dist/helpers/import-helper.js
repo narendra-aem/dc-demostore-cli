@@ -21,7 +21,9 @@ const copyTemplateFilesToTempDir = (context) => __awaiter(void 0, void 0, void 0
     let folder = `${context.automationDir}/content`;
     fs_extra_1.default.mkdirpSync(contentFolder);
     fs_extra_1.default.copySync(folder, contentFolder);
-    yield utils_1.fileIterator(contentFolder, yield types_1.getMapping(context)).iterate(() => __awaiter(void 0, void 0, void 0, function* () {
+    let mapping = yield types_1.getMapping(context);
+    fs_extra_1.default.writeFileSync(`${context.tempDir}/content_mapping.json`, JSON.stringify(mapping, undefined, 4));
+    yield utils_1.fileIterator(contentFolder, mapping).iterate(() => __awaiter(void 0, void 0, void 0, function* () {
     }));
 });
 exports.copyTemplateFilesToTempDir = copyTemplateFilesToTempDir;

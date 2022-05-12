@@ -26,10 +26,11 @@ exports.desc = "Update hub retail pointers";
 exports.builder = amplience_builder_1.default;
 exports.handler = middleware_1.contextHandler((context) => __awaiter(void 0, void 0, void 0, function* () {
     let demoStoreConfig = yield (yield context.amplienceHelper.getDemoStoreConfig()).body;
-    if (!demoStoreConfig.commerce) {
+    let commerce = yield context.amplienceHelper.getContentItem(demoStoreConfig.commerce.id).body;
+    if (!commerce) {
         throw new Error(`commerce integration not found!`);
     }
-    let commerceAPI = yield dc_demostore_integration_1.getCommerceAPI(demoStoreConfig.commerce);
+    let commerceAPI = yield dc_demostore_integration_1.getCommerceAPI(commerce);
     let megaMenu = yield commerceAPI.getMegaMenu({});
     let populated = lodash_1.default.sortBy(yield Promise.all(megaMenu.map((category) => __awaiter(void 0, void 0, void 0, function* () {
         return yield commerceAPI.getCategory({ slug: category.slug });

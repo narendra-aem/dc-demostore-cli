@@ -13,6 +13,9 @@ export const copyTemplateFilesToTempDir = async (context: ImportContext) => {
     // Copy ./content folder in repositories
     fs.copySync(folder, contentFolder)
 
-    await fileIterator(contentFolder, await getMapping(context)).iterate(async () => {
+    let mapping = await getMapping(context)
+    fs.writeFileSync(`${context.tempDir}/content_mapping.json`, JSON.stringify(mapping, undefined, 4))
+
+    await fileIterator(contentFolder, mapping).iterate(async () => {
     })
 }

@@ -18,7 +18,7 @@ const fs_extra_1 = require("fs-extra");
 const lodash_1 = __importDefault(require("lodash"));
 const chalk_1 = __importDefault(require("chalk"));
 const child_process_1 = __importDefault(require("child_process"));
-const { Select } = require('enquirer');
+const { Select, AutoComplete } = require('enquirer');
 const logger_1 = __importDefault(require("../common/logger"));
 const fs_extra_2 = __importDefault(require("fs-extra"));
 const getConfigPath = (platform = process.platform) => path_1.join(process.env[platform == 'win32' ? 'USERPROFILE' : 'HOME'] || __dirname, '.amplience');
@@ -62,18 +62,16 @@ const selectEnvironment = (argv) => __awaiter(void 0, void 0, void 0, function* 
 exports.selectEnvironment = selectEnvironment;
 const chooseEnvironment = (handler) => __awaiter(void 0, void 0, void 0, function* () {
     const envs = exports.getEnvironments();
-    const name = yield (new Select({
+    const active = envs.find(env => env.active);
+    const name = yield (new AutoComplete({
         name: 'env',
-        message: 'choose an environment',
+        message: `choose an environment ${chalk_1.default.bold.green(`[ current: ${active === null || active === void 0 ? void 0 : active.name} ]`)}`,
+        limit: envs.length,
+        multiple: false,
         choices: lodash_1.default.map(envs, 'name')
     })).run();
     let env = lodash_1.default.find(envs, e => e.name === name);
-    if (handler) {
-        yield handler(env);
-    }
-    else {
-        return env;
-    }
+    return handler ? yield handler(env) : env;
 });
 exports.chooseEnvironment = chooseEnvironment;
 const useEnvironmentFromArgs = (argv) => __awaiter(void 0, void 0, void 0, function* () {
@@ -83,7 +81,7 @@ const useEnvironmentFromArgs = (argv) => __awaiter(void 0, void 0, void 0, funct
 exports.useEnvironmentFromArgs = useEnvironmentFromArgs;
 const useEnvironment = (env) => __awaiter(void 0, void 0, void 0, function* () {
     logger_1.default.info(`[ ${chalk_1.default.greenBright(env.name)} ] configure dc-cli...`);
-    child_process_1.default.execSync(`npx @amplience/dc-cli configure --clientId ${env.dc.clientId} --clientSecret ${env.dc.clientSecret} --hubId ${env.dc.hubId}`);
+    child_process_1.default.execSync(`npx -y @amplience/dc-cli configure --clientId ${env.dc.clientId} --clientSecret ${env.dc.clientSecret} --hubId ${env.dc.hubId}`);
     logger_1.default.info(`[ ${chalk_1.default.greenBright(env.name)} ] environment active`);
     envConfig.current = env.name;
     saveConfig();
@@ -91,7 +89,7 @@ const useEnvironment = (env) => __awaiter(void 0, void 0, void 0, function* () {
 exports.useEnvironment = useEnvironment;
 const currentEnvironment = () => __awaiter(void 0, void 0, void 0, function* () {
     if (envConfig.envs.length === 0) {
-        logger_1.default.info(`no demostore environments found, let's create one!`);
+        logger_1.default.info(`no demostore configs found, let's create one!`);
         logger_1.default.info('');
         yield exports.createEnvironment();
     }
@@ -104,24 +102,43 @@ const currentEnvironment = () => __awaiter(void 0, void 0, void 0, function* () 
 });
 exports.currentEnvironment = currentEnvironment;
 const { Input, Password } = require('enquirer');
+const ask = (message) => __awaiter(void 0, void 0, void 0, function* () { return yield (new Input({ message }).run()); });
+const secureAsk = (message) => __awaiter(void 0, void 0, void 0, function* () { return yield (new Password({ message }).run()); });
+const helpTag = (message) => chalk_1.default.gray(`(${message})`);
+const sectionHeader = (message) => console.log(`\n${message}\n`);
+const appTag = chalk_1.default.bold.cyanBright('app');
+const dcTag = chalk_1.default.bold.cyanBright('dynamic content');
+const damTag = chalk_1.default.bold.cyanBright('content hub');
+const credentialsHelpText = helpTag('credentials assigned by Amplience support');
+const hubIdHelpText = helpTag('found in hub settings -> properties');
+const deploymentHelpText = helpTag('-> https://n.amprsa.net/deployment-instructions');
 const createEnvironment = () => __awaiter(void 0, void 0, void 0, function* () {
     try {
         let environments = exports.getEnvironments();
-        let name = yield (new Input({ message: 'env name:' }).run());
+        let name = yield ask(`name this config:`);
         if (lodash_1.default.find(environments, env => name === env.name)) {
-            throw new Error(`environment already exists: ${name}`);
+            throw new Error(`config already exists: ${name}`);
         }
+        sectionHeader(`${appTag} configuration ${deploymentHelpText}`);
+        let url = yield ask(`deployment url:`);
+        sectionHeader(`${dcTag} configuration ${credentialsHelpText}`);
+        let clientId = yield ask(`client ${chalk_1.default.magenta('id')}:`);
+        let clientSecret = yield secureAsk(`client ${chalk_1.default.magenta('secret')}:`);
+        let hubId = yield ask(`hub id ${hubIdHelpText}:`);
+        sectionHeader(`${damTag} configuration ${credentialsHelpText}`);
+        let username = yield ask(`username:`);
+        let password = yield secureAsk(`password:`);
         exports.addEnvironment({
             name,
-            url: yield (new Input({ message: `${chalk_1.default.blueBright('app')} deployment url:` }).run()),
+            url,
             dc: {
-                clientId: yield (new Input({ message: `${chalk_1.default.cyanBright('cms')} client id:` }).run()),
-                clientSecret: yield (new Password({ message: `${chalk_1.default.cyanBright('cms')} client secret:` }).run()),
-                hubId: yield (new Input({ message: `${chalk_1.default.cyanBright('cms')} hub id:` }).run())
+                clientId,
+                clientSecret,
+                hubId
             },
             dam: {
-                username: yield (new Input({ message: `${chalk_1.default.magentaBright('dam')} username:` }).run()),
-                password: yield (new Password({ message: `${chalk_1.default.magentaBright('dam')} password:` }).run())
+                username,
+                password
             }
         });
     }

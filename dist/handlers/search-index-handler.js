@@ -96,6 +96,9 @@ class SearchIndexHandler extends resource_handler_1.ResourceHandler {
                     delete item.indexDetails.id;
                     delete item.indexDetails.replicaCount;
                     let createdIndex = yield retrier(() => hub.related.searchIndexes.create(item.indexDetails), `create index: ${chalk_1.default.cyanBright(item.indexDetails.name)}`);
+                    if (!createdIndex) {
+                        throw new Error(`failed to create search index [ ${item.indexDetails.name} ] after 3 attempts`);
+                    }
                     searchIndexCount++;
                     yield retrier(() => createdIndex.related.settings.update(item.settings), `apply settings: ${chalk_1.default.cyanBright(item.indexDetails.name)}`);
                     publishedIndexes = yield dc_demostore_integration_1.paginator(dc_demostore_integration_1.searchIndexPaginator(hub));
@@ -136,7 +139,12 @@ class SearchIndexHandler extends resource_handler_1.ResourceHandler {
             const index = lodash_1.default.first(publishedIndexes);
             if (index) {
                 let key = yield index.related.keys.get();
-                context.config.algolia = Object.assign(Object.assign({}, context.config.algolia), { appId: key.applicationId, key: key.key });
+                if (key && key.applicationId && key.key) {
+                    context.config.algolia = {
+                        appId: key.applicationId,
+                        apiKey: key.key
+                    };
+                }
             }
             yield context.amplienceHelper.updateDemoStoreConfig();
         });

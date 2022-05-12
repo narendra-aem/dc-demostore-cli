@@ -71,6 +71,10 @@ export class SearchIndexHandler extends ResourceHandler implements Cleanable {
                 delete item.indexDetails.replicaCount;
     
                 let createdIndex = await retrier(() => hub.related.searchIndexes.create(item.indexDetails), `create index: ${chalk.cyanBright(item.indexDetails.name)}`)
+                if (!createdIndex) {
+                    throw new Error(`failed to create search index [ ${item.indexDetails.name} ] after 3 attempts`)
+                }
+                
                 searchIndexCount++
     
                 await retrier(() => createdIndex.related.settings.update(item.settings), `apply settings: ${chalk.cyanBright(item.indexDetails.name)}`)
@@ -129,10 +133,11 @@ export class SearchIndexHandler extends ResourceHandler implements Cleanable {
 
         if (index) {
             let key = await index!.related.keys.get()
-            context.config.algolia = {
-                ...context.config.algolia,
-                appId: key.applicationId!,
-                key: key.key!
+            if (key && key.applicationId && key.key) {
+                context.config.algolia = {
+                    appId: key.applicationId,
+                    apiKey: key.key
+                }
             }
         }
 

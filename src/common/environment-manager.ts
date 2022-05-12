@@ -4,7 +4,7 @@ import _ from 'lodash';
 import chalk from 'chalk'
 import { Arguments, Argv, env } from 'yargs';
 import childProcess from 'child_process'
-const { Select } = require('enquirer');
+const { Select, AutoComplete } = require('enquirer');
 import logger from '../common/logger'
 import { select } from 'async';
 import fs from 'fs-extra'
@@ -58,19 +58,17 @@ export const selectEnvironment = async (argv: Arguments) => argv.env ? getEnviro
 
 export const chooseEnvironment = async (handler?: any) => {
     const envs = getEnvironments()
-    const name = await (new Select({
+    const active = envs.find(env => env.active)
+    const name = await (new AutoComplete({
         name: 'env',
-        message: 'choose an environment',
+        message: `choose an environment ${chalk.bold.green(`[ current: ${active?.name} ]`)}`,
+        limit: envs.length,
+        multiple: false,
         choices: _.map(envs, 'name')
     })).run()
 
     let env = _.find(envs, e => e.name === name)
-    if (handler) {
-        await handler(env)
-    }
-    else {
-        return env
-    }
+    return handler ? await handler(env) : env
 }
 
 export const useEnvironmentFromArgs = async (argv: any) => {
@@ -80,8 +78,7 @@ export const useEnvironmentFromArgs = async (argv: any) => {
 
 export const useEnvironment = async (env: any) => {
     logger.info(`[ ${chalk.greenBright(env.name)} ] configure dc-cli...`);
-    childProcess.execSync(`npx @amplience/dc-cli configure --clientId ${env.dc.clientId} --clientSecret ${env.dc.clientSecret} --hubId ${env.dc.hubId}`);
-
+    childProcess.execSync(`npx -y @amplience/dc-cli configure --clientId ${env.dc.clientId} --clientSecret ${env.dc.clientSecret} --hubId ${env.dc.hubId}`);
     logger.info(`[ ${chalk.greenBright(env.name)} ] environment active`);
     envConfig.current = env.name
     saveConfig()
@@ -89,7 +86,7 @@ export const useEnvironment = async (env: any) => {
 
 export const currentEnvironment = async () => {
     if (envConfig.envs.length === 0) {
-        logger.info(`no demostore environments found, let's create one!`)
+        logger.info(`no demostore configs found, let's create one!`)
         logger.info('')
         await createEnvironment()
     }
@@ -103,27 +100,58 @@ export const currentEnvironment = async () => {
 }
 
 const { Input, Password } = require('enquirer');
+
+const ask = async (message: string) => await (new Input({ message }).run())
+const secureAsk = async (message: string) => await (new Password({ message }).run())
+const helpTag = (message: string) => chalk.gray(`(${message})`)
+const sectionHeader = (message: string) => console.log(`\n${message}\n`)
+
+const appTag = chalk.bold.cyanBright('app')
+const dcTag = chalk.bold.cyanBright('dynamic content')
+const damTag = chalk.bold.cyanBright('content hub')
+const credentialsHelpText = helpTag('credentials assigned by Amplience support')
+const hubIdHelpText = helpTag('found in hub settings -> properties')
+const deploymentHelpText = helpTag('-> https://n.amprsa.net/deployment-instructions')
+
 export const createEnvironment = async () => {
     try {
         // get loaded environments
         let environments = getEnvironments()
-        let name = await (new Input({ message: 'env name:' }).run())
+        let name = await ask(`name this config:`)
 
         if (_.find(environments, env => name === env.name)) {
-            throw new Error(`environment already exists: ${name}`)
+            throw new Error(`config already exists: ${name}`)
         }
+
+        // app config
+        sectionHeader(`${appTag} configuration ${deploymentHelpText}`)
+
+        let url = await ask(`deployment url:`)
+
+        // dc config
+        sectionHeader(`${dcTag} configuration ${credentialsHelpText}`)
+
+        let clientId = await ask(`client ${chalk.magenta('id')}:`)
+        let clientSecret = await secureAsk(`client ${chalk.magenta('secret')}:`)
+        let hubId = await ask(`hub id ${hubIdHelpText}:`)
+
+        // dam config
+        sectionHeader(`${damTag} configuration ${credentialsHelpText}`)
+
+        let username = await ask(`username:`)
+        let password = await secureAsk(`password:`)
 
         addEnvironment({
             name,
-            url: await (new Input({ message: `${chalk.blueBright('app')} deployment url:` }).run()),
+            url,
             dc: {
-                clientId: await (new Input({ message: `${chalk.cyanBright('cms')} client id:` }).run()),
-                clientSecret: await (new Password({ message: `${chalk.cyanBright('cms')} client secret:` }).run()),
-                hubId: await (new Input({ message: `${chalk.cyanBright('cms')} hub id:` }).run())
+                clientId,
+                clientSecret,
+                hubId
             },
             dam: {
-                username: await (new Input({ message: `${chalk.magentaBright('dam')} username:` }).run()),
-                password: await (new Password({ message: `${chalk.magentaBright('dam')} password:` }).run())
+                username,
+                password
             }
         })
     } catch (error) {

@@ -4,10 +4,10 @@ import chalk from 'chalk'
 import { Arguments } from "yargs"
 import { prompts } from "../common/prompts"
 import { logComplete } from "../common/logger"
-import { CleanupArgs, ImportArgs, CommonArgs, AmplienceArgs, LoggableArgs } from "../common/types"
+import { CleanupArgs, ImportArgs, AmplienceArgs, LoggableArgs } from "../common/types"
 
-export type Context = Arguments<CommonArgs>
-export type CommonContext = Arguments<CommonArgs>
+export type Context = Arguments<{}>
+export type CommonContext = Arguments<{}>
 export type AmplienceContext = Arguments<AmplienceArgs>
 export type LoggableContext = Arguments<LoggableArgs>
 export type ImportContext = Arguments<ImportArgs>

@@ -1,27 +1,21 @@
-import { ContentRepository, Hub } from 'dc-management-sdk-js';
-import { DAMService } from '../dam/dam-service';
+import { Hub } from 'dc-management-sdk-js';
 import _, { Dictionary } from 'lodash';
-import { DemoStoreConfiguration, paginator } from '@amplience/dc-demostore-integration';
+import { DemoStoreConfiguration, paginator, AlgoliaConfig, getCodecs, AmplienceConfig } from '@amplience/dc-demostore-integration';
 import { AmplienceHelper } from './amplience-helper';
 import { ImportContext } from '../handlers/resource-handler';
-
-export interface CommonArgs {
-}
 
 export interface EnvironmentConfig {
     name: string
     url: string
-    dc: DynamicContentCredentials
+    dc: {
+        clientId: string
+        clientSecret: string
+        hubId: string
+    }
     dam: {
         username: string
         password: string
     }
-}
-
-export interface DynamicContentCredentials {
-    clientId: string
-    clientSecret: string
-    hubId: string
 }
 
 export interface AmplienceArgs {
@@ -58,19 +52,8 @@ export interface Mapping {
     url: string
     cms?: CMSMapping
     algolia?: AlgoliaConfig
-    dam?: DAMMapping
-    contentMap?: Dictionary<string>
-}
-
-export interface AlgoliaConfig {
-    appId: string
-    apiKey: string
-    indexes: AlgoliaIndexSet[]
-}
-
-export interface AmplienceConfig {
-    hub: AmplienceHub
-    hubs: AmplienceHubPointer[]
+    dam: DAMMapping
+    contentMap: Dictionary<string>
 }
 
 export interface CMSMapping extends AmplienceConfig {
@@ -88,34 +71,15 @@ export interface DemoStoreMapping {
     to: string
 }
 
-export interface AppConfig {
-    url: string
-}
-
-export interface AlgoliaIndexSet {
-    key: string
-    prod: string
-    staging: string
-}
-
-export interface AmplienceHub {
-    name: string
-    stagingApi: string
-}
-
-export interface AmplienceHubPointer {
-    key: string
-    name: string
-}
-
 export const getMapping = async (context: ImportContext): Promise<Mapping> => {
     let repositories = await paginator(context.hub.related.contentRepositories.list)
     let workflowStates = await paginator(context.hub.related.workflowStates.list)
     return {
         url: context.environment.url,
         cms: {
-            hub: context.config?.cms.hub,
-            hubs: context.config?.cms.hubs,
+            hub: context.hub.name!,
+            stagingApi: context.hub.settings?.virtualStagingEnvironment?.hostname || '',
+            imageHub: context.config?.cms.imageHub,
             repositories: _.zipObject(_.map(repositories, r => r.name!), _.map(repositories, 'id')),
             workflowStates: _.zipObject(_.map(workflowStates, ws => _.camelCase(ws.label)), _.map(workflowStates, 'id'))
         },

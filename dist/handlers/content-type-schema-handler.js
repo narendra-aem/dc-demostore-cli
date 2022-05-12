@@ -22,6 +22,34 @@ const importer_1 = require("../helpers/importer");
 const schema_helper_1 = require("../helpers/schema-helper");
 const fs_extra_1 = __importDefault(require("fs-extra"));
 const logger_1 = require("../common/logger");
+let archiveCount = 0;
+let updateCount = 0;
+let createCount = 0;
+const installSchemas = (context, schemas) => __awaiter(void 0, void 0, void 0, function* () {
+    const storedSchemas = yield dc_demostore_integration_1.paginator(context.hub.related.contentTypeSchema.list);
+    yield Promise.all(schemas.map((schema) => __awaiter(void 0, void 0, void 0, function* () {
+        let stored = lodash_1.default.find(storedSchemas, s => s.schemaId === schema.schemaId);
+        if (stored) {
+            if (stored.status === 'ARCHIVED') {
+                archiveCount++;
+                stored = yield stored.related.unarchive();
+                logger_1.logUpdate(`${chalk_1.default.green('unarch')} schema [ ${chalk_1.default.gray(schema.schemaId)} ]`);
+            }
+            if (schema.body && stored.body !== schema.body) {
+                updateCount++;
+                schema.body = JSON.stringify(JSON.parse(schema.body), undefined, 4);
+                stored = yield stored.related.update(schema);
+                logger_1.logUpdate(`${chalk_1.default.green('update')} schema [ ${chalk_1.default.gray(schema.schemaId)} ]`);
+            }
+        }
+        else if (schema.body) {
+            createCount++;
+            schema.body = JSON.stringify(JSON.parse(schema.body), undefined, 4);
+            stored = yield context.hub.related.contentTypeSchema.create(schema);
+            logger_1.logUpdate(`${chalk_1.default.green('create')} schema [ ${chalk_1.default.gray(schema.schemaId)} ]`);
+        }
+    })));
+});
 class ContentTypeSchemaHandler extends resource_handler_1.CleanableResourceHandler {
     constructor() {
         super(dc_management_sdk_js_1.ContentTypeSchema, 'contentTypeSchema');
@@ -31,17 +59,17 @@ class ContentTypeSchemaHandler extends resource_handler_1.CleanableResourceHandl
     import(context) {
         return __awaiter(this, void 0, void 0, function* () {
             logger_1.logSubheading(`[ import ] content-type-schemas`);
-            let { hub } = context;
             let baseDir = `${context.tempDir}/content`;
             let sourceDir = `${baseDir}/content-type-schemas`;
-            let schemaDir = `${sourceDir}/schemas`;
             if (!fs_extra_1.default.existsSync(sourceDir)) {
                 return;
             }
             let codecs = dc_demostore_integration_1.getCodecs();
+            let codecSchemas = codecs.map(dc_demostore_integration_1.getContentTypeSchema);
+            yield installSchemas(context, codecSchemas);
             const schemas = importer_1.loadJsonFromDirectory(sourceDir, dc_management_sdk_js_1.ContentTypeSchema);
             const [resolvedSchemas, resolveSchemaErrors] = yield schema_helper_1.resolveSchemaBody(schemas, sourceDir);
-            const installSchemas = Object.values(resolvedSchemas);
+            const schemasToInstall = lodash_1.default.filter(Object.values(resolvedSchemas), s => !lodash_1.default.includes(lodash_1.default.map(codecs, 'schema.uri'), s.schemaId));
             if (Object.keys(resolveSchemaErrors).length > 0) {
                 const errors = Object.entries(resolveSchemaErrors)
                     .map(value => {
@@ -51,32 +79,21 @@ class ContentTypeSchemaHandler extends resource_handler_1.CleanableResourceHandl
                     .join('\n');
                 throw new Error(`Unable to resolve the body for the following files:\n${errors}`);
             }
-            let archiveCount = 0;
-            let updateCount = 0;
-            let createCount = 0;
-            const storedSchemas = yield dc_demostore_integration_1.paginator(hub.related.contentTypeSchema.list);
-            yield Promise.all(Object.values(resolvedSchemas).map((schema) => __awaiter(this, void 0, void 0, function* () {
-                let stored = lodash_1.default.find(storedSchemas, s => s.schemaId === schema.schemaId);
-                if (stored) {
-                    if (stored.status === 'ARCHIVED') {
-                        archiveCount++;
-                        stored = yield stored.related.unarchive();
-                        logger_1.logUpdate(`${chalk_1.default.green('unarch')} schema [ ${chalk_1.default.gray(schema.schemaId)} ]`);
-                    }
-                    if (schema.body && stored.body !== schema.body) {
-                        updateCount++;
-                        schema.body = JSON.stringify(JSON.parse(schema.body), undefined, 4);
-                        stored = yield stored.related.update(schema);
-                        logger_1.logUpdate(`${chalk_1.default.green('update')} schema [ ${chalk_1.default.gray(schema.schemaId)} ]`);
-                    }
-                }
-                else if (schema.body) {
-                    createCount++;
-                    schema.body = JSON.stringify(JSON.parse(schema.body), undefined, 4);
-                    stored = yield hub.related.contentTypeSchema.create(schema);
-                    logger_1.logUpdate(`${chalk_1.default.green('create')} schema [ ${chalk_1.default.gray(schema.schemaId)} ]`);
-                }
-            })));
+            let demostoreConfigSchema = lodash_1.default.find(schemasToInstall, s => s.schemaId === 'https://demostore.amplience.com/site/demostoreconfig');
+            if (demostoreConfigSchema === null || demostoreConfigSchema === void 0 ? void 0 : demostoreConfigSchema.body) {
+                let schemaBody = JSON.parse(demostoreConfigSchema.body);
+                schemaBody.properties.commerce.allOf = [{
+                        "$ref": "http://bigcontent.io/cms/schema/v1/core#/definitions/content-reference"
+                    }, {
+                        properties: {
+                            contentType: {
+                                enum: codecs.map(c => c.schema.uri)
+                            }
+                        }
+                    }];
+                demostoreConfigSchema.body = JSON.stringify(schemaBody);
+            }
+            yield installSchemas(context, schemasToInstall);
             logger_1.logComplete(`${this.getDescription()}: [ ${chalk_1.default.green(archiveCount)} unarchived ] [ ${chalk_1.default.green(updateCount)} updated ] [ ${chalk_1.default.green(createCount)} created ]`);
         });
     }

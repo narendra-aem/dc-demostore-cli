@@ -125,11 +125,6 @@ const AmplienceHelperGenerator = (context) => {
             environment: context.environment.name,
             url: context.environment.url,
             algolia: {
-                indexes: [{
-                        key: 'blog',
-                        prod: `${context.environment.name}.blog-production`,
-                        staging: `${context.environment.name}.blog-staging`
-                    }],
                 appId: '',
                 apiKey: ''
             },
@@ -141,14 +136,9 @@ const AmplienceHelperGenerator = (context) => {
                 contentType: schemas.rest
             },
             cms: {
-                hub: {
-                    name: context.environment.name,
-                    stagingApi: ((_b = (_a = context.hub.settings) === null || _a === void 0 ? void 0 : _a.virtualStagingEnvironment) === null || _b === void 0 ? void 0 : _b.hostname) || ''
-                },
-                hubs: [{
-                        key: 'productImages',
-                        name: 'willow'
-                    }]
+                hub: context.environment.name,
+                stagingApi: ((_b = (_a = context.hub.settings) === null || _a === void 0 ? void 0 : _a.virtualStagingEnvironment) === null || _b === void 0 ? void 0 : _b.hostname) || '',
+                imageHub: 'willow'
             }
         });
     });
