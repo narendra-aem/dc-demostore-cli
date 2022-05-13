@@ -127,12 +127,27 @@ exports.handler = middleware_1.contextHandler((context) => __awaiter(void 0, voi
                 let categoryCount = 0;
                 yield Promise.all(flattenedCategories.map((cat) => __awaiter(void 0, void 0, void 0, function* () {
                     let category = yield commerceAPI.getCategory(cat);
-                    cat.products = category.products;
-                    allProducts = lodash_1.default.concat(allProducts, cat.products);
-                    categoryCount++;
+                    if (category) {
+                        cat.products = category.products;
+                        allProducts = lodash_1.default.concat(allProducts, cat.products);
+                        categoryCount++;
+                    }
                     logger_1.logUpdate(`🧰  got [ ${categoryCount}/${flattenedCategories.length} ] categories and ${chalk_1.default.yellow(allProducts.length)} products`);
                 })));
+                allProducts = lodash_1.default.uniqBy(allProducts, 'id');
                 logger_1.logComplete(`🧰  read ${chalk_1.default.green(flattenedCategories.length)} categories, ${chalk_1.default.yellow(allProducts.length)} products in ${chalk_1.default.cyan(`${new Date().valueOf() - categoryReadStart} ms`)}`);
+                if (showMegaMenu) {
+                    console.log(`megaMenu ->`);
+                    lodash_1.default.each(megaMenu, tlc => {
+                        console.log(`${tlc.name} (${tlc.slug}) -- [ ${tlc.products.length} ]`);
+                        lodash_1.default.each(tlc.children, cat => {
+                            console.log(`\t${cat.name} (${cat.slug}) -- [ ${cat.products.length} ]`);
+                            lodash_1.default.each(cat.children, c => {
+                                console.log(`\t\t${c.name} (${c.slug}) -- [ ${c.products.length} ]`);
+                            });
+                        });
+                    });
+                }
                 let randomProduct = getRandom(allProducts);
                 let randomProduct2 = getRandom(allProducts);
                 let productOperation = yield Operation({
@@ -162,11 +177,11 @@ exports.handler = middleware_1.contextHandler((context) => __awaiter(void 0, voi
                 logOperation(productOperation);
                 logOperation(productsOperation);
                 logOperation(customerGroupOperation);
-                let noProductCategories = lodash_1.default.filter(flattenedCategories, cat => cat.products.length === 0);
+                let noProductCategories = lodash_1.default.filter(flattenedCategories, cat => { var _a; return ((_a = cat.products) === null || _a === void 0 ? void 0 : _a.length) === 0; });
                 logger_1.default.info(`${formatPercentage(noProductCategories, flattenedCategories)} categories with no products`);
                 let noImageProducts = lodash_1.default.filter(allProducts, prod => lodash_1.default.isEmpty(lodash_1.default.flatten(lodash_1.default.map(prod.variants, 'images'))));
                 logger_1.default.info(`${formatPercentage(noImageProducts, allProducts)} products with no image`);
-                let noPriceProducts = lodash_1.default.filter(allProducts, prod => prod.variants[0].listPrice === '--');
+                let noPriceProducts = lodash_1.default.filter(allProducts, prod => { var _a; return ((_a = prod.variants[0]) === null || _a === void 0 ? void 0 : _a.listPrice) === '--'; });
                 logger_1.default.info(`${formatPercentage(noPriceProducts, allProducts)} products with no price`);
             }
             catch (error) {

@@ -25,6 +25,7 @@ exports.command = 'update';
 exports.desc = "Update hub retail pointers";
 exports.builder = amplience_builder_1.default;
 exports.handler = middleware_1.contextHandler((context) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a, _b;
     let demoStoreConfig = yield (yield context.amplienceHelper.getDemoStoreConfig()).body;
     let commerce = yield context.amplienceHelper.getContentItem(demoStoreConfig.commerce.id).body;
     if (!commerce) {
@@ -32,15 +33,33 @@ exports.handler = middleware_1.contextHandler((context) => __awaiter(void 0, voi
     }
     let commerceAPI = yield dc_demostore_integration_1.getCommerceAPI(commerce);
     let megaMenu = yield commerceAPI.getMegaMenu({});
+    let { hub } = context;
+    let contentTypeSchemas = yield dc_demostore_integration_2.paginator(hub.related.contentTypeSchema.list);
+    let contentTypes = yield dc_demostore_integration_2.paginator(hub.related.contentTypes.list);
+    let productGridSchema = contentTypeSchemas.find(s => s.schemaId === 'https://demostore.amplience.com/content/product-grid');
+    if (productGridSchema) {
+        let jsonBody = JSON.parse(productGridSchema.body || '');
+        if ((_b = (_a = jsonBody === null || jsonBody === void 0 ? void 0 : jsonBody.properties) === null || _a === void 0 ? void 0 : _a.category) === null || _b === void 0 ? void 0 : _b.enum) {
+            jsonBody.properties.category.enum = lodash_1.default.map(megaMenu, 'key');
+        }
+        productGridSchema.body = JSON.stringify(jsonBody, undefined, 4);
+        yield productGridSchema.related.update(productGridSchema);
+        let contentType = contentTypes.find(type => type.contentTypeUri === 'https://demostore.amplience.com/content/product-grid');
+        if (contentType) {
+            yield contentType.related.contentTypeSchema.update();
+        }
+        else {
+            logger_1.default.error(`failed to synchronize content type [ https://demostore.amplience.com/content/product-grid ], content type not found`);
+        }
+    }
     let populated = lodash_1.default.sortBy(yield Promise.all(megaMenu.map((category) => __awaiter(void 0, void 0, void 0, function* () {
         return yield commerceAPI.getCategory({ slug: category.slug });
     }))), cat => cat.products.length);
     let mostPopulated = lodash_1.default.last(populated);
-    let { hub } = context;
     let contentItems = yield context.amplienceHelper.getContentItemsInRepository('content');
     yield Promise.all(contentItems.map((contentItem) => __awaiter(void 0, void 0, void 0, function* () {
         if (contentItem.body._meta.schema === 'https://demostore.amplience.com/content/curated-product-grid') {
-            logger_1.default.info(`Updating content items`);
+            logger_1.default.info(`Updating curated-product-grid...`);
             contentItem.body.products = yield Promise.all(contentItem.body.products.map((productId) => __awaiter(void 0, void 0, void 0, function* () {
                 let product = yield commerceAPI.getProduct({ id: productId });
                 if (!product && mostPopulated) {
@@ -53,26 +72,13 @@ exports.handler = middleware_1.contextHandler((context) => __awaiter(void 0, voi
             contentItem = yield contentItem.related.update(contentItem);
             yield context.amplienceHelper.publishContentItem(contentItem);
         }
-        if (contentItem.body._meta.schema === 'https://demostore.amplience.com/site/pages') {
-        }
-    })));
-    let contentTypeSchemas = yield dc_demostore_integration_2.paginator(hub.related.contentTypeSchema.list);
-    let contentTypes = yield dc_demostore_integration_2.paginator(hub.related.contentTypes.list);
-    yield Promise.all(contentTypeSchemas.map((schema) => __awaiter(void 0, void 0, void 0, function* () {
-        var _a, _b;
-        if (schema.schemaId === 'https://demostore.amplience.com/content/product-grid' && schema.body) {
-            let jsonBody = JSON.parse(schema.body);
-            if ((_b = (_a = jsonBody === null || jsonBody === void 0 ? void 0 : jsonBody.properties) === null || _a === void 0 ? void 0 : _a.category) === null || _b === void 0 ? void 0 : _b.enum) {
-                jsonBody.properties.category.enum = lodash_1.default.map(megaMenu, 'key');
-            }
-            schema.body = JSON.stringify(jsonBody, undefined, 4);
-            yield schema.related.update(schema);
-            let contentType = lodash_1.default.find(contentTypes, type => type.contentTypeUri === 'https://demostore.amplience.com/content/product-grid');
-            if (contentType) {
-                yield context.amplienceHelper.synchronizeContentType(contentType);
-            }
-            else {
-                logger_1.default.error(`failed to synchronize content type [ https://demostore.amplience.com/content/product-grid ], content type not found`);
+        if (contentItem.body._meta.schema === 'https://demostore.amplience.com/content/product-grid') {
+            let category = yield commerceAPI.getCategory({ slug: contentItem.body.category });
+            if (!category && mostPopulated) {
+                logger_1.default.info(`Updating product-grid...`);
+                contentItem.body.category = mostPopulated.slug;
+                contentItem = yield contentItem.related.update(contentItem);
+                yield context.amplienceHelper.publishContentItem(contentItem);
             }
         }
     })));

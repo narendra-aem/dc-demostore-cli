@@ -23,18 +23,41 @@ export const handler = contextHandler(async (context: AmplienceContext): Promise
 
     let commerceAPI = await getCommerceAPI(commerce)
     let megaMenu = await commerceAPI.getMegaMenu({})
+    let { hub } = context
+
+    let contentTypeSchemas: ContentTypeSchema[] = await paginator(hub.related.contentTypeSchema.list)
+    let contentTypes: ContentType[] = await paginator(hub.related.contentTypes.list)
+
+    // update product-grid schema with available category options
+    let productGridSchema = contentTypeSchemas.find(s => s.schemaId === 'https://demostore.amplience.com/content/product-grid')
+    if (productGridSchema) {
+        let jsonBody = JSON.parse(productGridSchema.body || '')
+        if (jsonBody?.properties?.category?.enum) {
+            jsonBody.properties.category.enum = _.map(megaMenu, 'key')
+        }
+        productGridSchema.body = JSON.stringify(jsonBody, undefined, 4)
+        await productGridSchema.related.update(productGridSchema)
+
+        // then sync the content type
+        let contentType = contentTypes.find(type => type.contentTypeUri === 'https://demostore.amplience.com/content/product-grid')
+        if (contentType) {
+            await contentType.related.contentTypeSchema.update()
+        }
+        else {
+            logger.error(`failed to synchronize content type [ https://demostore.amplience.com/content/product-grid ], content type not found`)
+        }
+    }
 
     let populated = _.sortBy(await Promise.all(megaMenu.map(async (category: Category) => {
         return await commerceAPI.getCategory({ slug: category.slug })
     })), cat => cat.products.length)
 
     let mostPopulated = _.last(populated)
-    let { hub } = context
     let contentItems = await context.amplienceHelper.getContentItemsInRepository('content')
     await Promise.all(contentItems.map(async contentItem => {
         // curated product grid
         if (contentItem.body._meta.schema === 'https://demostore.amplience.com/content/curated-product-grid') {
-            logger.info(`Updating content items`)
+            logger.info(`Updating curated-product-grid...`)
             contentItem.body.products = await Promise.all(contentItem.body.products.map(async (productId: string) => {
                 let product = await commerceAPI.getProduct({ id: productId })
                 if (!product && mostPopulated) {
@@ -48,28 +71,13 @@ export const handler = contextHandler(async (context: AmplienceContext): Promise
             await context.amplienceHelper.publishContentItem(contentItem)
         }
 
-        if (contentItem.body._meta.schema === 'https://demostore.amplience.com/site/pages') {
-        }
-    }))
-
-    let contentTypeSchemas: ContentTypeSchema[] = await paginator(hub.related.contentTypeSchema.list)
-    let contentTypes: ContentType[] = await paginator(hub.related.contentTypes.list)
-    await Promise.all(contentTypeSchemas.map(async schema => {
-        if (schema.schemaId === 'https://demostore.amplience.com/content/product-grid' && schema.body) {
-            let jsonBody = JSON.parse(schema.body)
-            if (jsonBody?.properties?.category?.enum) {
-                jsonBody.properties.category.enum = _.map(megaMenu, 'key')
-            }
-            schema.body = JSON.stringify(jsonBody, undefined, 4)
-            await schema.related.update(schema)
-
-            // then sync the content type
-            let contentType = _.find(contentTypes, type => type.contentTypeUri === 'https://demostore.amplience.com/content/product-grid')
-            if (contentType) {
-                await context.amplienceHelper.synchronizeContentType(contentType)
-            }
-            else {
-                logger.error(`failed to synchronize content type [ https://demostore.amplience.com/content/product-grid ], content type not found`)
+        if (contentItem.body._meta.schema === 'https://demostore.amplience.com/content/product-grid') {
+            let category = await commerceAPI.getCategory({ slug: contentItem.body.category })
+            if (!category && mostPopulated) {
+                logger.info(`Updating product-grid...`)
+                contentItem.body.category = mostPopulated.slug
+                contentItem = await contentItem.related.update(contentItem)
+                await context.amplienceHelper.publishContentItem(contentItem)
             }
         }
     }))

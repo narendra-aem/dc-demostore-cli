@@ -86,7 +86,6 @@ const AmplienceHelperGenerator = (context) => {
         }
         throw new Error(`hubId not found: ${context.environment.dc.hubId}`);
     });
-    const synchronizeContentType = (contentType) => __awaiter(void 0, void 0, void 0, function* () { return yield rest.patch(`/content-types/${contentType.id}/schema`); });
     const deleteFolder = (folder) => __awaiter(void 0, void 0, void 0, function* () { return yield rest.delete(`/folders/${folder.id}`); });
     const get = rest.get;
     const updateContentMap = (item) => {
@@ -229,7 +228,6 @@ const AmplienceHelperGenerator = (context) => {
         publishContentItem,
         publishAll,
         deleteFolder,
-        synchronizeContentType,
         login
     };
 };

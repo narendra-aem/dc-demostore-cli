@@ -48,4 +48,4 @@ export const fileIterator = (dir: any, mapping: Mapping) => ({
     }
 })
 
-export const getRandom = <T>(array: T[]): T => array[Math.floor(Math.random() * array.length + 1)]
+export const getRandom = <T>(array: T[]): T => array[Math.floor(Math.random() * array.length)]

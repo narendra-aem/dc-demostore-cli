@@ -69,7 +69,6 @@ const AmplienceHelperGenerator = (context: AmplienceContext): AmplienceHelper =>
         throw new Error(`hubId not found: ${context.environment.dc.hubId}`)
     }
 
-    const synchronizeContentType = async (contentType: ContentType) => await rest.patch(`/content-types/${contentType.id}/schema`)
     const deleteFolder = async (folder: Folder) => await rest.delete(`/folders/${folder.id}`)
     const get = rest.get
 
@@ -244,7 +243,6 @@ const AmplienceHelperGenerator = (context: AmplienceContext): AmplienceHelper =>
         publishAll,
 
         deleteFolder,
-        synchronizeContentType,
         login
     }
 }
@@ -265,6 +263,5 @@ export type AmplienceHelper = {
     get: (url: string) => Promise<any>
     publishContentItem: (ContentItem: any) => Promise<void>
     deleteFolder: (folder: Folder) => Promise<void>
-    synchronizeContentType: (contentType: ContentType) => Promise<void>
     login: () => Promise<Hub>
 }

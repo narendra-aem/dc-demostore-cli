@@ -124,25 +124,29 @@ export const handler = contextHandler(async (context: CleanupContext): Promise<v
                 let categoryCount = 0
                 await Promise.all(flattenedCategories.map(async (cat: Category) => {
                     let category = await commerceAPI.getCategory(cat)
-                    cat.products = category.products
-                    allProducts = _.concat(allProducts, cat.products)
-                    categoryCount++
+                    if (category) {
+                        cat.products = category.products
+                        allProducts = _.concat(allProducts, cat.products)
+                        categoryCount++
+                    }
                     logUpdate(`🧰  got [ ${categoryCount}/${flattenedCategories.length} ] categories and ${chalk.yellow(allProducts.length)} products`)
                 }))
+                allProducts = _.uniqBy(allProducts, 'id')
+
                 logComplete(`🧰  read ${chalk.green(flattenedCategories.length)} categories, ${chalk.yellow(allProducts.length)} products in ${chalk.cyan(`${new Date().valueOf() - categoryReadStart} ms`)}`)
 
-                // if (showMegaMenu) {
-                //     console.log(`megaMenu ->`)
-                //     _.each(megaMenu, tlc => {
-                //         console.log(`${tlc.name} [ ${tlc.slug} ] -- [ ${tlc.products.length} ]`)
-                //         _.each(tlc.children, cat => {
-                //             console.log(`|- ${cat.name} [ ${cat.slug} ] -- [ ${cat.products.length} ]`)
-                //             _.each(cat.children, c => {
-                //                 console.log(`|- |- ${c.name} [ ${c.slug} ] -- [ ${c.products.length} ]`)
-                //             })
-                //         })
-                //     })
-                // }
+                if (showMegaMenu) {
+                    console.log(`megaMenu ->`)
+                    _.each(megaMenu, tlc => {
+                        console.log(`${tlc.name} (${tlc.slug}) -- [ ${tlc.products.length} ]`)
+                        _.each(tlc.children, cat => {
+                            console.log(`\t${cat.name} (${cat.slug}) -- [ ${cat.products.length} ]`)
+                            _.each(cat.children, c => {
+                                console.log(`\t\t${c.name} (${c.slug}) -- [ ${c.products.length} ]`)
+                            })
+                        })
+                    })
+                }
 
                 let randomProduct = getRandom(allProducts)
                 let randomProduct2 = getRandom(allProducts)
@@ -182,13 +186,13 @@ export const handler = contextHandler(async (context: CleanupContext): Promise<v
                 logOperation(productsOperation)
                 logOperation(customerGroupOperation)
 
-                let noProductCategories = _.filter(flattenedCategories, cat => cat.products.length === 0)
+                let noProductCategories = _.filter(flattenedCategories, cat => cat.products?.length === 0)
                 logger.info(`${formatPercentage(noProductCategories, flattenedCategories)} categories with no products`)
 
                 let noImageProducts = _.filter(allProducts, prod => _.isEmpty(_.flatten(_.map(prod.variants, 'images'))))
                 logger.info(`${formatPercentage(noImageProducts, allProducts)} products with no image`)
 
-                let noPriceProducts = _.filter(allProducts, prod => prod.variants[0].listPrice === '--')
+                let noPriceProducts = _.filter(allProducts, prod => prod.variants[0]?.listPrice === '--')
                 logger.info(`${formatPercentage(noPriceProducts, allProducts)} products with no price`)
             } catch (error) {
                 logger.error(`testing integration for [ ${item.body._meta.schema} ]: ${chalk.red('failed')}: ${error}`)

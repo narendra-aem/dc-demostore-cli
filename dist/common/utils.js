@@ -48,5 +48,5 @@ const fileIterator = (dir, mapping) => ({
     })
 });
 exports.fileIterator = fileIterator;
-const getRandom = (array) => array[Math.floor(Math.random() * array.length + 1)];
+const getRandom = (array) => array[Math.floor(Math.random() * array.length)];
 exports.getRandom = getRandom;
