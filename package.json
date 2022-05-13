@@ -1,6 +1,6 @@
 {
   "name": "@amp-nova/dc-demostore-cli",
-  "version": "0.10.6",
+  "version": "0.10.7",
   "description": "Amplience Demo Store CLI",
   "man": "./dist/demo-cli.1",
   "bin": {
