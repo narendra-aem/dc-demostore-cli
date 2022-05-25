@@ -1,12 +1,11 @@
-import { join, dirname } from 'path';
-import { readJsonSync, existsSync, mkdirpSync, writeJsonSync, writeFileSync } from 'fs-extra';
+import { join } from 'path';
+import { readJsonSync, existsSync, mkdirpSync, writeFileSync } from 'fs-extra';
 import _ from 'lodash';
 import chalk from 'chalk'
-import { Arguments, Argv, env } from 'yargs';
+import { Arguments } from 'yargs';
 import childProcess from 'child_process'
 const { Select, AutoComplete } = require('enquirer');
 import logger from '../common/logger'
-import { select } from 'async';
 import fs from 'fs-extra'
 
 export const getConfigPath = (platform: string = process.platform): string => join(process.env[platform == 'win32' ? 'USERPROFILE' : 'HOME'] || __dirname, '.amplience');
@@ -48,12 +47,14 @@ export const deleteEnvironment = async (argv: Arguments) => {
     saveConfig()
 }
 
-export const getEnvironments = () => _.map(envConfig.envs, env => ({
+export const getEnvironments = () => envConfig.envs.map(env => ({
     ...env,
     active: envConfig.current === env.name
 }))
 
-export const getEnvironment = (name: string) => _.find(envConfig.envs, env => name === env.name)
+type Named = { name: string }
+export const byName = (lookup: string) => (obj: Named) => obj.name === lookup
+export const getEnvironment = (name: string) => envConfig.envs.find(byName(name))
 export const selectEnvironment = async (argv: Arguments) => argv.env ? getEnvironment(argv.env as string) : await chooseEnvironment()
 
 export const chooseEnvironment = async (handler?: any) => {
@@ -67,7 +68,7 @@ export const chooseEnvironment = async (handler?: any) => {
         choices: _.map(envs, 'name')
     })).run()
 
-    let env = _.find(envs, e => e.name === name)
+    let env = envs.find(byName(name))
     return handler ? await handler(env) : env
 }
 
@@ -101,17 +102,18 @@ export const currentEnvironment = async () => {
 
 const { Input, Password } = require('enquirer');
 
-const ask = async (message: string) => await (new Input({ message }).run())
-const secureAsk = async (message: string) => await (new Password({ message }).run())
-const helpTag = (message: string) => chalk.gray(`(${message})`)
-const sectionHeader = (message: string) => console.log(`\n${message}\n`)
+// formatting helpers
+const ask                   = async (message: string) => await (new Input({ message }).run())
+const secureAsk             = async (message: string) => await (new Password({ message }).run())
+const helpTag               = (message: string) => chalk.gray(`(${message})`)
+const sectionHeader         = (message: string) => console.log(`\n${message}\n`)
 
-const appTag = chalk.bold.cyanBright('app')
-const dcTag = chalk.bold.cyanBright('dynamic content')
-const damTag = chalk.bold.cyanBright('content hub')
-const credentialsHelpText = helpTag('credentials assigned by Amplience support')
-const hubIdHelpText = helpTag('found in hub settings -> properties')
-const deploymentHelpText = helpTag('-> https://n.amprsa.net/deployment-instructions')
+const appTag                = chalk.bold.cyanBright('app')
+const dcTag                 = chalk.bold.cyanBright('dynamic content')
+const damTag                = chalk.bold.cyanBright('content hub')
+const credentialsHelpText   = helpTag('credentials assigned by Amplience support')
+const hubIdHelpText         = helpTag('found in hub settings -> properties')
+const deploymentHelpText    = helpTag('-> https://n.amprsa.net/deployment-instructions')
 
 export const createEnvironment = async () => {
     try {
@@ -119,7 +121,7 @@ export const createEnvironment = async () => {
         let environments = getEnvironments()
         let name = await ask(`name this config:`)
 
-        if (_.find(environments, env => name === env.name)) {
+        if (environments.find(byName(name))) {
             throw new Error(`config already exists: ${name}`)
         }
 
@@ -160,7 +162,7 @@ export const createEnvironment = async () => {
 }
 
 export const listEnvironments = () => {
-    _.each(getEnvironments(), env => {
+    getEnvironments().forEach(env => {
         let str = `  ${env.name}`
         if (env.active) {
             str = chalk.greenBright(`* ${env.name}`)

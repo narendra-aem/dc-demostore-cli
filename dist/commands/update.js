@@ -26,8 +26,8 @@ exports.desc = "Update hub retail pointers";
 exports.builder = amplience_builder_1.default;
 exports.handler = middleware_1.contextHandler((context) => __awaiter(void 0, void 0, void 0, function* () {
     var _a, _b;
-    let demoStoreConfig = yield (yield context.amplienceHelper.getDemoStoreConfig()).body;
-    let commerce = yield context.amplienceHelper.getContentItem(demoStoreConfig.commerce.id).body;
+    let demoStoreConfig = (yield context.amplienceHelper.getDemoStoreConfig()).body;
+    let commerce = (yield context.amplienceHelper.getContentItem(demoStoreConfig.commerce.id)).body;
     if (!commerce) {
         throw new Error(`commerce integration not found!`);
     }

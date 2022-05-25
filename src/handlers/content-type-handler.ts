@@ -1,6 +1,6 @@
 import { CleanableResourceHandler, CleanupContext, ImportContext } from "./resource-handler"
 import { ContentType, ContentRepository } from "dc-management-sdk-js"
-import { getCodecs, getContentType, getContentTypeSchema, paginator } from "@amplience/dc-demostore-integration"
+import { CodecType, getCodecs, getContentType, getContentTypeSchema, paginator } from "@amplience/dc-demostore-integration"
 import _ from 'lodash'
 import logger, { logSubheading } from "../common/logger"
 import chalk from 'chalk'
@@ -114,7 +114,7 @@ export class ContentTypeHandler extends CleanableResourceHandler {
         }
 
         // first we will load the site/integration types (codecs)
-        await installTypes(context, getCodecs().map(getContentType))
+        await installTypes(context, getCodecs(CodecType.commerce).map(getContentType))
 
         const jsonTypes = loadJsonFromDirectory<ContentTypeWithRepositoryAssignments>(sourceDir, ContentTypeWithRepositoryAssignments);
 
@@ -123,7 +123,7 @@ export class ContentTypeHandler extends CleanableResourceHandler {
         }
         validateNoDuplicateContentTypeUris(jsonTypes);
 
-        await installTypes(context, _.filter(Object.values(jsonTypes), s => !_.includes(_.map(getCodecs(), 'schema.uri'), s.contentTypeUri)))
+        await installTypes(context, _.filter(Object.values(jsonTypes), s => !_.includes(_.map(getCodecs(CodecType.commerce), 'schema.uri'), s.contentTypeUri)))
         logComplete(`${this.getDescription()}: [ ${chalk.green(archiveCount)} unarchived ] [ ${chalk.green(updateCount)} updated ] [ ${chalk.green(createCount)} created ] [ ${chalk.green(synchronizedCount)} synced ]`)
     }
 

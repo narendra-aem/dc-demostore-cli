@@ -19,8 +19,6 @@ export class CLIJob {
     }
 
     async exec() {
-        logger.info(`${chalk.greenBright(this.cmd)}`)
-
         let startTime = new Date().valueOf()
         let child = childProcess.exec(this.cmd)
         child.stdout?.on('data', (message: string) => {

@@ -5,25 +5,20 @@ import logger, { logHeadline } from '../common/logger';
 
 import { ContentTypeSchemaHandler } from '../handlers/content-type-schema-handler';
 import { ContentTypeHandler } from '../handlers/content-type-handler';
-import { timed } from "../handlers/typed-result";
 import { ContentItemHandler } from '../handlers/content-item-handler';
 import { ExtensionHandler } from '../handlers/extension-handler';
 import { SearchIndexHandler } from '../handlers/search-index-handler';
 import { SettingsHandler } from '../handlers/settings-handler';
 
-import { AmplienceHelper } from '../common/amplience-helper';
 import { ImportContext } from '../handlers/resource-handler';
 import { copyTemplateFilesToTempDir } from '../helpers/import-helper';
 import { contextHandler } from '../common/middleware';
 import amplienceBuilder from '../common/amplience-builder';
-import { WorkflowState } from 'dc-management-sdk-js';
 import fs from 'fs-extra'
 import { CONFIG_PATH } from '../common/environment-manager';
 import axios from 'axios';
 import admZip from 'adm-zip'
 import { sleep } from '../common/utils';
-import { paginator } from '@amplience/dc-demostore-integration';
-import { Mapping } from '../common/types';
 
 export const command = 'import';
 export const desc = "Import hub data";
@@ -64,10 +59,7 @@ const downloadZip = async (branch: string): Promise<void> => {
 
             resolve()
         })
-
-        response.data.on('error', () => {
-            reject()
-        })
+        response.data.on('error', reject)
     })
 }
 
@@ -119,7 +111,7 @@ export const handler = contextHandler(async (context: ImportContext): Promise<vo
     await new ContentTypeHandler().import(context)
 
     // this call must be after the schema and type import because it's creating objects if they don't exist
-    context.config = await (await context.amplienceHelper.getDemoStoreConfig()).body
+    context.config = (await context.amplienceHelper.getDemoStoreConfig()).body
 
     logHeadline(`Phase 2: import/update`)
 

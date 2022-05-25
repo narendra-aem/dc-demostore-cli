@@ -31,7 +31,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.contextHandler = exports.setupLogging = exports.loginDC = void 0;
+exports.contextHandler = exports.setupLogging = exports.createTempDir = exports.loginDC = void 0;
 const logger_1 = __importStar(require("./logger"));
 const dc_management_sdk_js_1 = require("dc-management-sdk-js");
 const amplience_helper_1 = __importDefault(require("./amplience-helper"));
@@ -45,11 +45,14 @@ const loginDC = (context) => __awaiter(void 0, void 0, void 0, function* () {
     context.hub = yield context.amplienceHelper.login();
 });
 exports.loginDC = loginDC;
-const setupLogging = (context) => {
-    logger_1.setLogDirectory(context.tempDir);
+const createTempDir = (context) => {
     fs_extra_1.default.rmSync(context.tempDir, { recursive: true, force: true });
     fs_extra_1.default.mkdirpSync(context.tempDir);
     logger_1.default.info(`${prompts_1.prompts.created} temp dir: ${chalk_1.default.blue(context.tempDir)}`);
+    logger_1.setLogDirectory(context.tempDir);
+};
+exports.createTempDir = createTempDir;
+const setupLogging = (context) => {
     let _request = dc_management_sdk_js_1.AxiosHttpClient.prototype.request;
     dc_management_sdk_js_1.AxiosHttpClient.prototype.request = function (request) {
         var _a, _b;
@@ -96,7 +99,3 @@ const contextHandler = (handler) => (context) => __awaiter(void 0, void 0, void 
     }
 });
 exports.contextHandler = contextHandler;
-exports.default = {
-    loginDC: exports.loginDC,
-    contextHandler: exports.contextHandler
-};

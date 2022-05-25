@@ -2,7 +2,7 @@ import { CleanupContext } from '../handlers/resource-handler';
 import _ from 'lodash'
 import { contextHandler } from '../common/middleware';
 import amplienceBuilder from '../common/amplience-builder';
-import { Category, CommerceAPI, CryptKeeper, CustomerGroup, flattenCategories, getCodec, paginator, Product } from '@amplience/dc-demostore-integration'
+import { Category, CustomerGroup, flattenCategories, getCommerceCodec, Product } from '@amplience/dc-demostore-integration'
 import logger, { logComplete, logUpdate } from '../common/logger';
 import chalk from 'chalk';
 import async from 'async';
@@ -88,13 +88,9 @@ export const handler = contextHandler(async (context: CleanupContext): Promise<v
         }
 
         await async.eachSeries(integrationItems, async (item, cb) => {
-            item.body._meta = {
-                ...item.body._meta,
-                deliveryId: item.deliveryId
-            }
-
             try {
-                let commerceAPI = await getCodec(CryptKeeper(item.body, hub.name).decryptAll()) as CommerceAPI
+                let config = await context.amplienceHelper.getContentItem(item.deliveryId)
+                let commerceAPI = await getCommerceCodec(config.body)
                 // logger.info(`testing integration type: [ ${chalk.magentaBright(commerceAPI.SchemaURI.split('/').pop())} ]`)
 
                 let allProducts: Product[] = []
@@ -107,12 +103,14 @@ export const handler = contextHandler(async (context: CleanupContext): Promise<v
                 }).do((mm: Category[]) => {
                     megaMenu = mm
                     let second = _.reduce(megaMenu, (sum, n) => { return _.concat(sum, n.children) }, [])
-                    let third = _.reduce(_.flatMap(megaMenu, 'children'), (sum, n) => { return _.concat(sum, n.children) }, [])
+                    let third = _.reduce(second, (sum, n) => { return _.concat(sum, n.children) }, [])
                     categories = _.concat(megaMenu, second, third)
+
+                    console.log(`[ ${chalk.green(megaMenu.length)} top level ] [ ${chalk.green(second.length)} second level ] [ ${chalk.green(third.length)} third level ]`)
                     return `[ ${chalk.green(megaMenu.length)} top level ] [ ${chalk.green(second.length)} second level ] [ ${chalk.green(third.length)} third level ]`
                 })
 
-                let flattenedCategories = flattenCategories(categories)
+                let flattenedCategories = _.uniqBy(flattenCategories(categories), 'id')
                 let categoryOperation = await Operation({
                     tag: '🧰  get category',
                     execute: async (): Promise<Category> => await commerceAPI.getCategory(flattenedCategories[0])
@@ -122,18 +120,25 @@ export const handler = contextHandler(async (context: CleanupContext): Promise<v
 
                 const categoryReadStart = new Date().valueOf()
                 let categoryCount = 0
-                await Promise.all(flattenedCategories.map(async (cat: Category) => {
+
+                const loadCategory = async (cat: Category) => {
                     let category = await commerceAPI.getCategory(cat)
                     if (category) {
                         cat.products = category.products
                         allProducts = _.concat(allProducts, cat.products)
                         categoryCount++
                     }
-                    logUpdate(`🧰  got [ ${categoryCount}/${flattenedCategories.length} ] categories and ${chalk.yellow(allProducts.length)} products`)
-                }))
-                allProducts = _.uniqBy(allProducts, 'id')
+                    // logUpdate(`🧰  got [ ${categoryCount}/${categories.length} ] categories and ${chalk.yellow(allProducts.length)} products`)
+                }
 
-                logComplete(`🧰  read ${chalk.green(flattenedCategories.length)} categories, ${chalk.yellow(allProducts.length)} products in ${chalk.cyan(`${new Date().valueOf() - categoryReadStart} ms`)}`)
+                await Promise.all(flattenedCategories.map(async (cat: Category) => {
+                    await loadCategory(cat)
+                }))
+
+                // await async.eachSeries(flattenedCategories, async (cat: Category, callback: () => void) => {
+                //     await loadCategory(cat)
+                //     callback()
+                // })
 
                 if (showMegaMenu) {
                     console.log(`megaMenu ->`)
@@ -147,6 +152,10 @@ export const handler = contextHandler(async (context: CleanupContext): Promise<v
                         })
                     })
                 }
+
+                allProducts = _.uniqBy(allProducts, 'id')
+
+                logComplete(`🧰  read ${chalk.green(categories.length)} categories, ${chalk.yellow(allProducts.length)} products in ${chalk.cyan(`${new Date().valueOf() - categoryReadStart} ms`)}`)
 
                 let randomProduct = getRandom(allProducts)
                 let randomProduct2 = getRandom(allProducts)

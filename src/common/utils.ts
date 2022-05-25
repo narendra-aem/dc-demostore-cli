@@ -1,8 +1,8 @@
 import _ from "lodash"
 import fs from 'fs-extra'
-import { ImportContext } from "../handlers/resource-handler"
 import { compile as handlebarsCompile } from 'handlebars';
-import { getMapping, Mapping } from "./types";
+import { Mapping } from "./types";
+import chalk from "chalk";
 
 export const sleep = (delay: number) => new Promise((resolve) => setTimeout(resolve, delay))
 
@@ -47,5 +47,17 @@ export const fileIterator = (dir: any, mapping: Mapping) => ({
         }))))
     }
 })
+
+export const formatPercentage = (a: any[], b: any[]) => {
+    let percentage = Math.ceil(100.0 * a.length / b.length)
+    let colorFn = chalk.green
+    if (percentage > 66) {
+        colorFn = chalk.red
+    }
+    else if (percentage > 33) {
+        colorFn = chalk.yellow
+    }
+    return `[ ${colorFn(`${a.length} (${percentage}%)`)} ]`
+}
 
 export const getRandom = <T>(array: T[]): T => array[Math.floor(Math.random() * array.length)]

@@ -72,9 +72,7 @@ const downloadZip = (branch) => __awaiter(void 0, void 0, void 0, function* () {
             fs_extra_1.default.rmSync(zipFilePath);
             resolve();
         }));
-        response.data.on('error', () => {
-            reject();
-        });
+        response.data.on('error', reject);
     });
 });
 const builder = (yargs) => {
@@ -118,7 +116,7 @@ exports.handler = middleware_1.contextHandler((context) => __awaiter(void 0, voi
     yield import_helper_1.copyTemplateFilesToTempDir(context);
     yield new content_type_schema_handler_1.ContentTypeSchemaHandler().import(context);
     yield new content_type_handler_1.ContentTypeHandler().import(context);
-    context.config = yield (yield context.amplienceHelper.getDemoStoreConfig()).body;
+    context.config = (yield context.amplienceHelper.getDemoStoreConfig()).body;
     logger_1.logHeadline(`Phase 2: import/update`);
     yield import_helper_1.copyTemplateFilesToTempDir(context);
     yield new settings_handler_1.SettingsHandler().import(context);

@@ -2,7 +2,6 @@ import { AmplienceContext } from '../handlers/resource-handler';
 import _ from 'lodash'
 import { contextHandler } from '../common/middleware';
 import amplienceBuilder from '../common/amplience-builder';
-import { AmplienceHelper } from '../common/amplience-helper';
 import { CryptKeeper, paginator } from '@amplience/dc-demostore-integration'
 
 export const command = 'encrypt';

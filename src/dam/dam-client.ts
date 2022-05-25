@@ -17,7 +17,11 @@ export class DAMClient {
     accessToken: string;
 
     async init(argv: ConfigurationParameters) {
-        this.accessToken = await this.getAccessToken(argv.username, argv.password);
+        try {            
+            this.accessToken = await this.getAccessToken(argv.username, argv.password);
+        } catch (error) {
+            throw new Error(`error logging in to content hub, check your credentials`)
+        }
     }
 
     /**

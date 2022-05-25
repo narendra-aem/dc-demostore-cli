@@ -20,8 +20,13 @@ const configureYargs = (yargInstance: Argv): Promise<Arguments> => {
           return;
         }
         failInvoked = true;
+
         if ((msg && !err) || isYError(err)) {
           yargInstance.showHelp('error');
+        }
+        else if (err) {
+          logger.error(chalk.red(err))
+          process.exit(0)
         }
       };
       const argv = yargInstance
@@ -35,18 +40,7 @@ const configureYargs = (yargInstance: Argv): Promise<Arguments> => {
         .middleware([async (context: Context) => {
           context.startTime = new Date()
           logger.info(`run [ ${chalk.green(context._)} ]: started at ${context.startTime}`)
-
           context.environment = await currentEnvironment()
-
-          // monkey patch childProcess to log to the console whenever a shell command is used
-          const childProcess = require('child_process');
-          if (!childProcess._execSync) {
-            let _execSync = childProcess.execSync
-            childProcess.execSync = function (cmd: any) {
-              logger.info(`${chalk.greenBright(cmd)}`)
-              return _execSync.call(this, cmd)
-            }
-          }
         }])
         .fail(failFn).argv;
       resolve(argv);

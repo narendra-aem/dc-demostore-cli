@@ -100,9 +100,9 @@ exports.handler = middleware_1.contextHandler((context) => __awaiter(void 0, voi
             callback(new Error(`couldn't find integration for [ ${choice} ]`));
         }
         yield async_1.default.eachSeries(integrationItems, (item, cb) => __awaiter(void 0, void 0, void 0, function* () {
-            item.body._meta = Object.assign(Object.assign({}, item.body._meta), { deliveryId: item.deliveryId });
             try {
-                let commerceAPI = yield dc_demostore_integration_1.getCodec(dc_demostore_integration_1.CryptKeeper(item.body, hub.name).decryptAll());
+                let config = yield context.amplienceHelper.getContentItem(item.deliveryId);
+                let commerceAPI = yield dc_demostore_integration_1.getCommerceCodec(config.body);
                 let allProducts = [];
                 let megaMenu = [];
                 let categories = [];
@@ -112,11 +112,12 @@ exports.handler = middleware_1.contextHandler((context) => __awaiter(void 0, voi
                 }).do((mm) => {
                     megaMenu = mm;
                     let second = lodash_1.default.reduce(megaMenu, (sum, n) => { return lodash_1.default.concat(sum, n.children); }, []);
-                    let third = lodash_1.default.reduce(lodash_1.default.flatMap(megaMenu, 'children'), (sum, n) => { return lodash_1.default.concat(sum, n.children); }, []);
+                    let third = lodash_1.default.reduce(second, (sum, n) => { return lodash_1.default.concat(sum, n.children); }, []);
                     categories = lodash_1.default.concat(megaMenu, second, third);
+                    console.log(`[ ${chalk_1.default.green(megaMenu.length)} top level ] [ ${chalk_1.default.green(second.length)} second level ] [ ${chalk_1.default.green(third.length)} third level ]`);
                     return `[ ${chalk_1.default.green(megaMenu.length)} top level ] [ ${chalk_1.default.green(second.length)} second level ] [ ${chalk_1.default.green(third.length)} third level ]`;
                 });
-                let flattenedCategories = dc_demostore_integration_1.flattenCategories(categories);
+                let flattenedCategories = lodash_1.default.uniqBy(dc_demostore_integration_1.flattenCategories(categories), 'id');
                 let categoryOperation = yield Operation({
                     tag: '🧰  get category',
                     execute: () => __awaiter(void 0, void 0, void 0, function* () { return yield commerceAPI.getCategory(flattenedCategories[0]); })
@@ -125,17 +126,17 @@ exports.handler = middleware_1.contextHandler((context) => __awaiter(void 0, voi
                 });
                 const categoryReadStart = new Date().valueOf();
                 let categoryCount = 0;
-                yield Promise.all(flattenedCategories.map((cat) => __awaiter(void 0, void 0, void 0, function* () {
+                const loadCategory = (cat) => __awaiter(void 0, void 0, void 0, function* () {
                     let category = yield commerceAPI.getCategory(cat);
                     if (category) {
                         cat.products = category.products;
                         allProducts = lodash_1.default.concat(allProducts, cat.products);
                         categoryCount++;
                     }
-                    logger_1.logUpdate(`🧰  got [ ${categoryCount}/${flattenedCategories.length} ] categories and ${chalk_1.default.yellow(allProducts.length)} products`);
+                });
+                yield Promise.all(flattenedCategories.map((cat) => __awaiter(void 0, void 0, void 0, function* () {
+                    yield loadCategory(cat);
                 })));
-                allProducts = lodash_1.default.uniqBy(allProducts, 'id');
-                logger_1.logComplete(`🧰  read ${chalk_1.default.green(flattenedCategories.length)} categories, ${chalk_1.default.yellow(allProducts.length)} products in ${chalk_1.default.cyan(`${new Date().valueOf() - categoryReadStart} ms`)}`);
                 if (showMegaMenu) {
                     console.log(`megaMenu ->`);
                     lodash_1.default.each(megaMenu, tlc => {
@@ -148,6 +149,8 @@ exports.handler = middleware_1.contextHandler((context) => __awaiter(void 0, voi
                         });
                     });
                 }
+                allProducts = lodash_1.default.uniqBy(allProducts, 'id');
+                logger_1.logComplete(`🧰  read ${chalk_1.default.green(categories.length)} categories, ${chalk_1.default.yellow(allProducts.length)} products in ${chalk_1.default.cyan(`${new Date().valueOf() - categoryReadStart} ms`)}`);
                 let randomProduct = getRandom(allProducts);
                 let randomProduct2 = getRandom(allProducts);
                 let productOperation = yield Operation({

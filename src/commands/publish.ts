@@ -1,5 +1,4 @@
 import _ from 'lodash';
-import { AmplienceHelper } from '../common/amplience-helper';
 import { contextHandler } from '../common/middleware';
 import amplienceBuilder from '../common/amplience-builder';
 import { AmplienceContext } from '@lib/handlers/resource-handler';

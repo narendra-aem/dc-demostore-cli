@@ -1,74 +1,74 @@
 import { Hub } from 'dc-management-sdk-js';
 import _, { Dictionary } from 'lodash';
-import { DemoStoreConfiguration, paginator, AlgoliaConfig, getCodecs, AmplienceConfig } from '@amplience/dc-demostore-integration';
+import { DemoStoreConfiguration, paginator, AlgoliaConfig, AmplienceConfig } from '@amplience/dc-demostore-integration';
 import { AmplienceHelper } from './amplience-helper';
 import { ImportContext } from '../handlers/resource-handler';
 
-export interface EnvironmentConfig {
-    name: string
-    url: string
+export type EnvironmentConfig = {
+    name:                   string
+    url:                    string
     dc: {
-        clientId: string
-        clientSecret: string
-        hubId: string
+        clientId:           string
+        clientSecret:       string
+        hubId:              string
     }
     dam: {
-        username: string
-        password: string
+        username:           string
+        password:           string
     }
 }
 
-export interface AmplienceArgs {
-    environment: EnvironmentConfig
+export type AmplienceArgs = {
+    environment:            EnvironmentConfig
     automation: {
-        contentItems: DemoStoreMapping[]
-        workflowStates: DemoStoreMapping[]
+        contentItems:       DemoStoreMapping[]
+        workflowStates:     DemoStoreMapping[]
     }
-    hub: Hub
-    matchingSchema: string[]
-    amplienceHelper: AmplienceHelper
+    hub:                    Hub
+    matchingSchema:         string[]
+    amplienceHelper:        AmplienceHelper
 }
 
-export interface LoggableArgs extends AmplienceArgs {
-    startTime: Date
-    logRequests: boolean
-    tempDir: string
+export type LoggableArgs = AmplienceArgs & {
+    startTime:              Date
+    logRequests:            boolean
+    tempDir:                string
 }
 
-export interface ImportArgs extends LoggableArgs {
-    skipContentImport: boolean
-    automationDir: string
-    latest: boolean
-    branch: string
-    config: DemoStoreConfiguration
+export type ImportArgs = LoggableArgs & {
+    skipContentImport:      boolean
+    automationDir:          string
+    latest:                 boolean
+    branch:                 string
+    config:                 DemoStoreConfiguration
 }
 
-export interface CleanupArgs extends LoggableArgs {
-    skipConfirmation: boolean
-    include: string[]
+export type CleanupArgs = LoggableArgs & {
+    skipConfirmation:       boolean
+    include:                string[]
 }
 
-export interface Mapping {
-    url: string
-    cms?: CMSMapping
-    algolia?: AlgoliaConfig
-    dam: DAMMapping
-    contentMap: Dictionary<string>
+export type Mapping = {
+    url:                    string
+    cms?:                   CMSMapping
+    algolia?:               AlgoliaConfig
+    dam:                    DAMMapping
+    contentMap:             Dictionary<string>
 }
 
-export interface CMSMapping extends AmplienceConfig {
-    repositories: Dictionary<string | undefined>
-    workflowStates: Dictionary<string | undefined>
+export type CMSMapping = AmplienceConfig & {
+    repositories:           Dictionary<string | undefined>
+    workflowStates:         Dictionary<string | undefined>
 }
 
-export interface DAMMapping {
-    mediaEndpoint: string
-    imagesMap: Dictionary<string>
+export type DAMMapping = {
+    mediaEndpoint:          string
+    imagesMap:              Dictionary<string>
 }
 
-export interface DemoStoreMapping {
-    from: string
-    to: string
+export type DemoStoreMapping = {
+    from:                   string
+    to:                     string
 }
 
 export const getMapping = async (context: ImportContext): Promise<Mapping> => {

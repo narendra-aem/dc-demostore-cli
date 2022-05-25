@@ -1,6 +1,6 @@
 import { CleanableResourceHandler, ImportContext } from "./resource-handler"
 import { ContentTypeSchema } from "dc-management-sdk-js"
-import { getCodecs, paginator, getContentTypeSchema } from "@amplience/dc-demostore-integration"
+import { getCodecs, paginator, getContentTypeSchema, CommerceAPI, CodecType } from "@amplience/dc-demostore-integration"
 import _ from 'lodash'
 import chalk from 'chalk'
 import { loadJsonFromDirectory } from "../helpers/importer"
@@ -61,7 +61,7 @@ export class ContentTypeSchemaHandler extends CleanableResourceHandler {
         }
 
         // first we will load the site/integration types (codecs)
-        let codecs = getCodecs()
+        let codecs = getCodecs(CodecType.commerce)
         let codecSchemas = codecs.map(getContentTypeSchema)
         await installSchemas(context, codecSchemas)
 
