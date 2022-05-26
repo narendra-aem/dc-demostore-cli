@@ -40,7 +40,7 @@ exports.handler = middleware_1.contextHandler((context) => __awaiter(void 0, voi
     if (productGridSchema) {
         let jsonBody = JSON.parse(productGridSchema.body || '');
         if ((_b = (_a = jsonBody === null || jsonBody === void 0 ? void 0 : jsonBody.properties) === null || _a === void 0 ? void 0 : _a.category) === null || _b === void 0 ? void 0 : _b.enum) {
-            jsonBody.properties.category.enum = lodash_1.default.map(megaMenu, 'key');
+            jsonBody.properties.category.enum = lodash_1.default.map(megaMenu, 'slug');
         }
         productGridSchema.body = JSON.stringify(jsonBody, undefined, 4);
         yield productGridSchema.related.update(productGridSchema);

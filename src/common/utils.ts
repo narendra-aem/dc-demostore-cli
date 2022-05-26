@@ -60,4 +60,4 @@ export const formatPercentage = (a: any[], b: any[]) => {
     return `[ ${colorFn(`${a.length} (${percentage}%)`)} ]`
 }
 
-export const getRandom = <T>(array: T[]): T => array[Math.floor(Math.random() * array.length)]
+export const getRandom = <T>(array: T[]): T => array[Math.floor(Math.random() * (array.length - 1))]

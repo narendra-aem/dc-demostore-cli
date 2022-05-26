@@ -61,5 +61,5 @@ const formatPercentage = (a, b) => {
     return `[ ${colorFn(`${a.length} (${percentage}%)`)} ]`;
 };
 exports.formatPercentage = formatPercentage;
-const getRandom = (array) => array[Math.floor(Math.random() * array.length)];
+const getRandom = (array) => array[Math.floor(Math.random() * (array.length - 1))];
 exports.getRandom = getRandom;

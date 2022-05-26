@@ -33,7 +33,7 @@ export const handler = contextHandler(async (context: AmplienceContext): Promise
     if (productGridSchema) {
         let jsonBody = JSON.parse(productGridSchema.body || '')
         if (jsonBody?.properties?.category?.enum) {
-            jsonBody.properties.category.enum = _.map(megaMenu, 'key')
+            jsonBody.properties.category.enum = _.map(megaMenu, 'slug')
         }
         productGridSchema.body = JSON.stringify(jsonBody, undefined, 4)
         await productGridSchema.related.update(productGridSchema)
@@ -53,6 +53,18 @@ export const handler = contextHandler(async (context: AmplienceContext): Promise
     })), cat => cat.products.length)
 
     let mostPopulated = _.last(populated)
+
+    // console.log(`most populated category [ ${mostPopulated?.name} ] with ${mostPopulated?.products.length} products`)
+
+    // if (mostPopulated) {
+    //     for (let index = 0; index < 8; index++) {
+    //         let randomProduct = getRandom<Product>(mostPopulated.products)        
+    //         console.log(`product id [ ${randomProduct.id} ]`)
+    //     }
+    // }
+    
+    // process.exit(0)
+
     let contentItems = await context.amplienceHelper.getContentItemsInRepository('content')
     await Promise.all(contentItems.map(async contentItem => {
         // curated product grid
