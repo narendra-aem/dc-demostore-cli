@@ -136,7 +136,6 @@ const AmplienceHelperGenerator = (context) => {
     const getDemoStoreConfig = () => __awaiter(void 0, void 0, void 0, function* () {
         var _a, _b;
         return yield ensureContentItem('config', {
-            environment: context.environment.name,
             url: context.environment.url,
             algolia: {
                 appId: '',

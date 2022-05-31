@@ -123,7 +123,6 @@ const AmplienceHelperGenerator = (context: AmplienceContext): AmplienceHelper =>
     })
 
     const getDemoStoreConfig = async (): Promise<ContentItem> => await ensureContentItem('config', {
-        environment: context.environment.name,
         url: context.environment.url,
         algolia: {
             appId: '',
