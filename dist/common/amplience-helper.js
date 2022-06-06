@@ -31,6 +31,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.schemas = exports.labels = exports.deliveryKeys = void 0;
 const dc_management_sdk_js_1 = require("dc-management-sdk-js");
 const logger_1 = __importStar(require("./logger"));
 const chalk_1 = __importDefault(require("chalk"));
@@ -41,17 +42,17 @@ const fs_extra_1 = __importDefault(require("fs-extra"));
 const utils_1 = require("./utils");
 const dc_demostore_integration_1 = require("@amplience/dc-demostore-integration");
 const dam_service_1 = require("../dam/dam-service");
-const deliveryKeys = {
+exports.deliveryKeys = {
     config: `demostore/config/default`,
     automation: `demostore/automation`,
     rest: `demostore/integration/rest`
 };
-const labels = {
+exports.labels = {
     config: `demostore config`,
     automation: `demostore automation`,
     rest: `generic rest commerce configuration`
 };
-const schemas = {
+exports.schemas = {
     config: `https://demostore.amplience.com/site/demostoreconfig`,
     automation: `https://demostore.amplience.com/site/automation`,
     rest: `https://demostore.amplience.com/site/integration/rest`
@@ -74,17 +75,31 @@ const AmplienceHelperGenerator = (context) => {
             return yield dc_demostore_integration_1.paginator(repo.related.contentItems.list, opts);
         }))));
     });
+    const timedBlock = (tag, fn) => __awaiter(void 0, void 0, void 0, function* () {
+        const start = new Date().valueOf();
+        const result = yield fn();
+        const duration = new Date().valueOf() - start;
+        logger_1.default.info(`${tag} completed in ${duration}ms`);
+        return result;
+    });
     const login = () => __awaiter(void 0, void 0, void 0, function* () {
-        let client = new dc_management_sdk_js_1.DynamicContent({
-            client_id: context.environment.dc.clientId,
-            client_secret: context.environment.dc.clientSecret
-        });
-        let hub = yield client.hubs.get(context.environment.dc.hubId);
-        if (hub) {
-            logger_1.default.info(`connected to hub ${chalk_1.default.bold.cyan(`[ ${hub.name} ]`)}`);
-            return hub;
-        }
-        throw new Error(`hubId not found: ${context.environment.dc.hubId}`);
+        return yield timedBlock('login', () => __awaiter(void 0, void 0, void 0, function* () {
+            try {
+                let client = new dc_management_sdk_js_1.DynamicContent({
+                    client_id: context.environment.dc.clientId,
+                    client_secret: context.environment.dc.clientSecret
+                });
+                let hub = yield client.hubs.get(context.environment.dc.hubId);
+                if (!hub) {
+                    throw new Error(`hubId not found: ${context.environment.dc.hubId}`);
+                }
+                logger_1.default.info(`connected to hub ${chalk_1.default.bold.cyan(`[ ${hub.name} ]`)}`);
+                return hub;
+            }
+            catch (error) {
+                throw new Error(`error while logging in to dynamic content, check your credentials`);
+            }
+        }));
     });
     const deleteFolder = (folder) => __awaiter(void 0, void 0, void 0, function* () { return yield rest.delete(`/folders/${folder.id}`); });
     const get = rest.get;
@@ -121,7 +136,6 @@ const AmplienceHelperGenerator = (context) => {
     const getDemoStoreConfig = () => __awaiter(void 0, void 0, void 0, function* () {
         var _a, _b;
         return yield ensureContentItem('config', {
-            environment: context.environment.name,
             url: context.environment.url,
             algolia: {
                 appId: '',
@@ -132,7 +146,7 @@ const AmplienceHelperGenerator = (context) => {
                     schema: "http://bigcontent.io/cms/schema/v1/core#/definitions/content-reference"
                 },
                 id: (yield getRestConfig()).id,
-                contentType: schemas.rest
+                contentType: exports.schemas.rest
             },
             cms: {
                 hub: context.environment.name,
@@ -156,15 +170,15 @@ const AmplienceHelperGenerator = (context) => {
         }
     });
     const ensureContentItem = (key, body) => __awaiter(void 0, void 0, void 0, function* () {
-        let item = yield getContentItem(deliveryKeys[key]);
+        let item = yield getContentItem(exports.deliveryKeys[key]);
         if (!item) {
-            logger_1.default.info(`${deliveryKeys[key]} not found, creating...`);
+            logger_1.default.info(`${exports.deliveryKeys[key]} not found, creating...`);
             item = new dc_management_sdk_js_1.ContentItem();
-            item.label = labels[key];
+            item.label = exports.labels[key];
             item.body = Object.assign({ _meta: {
-                    name: labels[key],
-                    schema: schemas[key],
-                    deliveryKey: deliveryKeys[key]
+                    name: exports.labels[key],
+                    schema: exports.schemas[key],
+                    deliveryKey: exports.deliveryKeys[key]
                 } }, body);
             item = yield (yield getContentRepository('sitestructure')).related.contentItems.create(item);
             yield publishContentItem(item);

@@ -35,7 +35,6 @@ exports.handler = exports.builder = exports.desc = exports.command = void 0;
 const chalk_1 = __importDefault(require("chalk"));
 const logger_1 = __importStar(require("../common/logger"));
 const content_type_schema_handler_1 = require("../handlers/content-type-schema-handler");
-const content_type_handler_1 = require("../handlers/content-type-handler");
 const content_item_handler_1 = require("../handlers/content-item-handler");
 const extension_handler_1 = require("../handlers/extension-handler");
 const search_index_handler_1 = require("../handlers/search-index-handler");
@@ -72,9 +71,7 @@ const downloadZip = (branch) => __awaiter(void 0, void 0, void 0, function* () {
             fs_extra_1.default.rmSync(zipFilePath);
             resolve();
         }));
-        response.data.on('error', () => {
-            reject();
-        });
+        response.data.on('error', reject);
     });
 });
 const builder = (yargs) => {
@@ -109,28 +106,31 @@ const builder = (yargs) => {
                 yield downloadZip(context.branch);
             }
         })
-    ]);
+    ])
+        .command("indexes", "Import search indexes", {}, importHandler(new search_index_handler_1.SearchIndexHandler()))
+        .command("extensions", "Import extensions", {}, importHandler(new extension_handler_1.ExtensionHandler()))
+        .command("settings", "Import settings", {}, importHandler(new settings_handler_1.SettingsHandler()))
+        .command("types", "Import content types/schemas", {}, importHandler(new content_type_schema_handler_1.ContentTypeSchemaHandler()));
 };
 exports.builder = builder;
+const importHandler = (handler) => (context) => __awaiter(void 0, void 0, void 0, function* () {
+    context.config = (yield context.amplienceHelper.getDemoStoreConfig()).body;
+    yield import_helper_1.copyTemplateFilesToTempDir(context);
+    yield handler.import(context);
+});
 exports.handler = middleware_1.contextHandler((context) => __awaiter(void 0, void 0, void 0, function* () {
     logger_1.default.info(`${chalk_1.default.green(exports.command)}: ${exports.desc} started at ${chalk_1.default.magentaBright(context.startTime)}`);
     logger_1.logHeadline(`Phase 1: preparation`);
-    yield import_helper_1.copyTemplateFilesToTempDir(context);
-    yield new content_type_schema_handler_1.ContentTypeSchemaHandler().import(context);
-    yield new content_type_handler_1.ContentTypeHandler().import(context);
-    context.config = yield (yield context.amplienceHelper.getDemoStoreConfig()).body;
+    yield importHandler(new content_type_schema_handler_1.ContentTypeSchemaHandler())(context);
+    context.config = (yield context.amplienceHelper.getDemoStoreConfig()).body;
     logger_1.logHeadline(`Phase 2: import/update`);
-    yield import_helper_1.copyTemplateFilesToTempDir(context);
-    yield new settings_handler_1.SettingsHandler().import(context);
-    yield new extension_handler_1.ExtensionHandler().import(context);
-    yield new search_index_handler_1.SearchIndexHandler().import(context);
+    yield importHandler(new settings_handler_1.SettingsHandler())(context);
+    yield importHandler(new extension_handler_1.ExtensionHandler())(context);
+    yield importHandler(new search_index_handler_1.SearchIndexHandler())(context);
     if (!context.skipContentImport) {
-        yield new content_item_handler_1.ContentItemHandler().import(context);
-        logger_1.logHeadline(`Phase 3: update automation`);
-        yield context.amplienceHelper.updateAutomation();
+        logger_1.logHeadline(`Phase 3: content import`);
+        yield importHandler(new content_item_handler_1.ContentItemHandler())(context);
         logger_1.logHeadline(`Phase 4: reentrant import`);
-        yield import_helper_1.copyTemplateFilesToTempDir(context);
-        yield new content_type_schema_handler_1.ContentTypeSchemaHandler().import(context);
-        yield new content_type_handler_1.ContentTypeHandler().import(context);
+        yield importHandler(new content_type_schema_handler_1.ContentTypeSchemaHandler())(context);
     }
 }));

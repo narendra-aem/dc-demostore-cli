@@ -26,8 +26,8 @@ exports.desc = "Update hub retail pointers";
 exports.builder = amplience_builder_1.default;
 exports.handler = middleware_1.contextHandler((context) => __awaiter(void 0, void 0, void 0, function* () {
     var _a, _b;
-    let demoStoreConfig = yield (yield context.amplienceHelper.getDemoStoreConfig()).body;
-    let commerce = yield context.amplienceHelper.getContentItem(demoStoreConfig.commerce.id).body;
+    let demoStoreConfig = (yield context.amplienceHelper.getDemoStoreConfig()).body;
+    let commerce = (yield context.amplienceHelper.getContentItem(demoStoreConfig.commerce.id)).body;
     if (!commerce) {
         throw new Error(`commerce integration not found!`);
     }
@@ -40,7 +40,7 @@ exports.handler = middleware_1.contextHandler((context) => __awaiter(void 0, voi
     if (productGridSchema) {
         let jsonBody = JSON.parse(productGridSchema.body || '');
         if ((_b = (_a = jsonBody === null || jsonBody === void 0 ? void 0 : jsonBody.properties) === null || _a === void 0 ? void 0 : _a.category) === null || _b === void 0 ? void 0 : _b.enum) {
-            jsonBody.properties.category.enum = lodash_1.default.map(megaMenu, 'key');
+            jsonBody.properties.category.enum = lodash_1.default.map(megaMenu, 'slug');
         }
         productGridSchema.body = JSON.stringify(jsonBody, undefined, 4);
         yield productGridSchema.related.update(productGridSchema);

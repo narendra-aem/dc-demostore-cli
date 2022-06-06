@@ -50,7 +50,6 @@ class CLIJob {
     exec() {
         var _a, _b;
         return __awaiter(this, void 0, void 0, function* () {
-            logger_1.default.info(`${chalk_1.default.greenBright(this.cmd)}`);
             let startTime = new Date().valueOf();
             let child = child_process_1.default.exec(this.cmd);
             (_a = child.stdout) === null || _a === void 0 ? void 0 : _a.on('data', (message) => {

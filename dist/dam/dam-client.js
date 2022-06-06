@@ -21,7 +21,12 @@ class DAMClient {
     }
     init(argv) {
         return __awaiter(this, void 0, void 0, function* () {
-            this.accessToken = yield this.getAccessToken(argv.username, argv.password);
+            try {
+                this.accessToken = yield this.getAccessToken(argv.username, argv.password);
+            }
+            catch (error) {
+                throw new Error(`error logging in to content hub, check your credentials`);
+            }
         });
     }
     getAccessToken(username, password) {

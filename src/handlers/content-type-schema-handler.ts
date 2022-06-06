@@ -1,12 +1,13 @@
 import { CleanableResourceHandler, ImportContext } from "./resource-handler"
 import { ContentTypeSchema } from "dc-management-sdk-js"
-import { getCodecs, paginator, getContentTypeSchema } from "@amplience/dc-demostore-integration"
+import { getCodecs, paginator, getContentTypeSchema, CommerceAPI, CodecType } from "@amplience/dc-demostore-integration"
 import _ from 'lodash'
 import chalk from 'chalk'
 import { loadJsonFromDirectory } from "../helpers/importer"
 import { resolveSchemaBody } from "../helpers/schema-helper"
 import fs from 'fs-extra'
 import { logUpdate, logComplete, logSubheading } from '../common/logger'
+import { ContentTypeHandler } from "./content-type-handler"
 
 let archiveCount = 0
 let updateCount = 0
@@ -61,7 +62,7 @@ export class ContentTypeSchemaHandler extends CleanableResourceHandler {
         }
 
         // first we will load the site/integration types (codecs)
-        let codecs = getCodecs()
+        let codecs = getCodecs(CodecType.commerce)
         let codecSchemas = codecs.map(getContentTypeSchema)
         await installSchemas(context, codecSchemas)
 
@@ -96,5 +97,7 @@ export class ContentTypeSchemaHandler extends CleanableResourceHandler {
 
         await installSchemas(context, schemasToInstall)
         logComplete(`${this.getDescription()}: [ ${chalk.green(archiveCount)} unarchived ] [ ${chalk.green(updateCount)} updated ] [ ${chalk.green(createCount)} created ]`)
+ 
+        await new ContentTypeHandler().import(context) 
     }
 }

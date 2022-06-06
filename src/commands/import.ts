@@ -5,25 +5,20 @@ import logger, { logHeadline } from '../common/logger';
 
 import { ContentTypeSchemaHandler } from '../handlers/content-type-schema-handler';
 import { ContentTypeHandler } from '../handlers/content-type-handler';
-import { timed } from "../handlers/typed-result";
 import { ContentItemHandler } from '../handlers/content-item-handler';
 import { ExtensionHandler } from '../handlers/extension-handler';
 import { SearchIndexHandler } from '../handlers/search-index-handler';
 import { SettingsHandler } from '../handlers/settings-handler';
 
-import { AmplienceHelper } from '../common/amplience-helper';
-import { ImportContext } from '../handlers/resource-handler';
+import { Importable, ImportContext, ResourceHandler } from '../handlers/resource-handler';
 import { copyTemplateFilesToTempDir } from '../helpers/import-helper';
 import { contextHandler } from '../common/middleware';
 import amplienceBuilder from '../common/amplience-builder';
-import { WorkflowState } from 'dc-management-sdk-js';
 import fs from 'fs-extra'
 import { CONFIG_PATH } from '../common/environment-manager';
 import axios from 'axios';
 import admZip from 'adm-zip'
 import { sleep } from '../common/utils';
-import { paginator } from '@amplience/dc-demostore-integration';
-import { Mapping } from '../common/types';
 
 export const command = 'import';
 export const desc = "Import hub data";
@@ -64,10 +59,7 @@ const downloadZip = async (branch: string): Promise<void> => {
 
             resolve()
         })
-
-        response.data.on('error', () => {
-            reject()
-        })
+        response.data.on('error', reject)
     })
 }
 
@@ -107,6 +99,16 @@ export const builder = (yargs: Argv): Argv => {
             }
         }
     ])
+    .command("indexes", "Import search indexes", {}, importHandler(new SearchIndexHandler()))
+    .command("extensions", "Import extensions", {}, importHandler(new ExtensionHandler()))
+    .command("settings", "Import settings", {}, importHandler(new SettingsHandler()))
+    .command("types", "Import content types/schemas", {}, importHandler(new ContentTypeSchemaHandler()))
+}
+
+const importHandler = (handler: Importable) => async (context: ImportContext): Promise<void> => {
+    context.config = (await context.amplienceHelper.getDemoStoreConfig()).body
+    await copyTemplateFilesToTempDir(context)
+    await handler.import(context)
 }
 
 export const handler = contextHandler(async (context: ImportContext): Promise<void> => {
@@ -114,44 +116,33 @@ export const handler = contextHandler(async (context: ImportContext): Promise<vo
 
     logHeadline(`Phase 1: preparation`)
 
-    await copyTemplateFilesToTempDir(context)
-    await new ContentTypeSchemaHandler().import(context)
-    await new ContentTypeHandler().import(context)
+    await importHandler(new ContentTypeSchemaHandler())(context)
 
     // this call must be after the schema and type import because it's creating objects if they don't exist
-    context.config = await (await context.amplienceHelper.getDemoStoreConfig()).body
+    context.config = (await context.amplienceHelper.getDemoStoreConfig()).body
 
     logHeadline(`Phase 2: import/update`)
 
-    await copyTemplateFilesToTempDir(context)
-
     // process step 1: npm run automate:settings
-    await new SettingsHandler().import(context)
+    await importHandler(new SettingsHandler())(context)
 
     // process step 4: npm run automate:extensions
-    await new ExtensionHandler().import(context)
+    await importHandler(new ExtensionHandler())(context)
 
     // process step 5: npm run automate:indexes
-    await new SearchIndexHandler().import(context)
+    await importHandler(new SearchIndexHandler())(context)
 
     if (!context.skipContentImport) {
+        logHeadline(`Phase 3: content import`)
+
         // process step 6: npm run automate:content-with-republish
-        await new ContentItemHandler().import(context)
-
-        logHeadline(`Phase 3: update automation`)
-
-        // update the automation content item with any new mapping content generated
-        await context.amplienceHelper.updateAutomation()
+        await importHandler(new ContentItemHandler())(context)
 
         logHeadline(`Phase 4: reentrant import`)
-
-        // recopy template files with new mappings
-        await copyTemplateFilesToTempDir(context)
 
         // reimport content types that have been updated
         // now that we've installed the core content, we need to go through again for content types
         // that point to a specific hierarchy node
-        await new ContentTypeSchemaHandler().import(context)
-        await new ContentTypeHandler().import(context)
+        await importHandler(new ContentTypeSchemaHandler())(context)
     }
 })

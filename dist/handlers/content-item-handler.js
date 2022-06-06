@@ -90,6 +90,7 @@ class ContentItemHandler extends resource_handler_1.ResourceHandler {
             logger_1.logComplete(`${this.getDescription()}: [ ${chalk_1.default.green(createdCount)} created ] [ ${chalk_1.default.blue(updatedCount)} updated ]`);
             yield context.amplienceHelper.publishAll();
             yield context.amplienceHelper.cacheContentMap();
+            yield context.amplienceHelper.updateAutomation();
         });
     }
     shouldCleanUpItem(item, context) {

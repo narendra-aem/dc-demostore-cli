@@ -68,6 +68,9 @@ export class ContentItemHandler extends ResourceHandler implements Cleanable {
 
         // recache
         await context.amplienceHelper.cacheContentMap()
+
+        // update the automation content item with any new mapping content generated
+        await context.amplienceHelper.updateAutomation()
     }
 
     shouldCleanUpItem(item: ContentItem, context: CleanupContext): boolean {

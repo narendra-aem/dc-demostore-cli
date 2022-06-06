@@ -12,20 +12,26 @@ import { OAuthRestClientInterface } from "@amplience/dc-demostore-integration/di
 import { DAMMapping } from "./types"
 import { DAMService } from "../dam/dam-service"
 
+type IntegrationConstants = {
+    config: string
+    automation: string
+    rest: string
+}
+
 // constants
-const deliveryKeys = {
+export const deliveryKeys: IntegrationConstants = {
     config: `demostore/config/default`,
     automation: `demostore/automation`,
     rest: `demostore/integration/rest`
 }
 
-const labels = {
+export const labels: IntegrationConstants = {
     config: `demostore config`,
     automation: `demostore automation`,
     rest: `generic rest commerce configuration`
 }
 
-const schemas = {
+export const schemas: IntegrationConstants = {
     config: `https://demostore.amplience.com/site/demostoreconfig`,
     automation: `https://demostore.amplience.com/site/automation`,
     rest: `https://demostore.amplience.com/site/integration/rest`
@@ -54,20 +60,33 @@ const AmplienceHelperGenerator = (context: AmplienceContext): AmplienceHelper =>
         })))
     }
 
-    const login = async (): Promise<Hub> => {
-        // log in to Dynamic Content
-        let client = new DynamicContent({
-            client_id: context.environment.dc.clientId,
-            client_secret: context.environment.dc.clientSecret
-        })
+    const timedBlock = async (tag: string, fn: () => Promise<any>): Promise<any> => {
+        const start = new Date().valueOf()
+        const result = await fn()
+        const duration = new Date().valueOf() - start
+        logger.info(`${tag} completed in ${duration}ms`)
+        return result
+    }
 
-        let hub: Hub = await client.hubs.get(context.environment.dc.hubId)
-        if (hub) {
+    const login = async (): Promise<Hub> => await timedBlock('login', async () => {
+        try {
+            // log in to Dynamic Content
+            let client = new DynamicContent({
+                client_id: context.environment.dc.clientId,
+                client_secret: context.environment.dc.clientSecret
+            })
+
+            let hub: Hub = await client.hubs.get(context.environment.dc.hubId)
+            if (!hub) {
+                throw new Error(`hubId not found: ${context.environment.dc.hubId}`)
+            }
+
             logger.info(`connected to hub ${chalk.bold.cyan(`[ ${hub.name} ]`)}`)
             return hub
+        } catch (error) {
+            throw new Error(`error while logging in to dynamic content, check your credentials`)
         }
-        throw new Error(`hubId not found: ${context.environment.dc.hubId}`)
-    }
+    })
 
     const deleteFolder = async (folder: Folder) => await rest.delete(`/folders/${folder.id}`)
     const get = rest.get
@@ -104,7 +123,6 @@ const AmplienceHelperGenerator = (context: AmplienceContext): AmplienceHelper =>
     })
 
     const getDemoStoreConfig = async (): Promise<ContentItem> => await ensureContentItem('config', {
-        environment: context.environment.name,
         url: context.environment.url,
         algolia: {
             appId: '',

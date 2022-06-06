@@ -12,10 +12,11 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getRandom = exports.fileIterator = exports.sleep = void 0;
+exports.getRandom = exports.formatPercentage = exports.fileIterator = exports.sleep = void 0;
 const lodash_1 = __importDefault(require("lodash"));
 const fs_extra_1 = __importDefault(require("fs-extra"));
 const handlebars_1 = require("handlebars");
+const chalk_1 = __importDefault(require("chalk"));
 const sleep = (delay) => new Promise((resolve) => setTimeout(resolve, delay));
 exports.sleep = sleep;
 const fileIterator = (dir, mapping) => ({
@@ -48,5 +49,17 @@ const fileIterator = (dir, mapping) => ({
     })
 });
 exports.fileIterator = fileIterator;
-const getRandom = (array) => array[Math.floor(Math.random() * array.length)];
+const formatPercentage = (a, b) => {
+    let percentage = Math.ceil(100.0 * a.length / b.length);
+    let colorFn = chalk_1.default.green;
+    if (percentage > 66) {
+        colorFn = chalk_1.default.red;
+    }
+    else if (percentage > 33) {
+        colorFn = chalk_1.default.yellow;
+    }
+    return `[ ${colorFn(`${a.length} (${percentage}%)`)} ]`;
+};
+exports.formatPercentage = formatPercentage;
+const getRandom = (array) => array[Math.floor(Math.random() * (array.length - 1))];
 exports.getRandom = getRandom;

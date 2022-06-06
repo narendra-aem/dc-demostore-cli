@@ -29,6 +29,10 @@ const configureYargs = (yargInstance) => {
             if ((msg && !err) || isYError(err)) {
                 yargInstance.showHelp('error');
             }
+            else if (err) {
+                logger_1.default.error(chalk_1.default.red(err));
+                process.exit(0);
+            }
         };
         const argv = yargInstance
             .scriptName('demostore')
@@ -42,14 +46,6 @@ const configureYargs = (yargInstance) => {
                 context.startTime = new Date();
                 logger_1.default.info(`run [ ${chalk_1.default.green(context._)} ]: started at ${context.startTime}`);
                 context.environment = yield environment_manager_1.currentEnvironment();
-                const childProcess = require('child_process');
-                if (!childProcess._execSync) {
-                    let _execSync = childProcess.execSync;
-                    childProcess.execSync = function (cmd) {
-                        logger_1.default.info(`${chalk_1.default.greenBright(cmd)}`);
-                        return _execSync.call(this, cmd);
-                    };
-                }
             })])
             .fail(failFn).argv;
         resolve(argv);

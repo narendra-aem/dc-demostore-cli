@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.listEnvironments = exports.createEnvironment = exports.currentEnvironment = exports.useEnvironment = exports.useEnvironmentFromArgs = exports.chooseEnvironment = exports.selectEnvironment = exports.getEnvironment = exports.getEnvironments = exports.deleteEnvironment = exports.addEnvironment = exports.updateEnvironments = exports.CONFIG_PATH = exports.getConfigPath = void 0;
+exports.listEnvironments = exports.createEnvironment = exports.currentEnvironment = exports.useEnvironment = exports.useEnvironmentFromArgs = exports.chooseEnvironment = exports.selectEnvironment = exports.getEnvironment = exports.byName = exports.getEnvironments = exports.deleteEnvironment = exports.addEnvironment = exports.updateEnvironments = exports.CONFIG_PATH = exports.getConfigPath = void 0;
 const path_1 = require("path");
 const fs_extra_1 = require("fs-extra");
 const lodash_1 = __importDefault(require("lodash"));
@@ -54,9 +54,11 @@ const deleteEnvironment = (argv) => __awaiter(void 0, void 0, void 0, function* 
     saveConfig();
 });
 exports.deleteEnvironment = deleteEnvironment;
-const getEnvironments = () => lodash_1.default.map(envConfig.envs, env => (Object.assign(Object.assign({}, env), { active: envConfig.current === env.name })));
+const getEnvironments = () => envConfig.envs.map(env => (Object.assign(Object.assign({}, env), { active: envConfig.current === env.name })));
 exports.getEnvironments = getEnvironments;
-const getEnvironment = (name) => lodash_1.default.find(envConfig.envs, env => name === env.name);
+const byName = (lookup) => (obj) => obj.name === lookup;
+exports.byName = byName;
+const getEnvironment = (name) => envConfig.envs.find(exports.byName(name));
 exports.getEnvironment = getEnvironment;
 const selectEnvironment = (argv) => __awaiter(void 0, void 0, void 0, function* () { return argv.env ? exports.getEnvironment(argv.env) : yield exports.chooseEnvironment(); });
 exports.selectEnvironment = selectEnvironment;
@@ -70,7 +72,7 @@ const chooseEnvironment = (handler) => __awaiter(void 0, void 0, void 0, functio
         multiple: false,
         choices: lodash_1.default.map(envs, 'name')
     })).run();
-    let env = lodash_1.default.find(envs, e => e.name === name);
+    let env = envs.find(exports.byName(name));
     return handler ? yield handler(env) : env;
 });
 exports.chooseEnvironment = chooseEnvironment;
@@ -116,7 +118,7 @@ const createEnvironment = () => __awaiter(void 0, void 0, void 0, function* () {
     try {
         let environments = exports.getEnvironments();
         let name = yield ask(`name this config:`);
-        if (lodash_1.default.find(environments, env => name === env.name)) {
+        if (environments.find(exports.byName(name))) {
             throw new Error(`config already exists: ${name}`);
         }
         sectionHeader(`${appTag} configuration ${deploymentHelpText}`);
@@ -148,7 +150,7 @@ const createEnvironment = () => __awaiter(void 0, void 0, void 0, function* () {
 });
 exports.createEnvironment = createEnvironment;
 const listEnvironments = () => {
-    lodash_1.default.each(exports.getEnvironments(), env => {
+    exports.getEnvironments().forEach(env => {
         let str = `  ${env.name}`;
         if (env.active) {
             str = chalk_1.default.greenBright(`* ${env.name}`);
