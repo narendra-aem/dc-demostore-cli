@@ -86,7 +86,7 @@ class SearchIndexHandler extends resource_handler_1.ResourceHandler {
             else {
                 let testIndexes = fs_extra_1.default.readJsonSync(`${context.tempDir}/content/indexes/test-index.json`);
                 let importIndexes = fs_extra_1.default.readJsonSync(indexesFile);
-                const indexes = testIndexes.concat(importIndexes);
+                const indexes = importIndexes;
                 let publishedIndexes = yield dc_demostore_integration_1.paginator(dc_demostore_integration_1.searchIndexPaginator(hub));
                 let unpublishedIndexes = lodash_1.default.filter(indexes, idx => !lodash_1.default.includes(lodash_1.default.map(publishedIndexes, 'name'), idx.indexDetails.name));
                 let searchIndexCount = 0;
@@ -140,6 +140,7 @@ class SearchIndexHandler extends resource_handler_1.ResourceHandler {
             if (index) {
                 let key = yield index.related.keys.get();
                 if (key && key.applicationId && key.key) {
+                    console.log(`algolia: ${key.applicationId}/${key.key}`);
                     context.config.algolia = {
                         appId: key.applicationId,
                         apiKey: key.key

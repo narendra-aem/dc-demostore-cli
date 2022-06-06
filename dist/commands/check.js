@@ -34,12 +34,10 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.handler = exports.builder = exports.desc = exports.command = void 0;
 const lodash_1 = __importDefault(require("lodash"));
 const middleware_1 = require("../common/middleware");
-const amplience_builder_1 = __importDefault(require("../common/amplience-builder"));
 const dc_demostore_integration_1 = require("@amplience/dc-demostore-integration");
 const logger_1 = __importStar(require("../common/logger"));
 const chalk_1 = __importDefault(require("chalk"));
-const async_1 = __importDefault(require("async"));
-const { MultiSelect } = require('enquirer');
+const { MultiSelect, AutoComplete } = require('enquirer');
 exports.command = 'check';
 exports.desc = "Check integration content quality";
 const formatPercentage = (a, b) => {
@@ -54,7 +52,8 @@ const formatPercentage = (a, b) => {
     return `[ ${colorFn(`${a.length} (${percentage}%)`)} ]`;
 };
 const getRandom = array => array[Math.floor(Math.random() * array.length)];
-const builder = (yargs) => amplience_builder_1.default(yargs).options({
+const builder = (yargs) => yargs
+    .options({
     include: {
         alias: 'i',
         describe: 'types to include',
@@ -69,6 +68,12 @@ const builder = (yargs) => amplience_builder_1.default(yargs).options({
         alias: 'm',
         describe: 'show the mega menu structure',
         type: 'boolean'
+    },
+    key: {
+        alias: 'k',
+        describe: 'provide a delivery key (instead of using default)',
+        type: 'string',
+        required: true
     }
 });
 exports.builder = builder;
@@ -81,118 +86,95 @@ const Operation = operation => {
         })
     };
 };
+const dc_demostore_integration_2 = require("@amplience/dc-demostore-integration");
 exports.handler = middleware_1.contextHandler((context) => __awaiter(void 0, void 0, void 0, function* () {
-    let { hub, showMegaMenu } = context;
-    let siteStructureContentItems = yield context.amplienceHelper.getContentItemsInRepository('sitestructure');
-    let integrationItems = siteStructureContentItems.filter(ci => ci.body._meta.schema.indexOf('/site/integration') > -1);
-    let choices = context.all ? integrationItems.map(i => i.body._meta.schema.split('/').pop()) : context.include;
-    if (lodash_1.default.isEmpty(choices)) {
-        let selected = yield new MultiSelect({
-            message: 'select integrations to test',
-            choices: integrationItems.map(i => ({ name: i.body._meta.name, value: i.body._meta.schema.split('/').pop() })),
-            result(names) { return this.map(names); }
-        }).run();
-        choices = Object.values(selected);
+    let { key, showMegaMenu } = context;
+    let config = yield dc_demostore_integration_2.getContentItemFromConfigLocator(key);
+    if (config._meta.schema === 'https://demostore.amplience.com/site/demostoreconfig') {
+        config = yield dc_demostore_integration_1.getContentItem(key.split(':')[0], { id: config.commerce.id });
     }
-    yield async_1.default.eachSeries(choices, (choice, callback) => __awaiter(void 0, void 0, void 0, function* () {
-        let integrationItems = siteStructureContentItems.filter(ci => ci.body._meta.schema.indexOf(`/site/integration/${choice}`) > -1);
-        if (lodash_1.default.isEmpty(integrationItems)) {
-            callback(new Error(`couldn't find integration for [ ${choice} ]`));
+    let commerceAPI = yield dc_demostore_integration_1.getCommerceCodec(config);
+    let allProducts = [];
+    let megaMenu = [];
+    let categories = [];
+    let megaMenuOperation = yield Operation({
+        tag: '☯️  get megamenu',
+        execute: () => __awaiter(void 0, void 0, void 0, function* () { return yield commerceAPI.getMegaMenu({}); })
+    }).do((mm) => {
+        megaMenu = mm;
+        let second = lodash_1.default.reduce(megaMenu, (sum, n) => { return lodash_1.default.concat(sum, n.children); }, []);
+        let third = lodash_1.default.reduce(second, (sum, n) => { return lodash_1.default.concat(sum, n.children); }, []);
+        categories = lodash_1.default.concat(megaMenu, second, third);
+        console.log(`[ ${chalk_1.default.green(megaMenu.length)} top level ] [ ${chalk_1.default.green(second.length)} second level ] [ ${chalk_1.default.green(third.length)} third level ]`);
+        return `[ ${chalk_1.default.green(megaMenu.length)} top level ] [ ${chalk_1.default.green(second.length)} second level ] [ ${chalk_1.default.green(third.length)} third level ]`;
+    });
+    let flattenedCategories = lodash_1.default.uniqBy(dc_demostore_integration_1.flattenCategories(categories), 'id');
+    let categoryOperation = yield Operation({
+        tag: '🧰  get category',
+        execute: () => __awaiter(void 0, void 0, void 0, function* () { return yield commerceAPI.getCategory(flattenedCategories[0]); })
+    }).do((cat) => {
+        return ` has ${chalk_1.default.green(cat.products.length)} products`;
+    });
+    const categoryReadStart = new Date().valueOf();
+    let categoryCount = 0;
+    const loadCategory = (cat) => __awaiter(void 0, void 0, void 0, function* () {
+        let category = yield commerceAPI.getCategory(cat);
+        if (category) {
+            cat.products = category.products;
+            allProducts = lodash_1.default.concat(allProducts, cat.products);
+            categoryCount++;
         }
-        yield async_1.default.eachSeries(integrationItems, (item, cb) => __awaiter(void 0, void 0, void 0, function* () {
-            try {
-                let config = yield context.amplienceHelper.getContentItem(item.deliveryId);
-                let commerceAPI = yield dc_demostore_integration_1.getCommerceCodec(config.body);
-                let allProducts = [];
-                let megaMenu = [];
-                let categories = [];
-                let megaMenuOperation = yield Operation({
-                    tag: '☯️  get megamenu',
-                    execute: () => __awaiter(void 0, void 0, void 0, function* () { return yield commerceAPI.getMegaMenu({}); })
-                }).do((mm) => {
-                    megaMenu = mm;
-                    let second = lodash_1.default.reduce(megaMenu, (sum, n) => { return lodash_1.default.concat(sum, n.children); }, []);
-                    let third = lodash_1.default.reduce(second, (sum, n) => { return lodash_1.default.concat(sum, n.children); }, []);
-                    categories = lodash_1.default.concat(megaMenu, second, third);
-                    console.log(`[ ${chalk_1.default.green(megaMenu.length)} top level ] [ ${chalk_1.default.green(second.length)} second level ] [ ${chalk_1.default.green(third.length)} third level ]`);
-                    return `[ ${chalk_1.default.green(megaMenu.length)} top level ] [ ${chalk_1.default.green(second.length)} second level ] [ ${chalk_1.default.green(third.length)} third level ]`;
+    });
+    yield Promise.all(flattenedCategories.map((cat) => __awaiter(void 0, void 0, void 0, function* () {
+        yield loadCategory(cat);
+    })));
+    if (showMegaMenu) {
+        console.log(`megaMenu ->`);
+        lodash_1.default.each(megaMenu, tlc => {
+            console.log(`${tlc.name} (${tlc.slug}) -- [ ${tlc.products.length} ]`);
+            lodash_1.default.each(tlc.children, cat => {
+                console.log(`\t${cat.name} (${cat.slug}) -- [ ${cat.products.length} ]`);
+                lodash_1.default.each(cat.children, c => {
+                    console.log(`\t\t${c.name} (${c.slug}) -- [ ${c.products.length} ]`);
                 });
-                let flattenedCategories = lodash_1.default.uniqBy(dc_demostore_integration_1.flattenCategories(categories), 'id');
-                let categoryOperation = yield Operation({
-                    tag: '🧰  get category',
-                    execute: () => __awaiter(void 0, void 0, void 0, function* () { return yield commerceAPI.getCategory(flattenedCategories[0]); })
-                }).do((cat) => {
-                    return ` has ${chalk_1.default.green(cat.products.length)} products`;
-                });
-                const categoryReadStart = new Date().valueOf();
-                let categoryCount = 0;
-                const loadCategory = (cat) => __awaiter(void 0, void 0, void 0, function* () {
-                    let category = yield commerceAPI.getCategory(cat);
-                    if (category) {
-                        cat.products = category.products;
-                        allProducts = lodash_1.default.concat(allProducts, cat.products);
-                        categoryCount++;
-                    }
-                });
-                yield Promise.all(flattenedCategories.map((cat) => __awaiter(void 0, void 0, void 0, function* () {
-                    yield loadCategory(cat);
-                })));
-                if (showMegaMenu) {
-                    console.log(`megaMenu ->`);
-                    lodash_1.default.each(megaMenu, tlc => {
-                        console.log(`${tlc.name} (${tlc.slug}) -- [ ${tlc.products.length} ]`);
-                        lodash_1.default.each(tlc.children, cat => {
-                            console.log(`\t${cat.name} (${cat.slug}) -- [ ${cat.products.length} ]`);
-                            lodash_1.default.each(cat.children, c => {
-                                console.log(`\t\t${c.name} (${c.slug}) -- [ ${c.products.length} ]`);
-                            });
-                        });
-                    });
-                }
-                allProducts = lodash_1.default.uniqBy(allProducts, 'id');
-                logger_1.logComplete(`🧰  read ${chalk_1.default.green(categories.length)} categories, ${chalk_1.default.yellow(allProducts.length)} products in ${chalk_1.default.cyan(`${new Date().valueOf() - categoryReadStart} ms`)}`);
-                let randomProduct = getRandom(allProducts);
-                let randomProduct2 = getRandom(allProducts);
-                let productOperation = yield Operation({
-                    tag: `💰  get product`,
-                    execute: () => __awaiter(void 0, void 0, void 0, function* () { return yield commerceAPI.getProduct(randomProduct); })
-                }).do((product) => {
-                    return `found product [ ${chalk_1.default.yellow(product.name)} : ${chalk_1.default.green(product.variants[0].listPrice)} ]`;
-                });
-                let productIds = [randomProduct, randomProduct2].map(i => i.id);
-                let productsOperation = yield Operation({
-                    tag: '💎  get products',
-                    execute: () => __awaiter(void 0, void 0, void 0, function* () { return yield commerceAPI.getProducts({ productIds: productIds.join(',') }); })
-                }).do((products) => {
-                    return `got [ ${chalk_1.default.green(products.length)} ] products for [ ${chalk_1.default.gray(productIds.length)} ] productIds`;
-                });
-                let customerGroupOperation = yield Operation({
-                    tag: `👨‍👩‍👧‍👦  get customer groups`,
-                    execute: () => __awaiter(void 0, void 0, void 0, function* () { return yield commerceAPI.getCustomerGroups({}); })
-                }).do((customerGroups) => {
-                    return `got [ ${chalk_1.default.green(customerGroups.length)} ]`;
-                });
-                const logOperation = (operation) => {
-                    logger_1.default.info(`[ ${chalk_1.default.blueBright(operation.tag)} ] [ ${chalk_1.default.cyan(operation.duration)} ] ${operation.status}`);
-                };
-                logOperation(megaMenuOperation);
-                logOperation(categoryOperation);
-                logOperation(productOperation);
-                logOperation(productsOperation);
-                logOperation(customerGroupOperation);
-                let noProductCategories = lodash_1.default.filter(flattenedCategories, cat => { var _a; return ((_a = cat.products) === null || _a === void 0 ? void 0 : _a.length) === 0; });
-                logger_1.default.info(`${formatPercentage(noProductCategories, flattenedCategories)} categories with no products`);
-                let noImageProducts = lodash_1.default.filter(allProducts, prod => lodash_1.default.isEmpty(lodash_1.default.flatten(lodash_1.default.map(prod.variants, 'images'))));
-                logger_1.default.info(`${formatPercentage(noImageProducts, allProducts)} products with no image`);
-                let noPriceProducts = lodash_1.default.filter(allProducts, prod => { var _a; return ((_a = prod.variants[0]) === null || _a === void 0 ? void 0 : _a.listPrice) === '--'; });
-                logger_1.default.info(`${formatPercentage(noPriceProducts, allProducts)} products with no price`);
-            }
-            catch (error) {
-                logger_1.default.error(`testing integration for [ ${item.body._meta.schema} ]: ${chalk_1.default.red('failed')}: ${error}`);
-                console.log(error.stack);
-            }
-            cb();
-        }));
-        callback();
-    }));
+            });
+        });
+    }
+    allProducts = lodash_1.default.uniqBy(allProducts, 'id');
+    logger_1.logComplete(`🧰  read ${chalk_1.default.green(categories.length)} categories, ${chalk_1.default.yellow(allProducts.length)} products in ${chalk_1.default.cyan(`${new Date().valueOf() - categoryReadStart} ms`)}`);
+    let randomProduct = getRandom(allProducts);
+    let randomProduct2 = getRandom(allProducts);
+    let productOperation = yield Operation({
+        tag: `💰  get product`,
+        execute: () => __awaiter(void 0, void 0, void 0, function* () { return yield commerceAPI.getProduct(randomProduct); })
+    }).do((product) => {
+        return `found product [ ${chalk_1.default.yellow(product.name)} : ${chalk_1.default.green(product.variants[0].listPrice)} ]`;
+    });
+    let productIds = [randomProduct, randomProduct2].map(i => i.id);
+    let productsOperation = yield Operation({
+        tag: '💎  get products',
+        execute: () => __awaiter(void 0, void 0, void 0, function* () { return yield commerceAPI.getProducts({ productIds: productIds.join(',') }); })
+    }).do((products) => {
+        return `got [ ${chalk_1.default.green(products.length)} ] products for [ ${chalk_1.default.gray(productIds.length)} ] productIds`;
+    });
+    let customerGroupOperation = yield Operation({
+        tag: `👨‍👩‍👧‍👦  get customer groups`,
+        execute: () => __awaiter(void 0, void 0, void 0, function* () { return yield commerceAPI.getCustomerGroups({}); })
+    }).do((customerGroups) => {
+        return `got [ ${chalk_1.default.green(customerGroups.length)} ]`;
+    });
+    const logOperation = (operation) => {
+        logger_1.default.info(`[ ${chalk_1.default.blueBright(operation.tag)} ] [ ${chalk_1.default.cyan(operation.duration)} ] ${operation.status}`);
+    };
+    logOperation(megaMenuOperation);
+    logOperation(categoryOperation);
+    logOperation(productOperation);
+    logOperation(productsOperation);
+    logOperation(customerGroupOperation);
+    let noProductCategories = lodash_1.default.filter(flattenedCategories, cat => { var _a; return ((_a = cat.products) === null || _a === void 0 ? void 0 : _a.length) === 0; });
+    logger_1.default.info(`${formatPercentage(noProductCategories, flattenedCategories)} categories with no products`);
+    let noImageProducts = lodash_1.default.filter(allProducts, prod => lodash_1.default.isEmpty(lodash_1.default.flatten(lodash_1.default.map(prod.variants, 'images'))));
+    logger_1.default.info(`${formatPercentage(noImageProducts, allProducts)} products with no image`);
+    let noPriceProducts = lodash_1.default.filter(allProducts, prod => { var _a; return ((_a = prod.variants[0]) === null || _a === void 0 ? void 0 : _a.listPrice) === '--'; });
+    logger_1.default.info(`${formatPercentage(noPriceProducts, allProducts)} products with no price`);
 }));

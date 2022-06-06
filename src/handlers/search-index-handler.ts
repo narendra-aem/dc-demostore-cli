@@ -56,7 +56,8 @@ export class SearchIndexHandler extends ResourceHandler implements Cleanable {
             let testIndexes = fs.readJsonSync(`${context.tempDir}/content/indexes/test-index.json`)
             let importIndexes = fs.readJsonSync(indexesFile)
     
-            const indexes = testIndexes.concat(importIndexes)
+            // const indexes = testIndexes.concat(importIndexes)
+            const indexes = importIndexes
     
             let publishedIndexes = await paginator(searchIndexPaginator(hub))
             let unpublishedIndexes = _.filter(indexes, idx => !_.includes(_.map(publishedIndexes, 'name'), idx.indexDetails.name))
@@ -134,6 +135,7 @@ export class SearchIndexHandler extends ResourceHandler implements Cleanable {
         if (index) {
             let key = await index!.related.keys.get()
             if (key && key.applicationId && key.key) {
+                console.log(`algolia: ${key.applicationId}/${key.key}`)
                 context.config.algolia = {
                     appId: key.applicationId,
                     apiKey: key.key

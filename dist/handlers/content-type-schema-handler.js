@@ -22,6 +22,7 @@ const importer_1 = require("../helpers/importer");
 const schema_helper_1 = require("../helpers/schema-helper");
 const fs_extra_1 = __importDefault(require("fs-extra"));
 const logger_1 = require("../common/logger");
+const content_type_handler_1 = require("./content-type-handler");
 let archiveCount = 0;
 let updateCount = 0;
 let createCount = 0;
@@ -98,6 +99,7 @@ class ContentTypeSchemaHandler extends resource_handler_1.CleanableResourceHandl
             }
             yield installSchemas(context, schemasToInstall);
             logger_1.logComplete(`${this.getDescription()}: [ ${chalk_1.default.green(archiveCount)} unarchived ] [ ${chalk_1.default.green(updateCount)} updated ] [ ${chalk_1.default.green(createCount)} created ]`);
+            yield new content_type_handler_1.ContentTypeHandler().import(context);
         });
     }
 }

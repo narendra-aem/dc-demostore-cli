@@ -7,6 +7,7 @@ import { loadJsonFromDirectory } from "../helpers/importer"
 import { resolveSchemaBody } from "../helpers/schema-helper"
 import fs from 'fs-extra'
 import { logUpdate, logComplete, logSubheading } from '../common/logger'
+import { ContentTypeHandler } from "./content-type-handler"
 
 let archiveCount = 0
 let updateCount = 0
@@ -96,5 +97,7 @@ export class ContentTypeSchemaHandler extends CleanableResourceHandler {
 
         await installSchemas(context, schemasToInstall)
         logComplete(`${this.getDescription()}: [ ${chalk.green(archiveCount)} unarchived ] [ ${chalk.green(updateCount)} updated ] [ ${chalk.green(createCount)} created ]`)
+ 
+        await new ContentTypeHandler().import(context) 
     }
 }
