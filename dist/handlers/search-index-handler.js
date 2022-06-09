@@ -140,7 +140,6 @@ class SearchIndexHandler extends resource_handler_1.ResourceHandler {
             if (index) {
                 let key = yield index.related.keys.get();
                 if (key && key.applicationId && key.key) {
-                    console.log(`algolia: ${key.applicationId}/${key.key}`);
                     context.config.algolia = {
                         appId: key.applicationId,
                         apiKey: key.key

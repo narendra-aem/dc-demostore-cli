@@ -121,8 +121,8 @@ const importHandler = (handler) => (context) => __awaiter(void 0, void 0, void 0
 exports.handler = middleware_1.contextHandler((context) => __awaiter(void 0, void 0, void 0, function* () {
     logger_1.default.info(`${chalk_1.default.green(exports.command)}: ${exports.desc} started at ${chalk_1.default.magentaBright(context.startTime)}`);
     logger_1.logHeadline(`Phase 1: preparation`);
-    yield importHandler(new content_type_schema_handler_1.ContentTypeSchemaHandler())(context);
-    context.config = (yield context.amplienceHelper.getDemoStoreConfig()).body;
+    yield import_helper_1.copyTemplateFilesToTempDir(context);
+    yield new content_type_schema_handler_1.ContentTypeSchemaHandler().import(context);
     logger_1.logHeadline(`Phase 2: import/update`);
     yield importHandler(new settings_handler_1.SettingsHandler())(context);
     yield importHandler(new extension_handler_1.ExtensionHandler())(context);
