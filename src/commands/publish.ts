@@ -1,7 +1,7 @@
 import _ from 'lodash';
 import { contextHandler } from '../common/middleware';
 import amplienceBuilder from '../common/amplience-builder';
-import { AmplienceContext } from '@lib/handlers/resource-handler';
+import { AmplienceContext } from '../handlers/resource-handler';
 
 export const command = 'publish';
 export const desc = "Publish unpublished content items";
