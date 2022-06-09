@@ -135,7 +135,6 @@ export class SearchIndexHandler extends ResourceHandler implements Cleanable {
         if (index) {
             let key = await index!.related.keys.get()
             if (key && key.applicationId && key.key) {
-                console.log(`algolia: ${key.applicationId}/${key.key}`)
                 context.config.algolia = {
                     appId: key.applicationId,
                     apiKey: key.key

@@ -116,10 +116,8 @@ export const handler = contextHandler(async (context: ImportContext): Promise<vo
 
     logHeadline(`Phase 1: preparation`)
 
-    await importHandler(new ContentTypeSchemaHandler())(context)
-
-    // this call must be after the schema and type import because it's creating objects if they don't exist
-    context.config = (await context.amplienceHelper.getDemoStoreConfig()).body
+    await copyTemplateFilesToTempDir(context)
+    await new ContentTypeSchemaHandler().import(context)
 
     logHeadline(`Phase 2: import/update`)
 
