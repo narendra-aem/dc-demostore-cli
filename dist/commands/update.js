@@ -24,18 +24,18 @@ const chalk_1 = __importDefault(require("chalk"));
 exports.command = 'update';
 exports.desc = "Update hub retail pointers";
 exports.builder = amplience_builder_1.default;
-exports.handler = middleware_1.contextHandler((context) => __awaiter(void 0, void 0, void 0, function* () {
+exports.handler = (0, middleware_1.contextHandler)((context) => __awaiter(void 0, void 0, void 0, function* () {
     var _a, _b;
     let demoStoreConfig = (yield context.amplienceHelper.getDemoStoreConfig()).body;
     let commerce = (yield context.amplienceHelper.getContentItem(demoStoreConfig.commerce.id)).body;
     if (!commerce) {
         throw new Error(`commerce integration not found!`);
     }
-    let commerceAPI = yield dc_demostore_integration_1.getCommerceAPI(commerce);
+    let commerceAPI = yield (0, dc_demostore_integration_1.getCommerceAPI)(commerce);
     let megaMenu = yield commerceAPI.getMegaMenu({});
     let { hub } = context;
-    let contentTypeSchemas = yield dc_demostore_integration_2.paginator(hub.related.contentTypeSchema.list);
-    let contentTypes = yield dc_demostore_integration_2.paginator(hub.related.contentTypes.list);
+    let contentTypeSchemas = yield (0, dc_demostore_integration_2.paginator)(hub.related.contentTypeSchema.list);
+    let contentTypes = yield (0, dc_demostore_integration_2.paginator)(hub.related.contentTypes.list);
     let productGridSchema = contentTypeSchemas.find(s => s.schemaId === 'https://demostore.amplience.com/content/product-grid');
     if (productGridSchema) {
         let jsonBody = JSON.parse(productGridSchema.body || '');
@@ -63,7 +63,7 @@ exports.handler = middleware_1.contextHandler((context) => __awaiter(void 0, voi
             contentItem.body.products = yield Promise.all(contentItem.body.products.map((productId) => __awaiter(void 0, void 0, void 0, function* () {
                 let product = yield commerceAPI.getProduct({ id: productId });
                 if (!product && mostPopulated) {
-                    let randomProduct = utils_1.getRandom(mostPopulated.products);
+                    let randomProduct = (0, utils_1.getRandom)(mostPopulated.products);
                     logger_1.default.info(`mapped product [ ${chalk_1.default.gray(productId)} ] to [ ${chalk_1.default.green(randomProduct.name)} ]`);
                     productId = randomProduct.id;
                 }

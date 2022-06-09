@@ -15,8 +15,8 @@ const fs_1 = require("fs");
 const path_1 = require("path");
 function ensureDirectoryExists(dir) {
     return __awaiter(this, void 0, void 0, function* () {
-        if (yield util_1.promisify(fs_1.exists)(dir)) {
-            const dirStat = yield util_1.promisify(fs_1.lstat)(dir);
+        if (yield (0, util_1.promisify)(fs_1.exists)(dir)) {
+            const dirStat = yield (0, util_1.promisify)(fs_1.lstat)(dir);
             if (!dirStat || !dirStat.isDirectory()) {
                 throw new Error(`"${dir}" already exists and is not a directory.`);
             }
@@ -30,10 +30,10 @@ function ensureDirectoryExists(dir) {
             }
             if (dir.length > 0) {
                 try {
-                    yield util_1.promisify(fs_1.mkdir)(dir);
+                    yield (0, util_1.promisify)(fs_1.mkdir)(dir);
                 }
                 catch (e) {
-                    if (yield util_1.promisify(fs_1.exists)(dir)) {
+                    if (yield (0, util_1.promisify)(fs_1.exists)(dir)) {
                         return;
                     }
                     throw new Error(`Unable to create directory: "${dir}".`);

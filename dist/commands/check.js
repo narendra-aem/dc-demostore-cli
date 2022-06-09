@@ -1,7 +1,11 @@
 "use strict";
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
 }) : (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     o[k2] = m[k];
@@ -87,13 +91,13 @@ const Operation = operation => {
     };
 };
 const dc_demostore_integration_2 = require("@amplience/dc-demostore-integration");
-exports.handler = middleware_1.contextHandler((context) => __awaiter(void 0, void 0, void 0, function* () {
+exports.handler = (0, middleware_1.contextHandler)((context) => __awaiter(void 0, void 0, void 0, function* () {
     let { key, showMegaMenu } = context;
-    let config = yield dc_demostore_integration_2.getContentItemFromConfigLocator(key);
+    let config = yield (0, dc_demostore_integration_2.getContentItemFromConfigLocator)(key);
     if (config._meta.schema === 'https://demostore.amplience.com/site/demostoreconfig') {
-        config = yield dc_demostore_integration_1.getContentItem(key.split(':')[0], { id: config.commerce.id });
+        config = yield (0, dc_demostore_integration_1.getContentItem)(key.split(':')[0], { id: config.commerce.id });
     }
-    let commerceAPI = yield dc_demostore_integration_1.getCommerceCodec(config);
+    let commerceAPI = yield (0, dc_demostore_integration_1.getCommerceCodec)(config);
     let allProducts = [];
     let megaMenu = [];
     let categories = [];
@@ -108,7 +112,7 @@ exports.handler = middleware_1.contextHandler((context) => __awaiter(void 0, voi
         console.log(`[ ${chalk_1.default.green(megaMenu.length)} top level ] [ ${chalk_1.default.green(second.length)} second level ] [ ${chalk_1.default.green(third.length)} third level ]`);
         return `[ ${chalk_1.default.green(megaMenu.length)} top level ] [ ${chalk_1.default.green(second.length)} second level ] [ ${chalk_1.default.green(third.length)} third level ]`;
     });
-    let flattenedCategories = lodash_1.default.uniqBy(dc_demostore_integration_1.flattenCategories(categories), 'id');
+    let flattenedCategories = lodash_1.default.uniqBy((0, dc_demostore_integration_1.flattenCategories)(categories), 'id');
     let categoryOperation = yield Operation({
         tag: '🧰  get category',
         execute: () => __awaiter(void 0, void 0, void 0, function* () { return yield commerceAPI.getCategory(flattenedCategories[0]); })
@@ -141,7 +145,7 @@ exports.handler = middleware_1.contextHandler((context) => __awaiter(void 0, voi
         });
     }
     allProducts = lodash_1.default.uniqBy(allProducts, 'id');
-    logger_1.logComplete(`🧰  read ${chalk_1.default.green(categories.length)} categories, ${chalk_1.default.yellow(allProducts.length)} products in ${chalk_1.default.cyan(`${new Date().valueOf() - categoryReadStart} ms`)}`);
+    (0, logger_1.logComplete)(`🧰  read ${chalk_1.default.green(categories.length)} categories, ${chalk_1.default.yellow(allProducts.length)} products in ${chalk_1.default.cyan(`${new Date().valueOf() - categoryReadStart} ms`)}`);
     let randomProduct = getRandom(allProducts);
     let randomProduct2 = getRandom(allProducts);
     let productOperation = yield Operation({

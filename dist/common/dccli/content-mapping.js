@@ -43,17 +43,17 @@ class ContentMapping {
                 workflowStates: Array.from(this.workflowStates)
             };
             const text = JSON.stringify(obj);
-            const dir = path_1.dirname(filename);
-            if (!(yield util_1.promisify(fs_1.exists)(dir))) {
-                yield util_1.promisify(fs_1.mkdir)(dir);
+            const dir = (0, path_1.dirname)(filename);
+            if (!(yield (0, util_1.promisify)(fs_1.exists)(dir))) {
+                yield (0, util_1.promisify)(fs_1.mkdir)(dir);
             }
-            yield util_1.promisify(fs_1.writeFile)(filename, text, { encoding: 'utf8' });
+            yield (0, util_1.promisify)(fs_1.writeFile)(filename, text, { encoding: 'utf8' });
         });
     }
     load(filename) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
-                const text = yield util_1.promisify(fs_1.readFile)(filename, { encoding: 'utf8' });
+                const text = yield (0, util_1.promisify)(fs_1.readFile)(filename, { encoding: 'utf8' });
                 const obj = JSON.parse(text);
                 this.contentItems = new Map(obj.contentItems);
                 this.workflowStates = new Map(obj.workflowStates);

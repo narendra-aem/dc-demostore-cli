@@ -11,11 +11,9 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.timed = void 0;
 const timed = (tag, block) => __awaiter(void 0, void 0, void 0, function* () {
-    console.log(`timed start: ${tag}`);
     const start = new Date().valueOf();
     let result = yield block();
     let duration = new Date().valueOf() - start;
-    console.log(`timed end: ${tag} ${duration}ms`);
     return { tag, duration, result };
 });
 exports.timed = timed;

@@ -36,7 +36,7 @@ class DAMClient {
                 username,
                 password
             };
-            const response = yield isomorphic_unfetch_1.default(authUrlFinal, {
+            const response = yield (0, isomorphic_unfetch_1.default)(authUrlFinal, {
                 method: 'POST',
                 body: JSON.stringify(payload),
                 headers: { 'Content-Type': 'application/json' }
@@ -49,7 +49,7 @@ class DAMClient {
         return __awaiter(this, void 0, void 0, function* () {
             let resource = {};
             if (this.accessToken) {
-                const response = yield isomorphic_unfetch_1.default(`${this.apiUrl}${endpointUri}`, {
+                const response = yield (0, isomorphic_unfetch_1.default)(`${this.apiUrl}${endpointUri}`, {
                     method: 'GET',
                     headers: { 'X-Amp-Auth': this.accessToken }
                 });
@@ -66,7 +66,7 @@ class DAMClient {
             let resourcesList = [];
             if (this.accessToken) {
                 const additionalParamsSeparator = endpointUri.indexOf('?') > 0 ? '&' : '?';
-                const response = yield isomorphic_unfetch_1.default(`${this.apiUrl}${endpointUri}${additionalParamsSeparator}n=${this.PAGE_SIZE}`, {
+                const response = yield (0, isomorphic_unfetch_1.default)(`${this.apiUrl}${endpointUri}${additionalParamsSeparator}n=${this.PAGE_SIZE}`, {
                     method: 'GET',
                     headers: { 'X-Amp-Auth': this.accessToken }
                 });
@@ -85,7 +85,7 @@ class DAMClient {
                     while (pageNumber < totalPages - 2) {
                         pageNumber++;
                         const resourcesUrl = `${this.apiUrl}${endpointUri}${additionalParamsSeparator}n=${this.PAGE_SIZE}&s=${pageNumber * this.PAGE_SIZE}`;
-                        const response = yield isomorphic_unfetch_1.default(resourcesUrl, {
+                        const response = yield (0, isomorphic_unfetch_1.default)(resourcesUrl, {
                             method: 'GET',
                             headers: { 'X-Amp-Auth': this.accessToken }
                         });
@@ -104,7 +104,7 @@ class DAMClient {
         return __awaiter(this, void 0, void 0, function* () {
             let finalResourceId = '';
             if (this.accessToken) {
-                const response = yield isomorphic_unfetch_1.default(`${this.apiUrl}${endpointUri}`, {
+                const response = yield (0, isomorphic_unfetch_1.default)(`${this.apiUrl}${endpointUri}`, {
                     method: 'DELETE',
                     headers: { 'X-Amp-Auth': this.accessToken }
                 });
@@ -119,7 +119,7 @@ class DAMClient {
         return __awaiter(this, void 0, void 0, function* () {
             let resource = {};
             if (this.accessToken) {
-                const response = yield isomorphic_unfetch_1.default(`${this.apiUrl}${endpointUri}`, {
+                const response = yield (0, isomorphic_unfetch_1.default)(`${this.apiUrl}${endpointUri}`, {
                     method: 'PUT',
                     headers: {
                         'X-Amp-Auth': this.accessToken,
@@ -138,7 +138,7 @@ class DAMClient {
         return __awaiter(this, void 0, void 0, function* () {
             let updatedResourceId = '';
             if (this.accessToken) {
-                const response = yield isomorphic_unfetch_1.default(`${this.apiUrl}${endpointUri}`, {
+                const response = yield (0, isomorphic_unfetch_1.default)(`${this.apiUrl}${endpointUri}`, {
                     method: 'PUT',
                     headers: {
                         'X-Amp-Auth': this.accessToken,
@@ -156,7 +156,7 @@ class DAMClient {
     publishResources(endpointUri, data) {
         return __awaiter(this, void 0, void 0, function* () {
             if (this.accessToken) {
-                const response = yield isomorphic_unfetch_1.default(`${this.apiUrl}${endpointUri}`, {
+                const response = yield (0, isomorphic_unfetch_1.default)(`${this.apiUrl}${endpointUri}`, {
                     method: 'POST',
                     headers: { 'X-Amp-Auth': this.accessToken },
                     body: JSON.stringify(data)

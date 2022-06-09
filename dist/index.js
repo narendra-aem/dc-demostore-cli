@@ -5,4 +5,4 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const cli_1 = __importDefault(require("./cli"));
-cli_1.default();
+(0, cli_1.default)();

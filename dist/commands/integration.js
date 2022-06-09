@@ -1,7 +1,11 @@
 "use strict";
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
 }) : (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     o[k2] = m[k];
@@ -73,7 +77,7 @@ const Operation = operation => {
 const checkCommerceIntegration = (item, context) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         let config = yield context.amplienceHelper.getContentItem(item.deliveryId);
-        let commerceAPI = yield dc_demostore_integration_1.getCommerceCodec(config.body);
+        let commerceAPI = yield (0, dc_demostore_integration_1.getCommerceCodec)(config.body);
         let allProducts = [];
         let megaMenu = [];
         let categories = [];
@@ -87,7 +91,7 @@ const checkCommerceIntegration = (item, context) => __awaiter(void 0, void 0, vo
             categories = lodash_1.default.concat(megaMenu, second, third);
             return `[ ${chalk_1.default.green(megaMenu.length)} top level ] [ ${chalk_1.default.green(second.length)} second level ] [ ${chalk_1.default.green(third.length)} third level ]`;
         });
-        let flattenedCategories = dc_demostore_integration_1.flattenCategories(categories);
+        let flattenedCategories = (0, dc_demostore_integration_1.flattenCategories)(categories);
         let categoryOperation = yield Operation({
             tag: '🧰  get category',
             execute: () => __awaiter(void 0, void 0, void 0, function* () { return yield commerceAPI.getCategory(flattenedCategories[0]); })
@@ -103,10 +107,10 @@ const checkCommerceIntegration = (item, context) => __awaiter(void 0, void 0, vo
                 allProducts = lodash_1.default.concat(allProducts, cat.products);
                 categoryCount++;
             }
-            logger_1.logUpdate(`🧰  got [ ${categoryCount}/${flattenedCategories.length} ] categories and ${chalk_1.default.yellow(allProducts.length)} products`);
+            (0, logger_1.logUpdate)(`🧰  got [ ${categoryCount}/${flattenedCategories.length} ] categories and ${chalk_1.default.yellow(allProducts.length)} products`);
         })));
         allProducts = lodash_1.default.uniqBy(allProducts, 'id');
-        logger_1.logComplete(`🧰  read ${chalk_1.default.green(flattenedCategories.length)} categories, ${chalk_1.default.yellow(allProducts.length)} products in ${chalk_1.default.cyan(`${new Date().valueOf() - categoryReadStart} ms`)}`);
+        (0, logger_1.logComplete)(`🧰  read ${chalk_1.default.green(flattenedCategories.length)} categories, ${chalk_1.default.yellow(allProducts.length)} products in ${chalk_1.default.cyan(`${new Date().valueOf() - categoryReadStart} ms`)}`);
         if (context.showMegaMenu) {
             console.log(`megaMenu ->`);
             lodash_1.default.each(megaMenu, tlc => {
@@ -119,8 +123,8 @@ const checkCommerceIntegration = (item, context) => __awaiter(void 0, void 0, vo
                 });
             });
         }
-        let randomProduct = utils_1.getRandom(allProducts);
-        let randomProduct2 = utils_1.getRandom(allProducts);
+        let randomProduct = (0, utils_1.getRandom)(allProducts);
+        let randomProduct2 = (0, utils_1.getRandom)(allProducts);
         let productOperation = yield Operation({
             tag: `💰  get product`,
             execute: () => __awaiter(void 0, void 0, void 0, function* () { return yield commerceAPI.getProduct(randomProduct); })
@@ -149,11 +153,11 @@ const checkCommerceIntegration = (item, context) => __awaiter(void 0, void 0, vo
         logOperation(productsOperation);
         logOperation(customerGroupOperation);
         let noProductCategories = lodash_1.default.filter(flattenedCategories, cat => { var _a; return ((_a = cat.products) === null || _a === void 0 ? void 0 : _a.length) === 0; });
-        logger_1.default.info(`${utils_1.formatPercentage(noProductCategories, flattenedCategories)} categories with no products`);
+        logger_1.default.info(`${(0, utils_1.formatPercentage)(noProductCategories, flattenedCategories)} categories with no products`);
         let noImageProducts = lodash_1.default.filter(allProducts, prod => lodash_1.default.isEmpty(lodash_1.default.flatten(lodash_1.default.map(prod.variants, 'images'))));
-        logger_1.default.info(`${utils_1.formatPercentage(noImageProducts, allProducts)} products with no image`);
+        logger_1.default.info(`${(0, utils_1.formatPercentage)(noImageProducts, allProducts)} products with no image`);
         let noPriceProducts = lodash_1.default.filter(allProducts, prod => { var _a; return ((_a = prod.variants[0]) === null || _a === void 0 ? void 0 : _a.listPrice) === '--'; });
-        logger_1.default.info(`${utils_1.formatPercentage(noPriceProducts, allProducts)} products with no price`);
+        logger_1.default.info(`${(0, utils_1.formatPercentage)(noPriceProducts, allProducts)} products with no price`);
     }
     catch (error) {
         logger_1.default.error(`testing integration for [ ${item.body._meta.schema} ]: ${chalk_1.default.red('failed')}: ${error}`);
@@ -167,7 +171,7 @@ const checkIntegration = (context) => __awaiter(void 0, void 0, void 0, function
         yield checkCommerceIntegration(item, context);
     }
 });
-const builder = (yargs) => amplience_builder_1.default(yargs)
+const builder = (yargs) => (0, amplience_builder_1.default)(yargs)
     .demandCommand()
     .options({
     showMegaMenu: {

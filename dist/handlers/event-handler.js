@@ -27,9 +27,9 @@ class EventHandler extends resource_handler_1.ResourceHandler {
     }
     cleanup(context) {
         return __awaiter(this, void 0, void 0, function* () {
-            let events = yield dc_demostore_integration_1.paginator(context.hub.related.events.list, { status: 'ACTIVE' });
+            let events = yield (0, dc_demostore_integration_1.paginator)(context.hub.related.events.list, { status: 'ACTIVE' });
             yield Promise.all(events.map((event) => __awaiter(this, void 0, void 0, function* () {
-                let editions = yield dc_demostore_integration_1.paginator(event.related.editions.list, { status: 'ACTIVE' });
+                let editions = yield (0, dc_demostore_integration_1.paginator)(event.related.editions.list, { status: 'ACTIVE' });
                 let publishedEditions = lodash_1.default.filter(editions, e => e.publishingStatus === dc_management_sdk_js_1.PublishingStatus.PUBLISHED);
                 yield Promise.all(editions.map((edition) => __awaiter(this, void 0, void 0, function* () {
                     if (edition.publishingStatus !== dc_management_sdk_js_1.PublishingStatus.PUBLISHED) {

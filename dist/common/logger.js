@@ -1,7 +1,11 @@
 "use strict";
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
 }) : (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     o[k2] = m[k];
@@ -27,7 +31,7 @@ const winston_1 = __importStar(require("winston"));
 const chalk_1 = __importDefault(require("chalk"));
 const transports_1 = require("winston/lib/winston/transports");
 const decolorizeString = (str) => str.replace(/[\u001b\u009b][[()#;?]*(?:[0-9]{1,4}(?:;[0-9]{0,4})*)?[0-9A-ORZcf-nqry=><]/g, '');
-const decolorize = winston_1.format((info, opts) => (Object.assign(Object.assign({}, info), { message: info.message && decolorizeString(info.message) })));
+const decolorize = (0, winston_1.format)((info, opts) => (Object.assign(Object.assign({}, info), { message: info.message && decolorizeString(info.message) })));
 let _log = transports_1.Console.prototype.log;
 transports_1.Console.prototype.log = function (info, callback) {
     if (process.env.NODE_ENV !== 'production') {

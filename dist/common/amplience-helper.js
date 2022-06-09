@@ -1,7 +1,11 @@
 "use strict";
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
 }) : (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     o[k2] = m[k];
@@ -62,7 +66,7 @@ const restMap = {};
 const damServiceMap = {};
 let contentMap = {};
 const AmplienceHelperGenerator = (context) => {
-    const rest = restMap[context.environment.dc.clientId] = restMap[context.environment.dc.clientId] || dc_demostore_integration_1.OAuthRestClient({
+    const rest = restMap[context.environment.dc.clientId] = restMap[context.environment.dc.clientId] || (0, dc_demostore_integration_1.OAuthRestClient)({
         api_url: `https://api.amplience.net/v2/content`,
         auth_url: `https://auth.amplience.net/oauth/token?client_id=${context.environment.dc.clientId}&client_secret=${context.environment.dc.clientSecret}&grant_type=client_credentials`
     }, {}, {
@@ -71,8 +75,8 @@ const AmplienceHelperGenerator = (context) => {
         }
     });
     const getContentItems = (hub, opts) => __awaiter(void 0, void 0, void 0, function* () {
-        return lodash_1.default.flatMap(yield Promise.all((yield dc_demostore_integration_1.paginator(hub.related.contentRepositories.list)).map((repo) => __awaiter(void 0, void 0, void 0, function* () {
-            return yield dc_demostore_integration_1.paginator(repo.related.contentItems.list, opts);
+        return lodash_1.default.flatMap(yield Promise.all((yield (0, dc_demostore_integration_1.paginator)(hub.related.contentRepositories.list)).map((repo) => __awaiter(void 0, void 0, void 0, function* () {
+            return yield (0, dc_demostore_integration_1.paginator)(repo.related.contentItems.list, opts);
         }))));
     });
     const timedBlock = (tag, fn) => __awaiter(void 0, void 0, void 0, function* () {
@@ -186,7 +190,7 @@ const AmplienceHelperGenerator = (context) => {
         return item;
     });
     const getContentRepository = (key) => __awaiter(void 0, void 0, void 0, function* () {
-        let repositories = yield dc_demostore_integration_1.paginator(context.hub.related.contentRepositories.list);
+        let repositories = yield (0, dc_demostore_integration_1.paginator)(context.hub.related.contentRepositories.list);
         let repo = repositories.find(repo => repo.name === key);
         if (!repo) {
             throw new Error(`repository [ ${key} ] not found`);
@@ -194,7 +198,7 @@ const AmplienceHelperGenerator = (context) => {
         return repo;
     });
     const getContentItemsInRepository = (key) => __awaiter(void 0, void 0, void 0, function* () {
-        return yield dc_demostore_integration_1.paginator((yield getContentRepository(key)).related.contentItems.list, { status: 'ACTIVE' });
+        return yield (0, dc_demostore_integration_1.paginator)((yield getContentRepository(key)).related.contentItems.list, { status: 'ACTIVE' });
     });
     const updateContentItem = (key, body) => __awaiter(void 0, void 0, void 0, function* () {
         let item = yield ensureContentItem(key, body);
@@ -213,19 +217,19 @@ const AmplienceHelperGenerator = (context) => {
             let chunk = chunks.pop();
             if (chunk) {
                 const start = new Date().valueOf();
-                logger_2.logUpdate(`publishing ${chalk_1.default.blueBright(chunk.length)} items...`);
+                (0, logger_2.logUpdate)(`publishing ${chalk_1.default.blueBright(chunk.length)} items...`);
                 yield Promise.all(chunk.map(publishContentItem));
                 if (chunks.length > 0) {
                     const current = new Date().valueOf();
                     const remainder = Math.ceil((60000 - (current - start)) / 1000);
                     for (let index = remainder; index > 0; index--) {
-                        logger_2.logUpdate(`sleeping ${chalk_1.default.blueBright(index)} seconds before next chunk...`, false);
-                        yield utils_1.sleep(1000);
+                        (0, logger_2.logUpdate)(`sleeping ${chalk_1.default.blueBright(index)} seconds before next chunk...`, false);
+                        yield (0, utils_1.sleep)(1000);
                     }
                 }
             }
         }
-        logger_1.logComplete(`${new content_item_handler_1.ContentItemHandler().getDescription()}: [ ${chalk_1.default.green(unpublished.length)} published ]`);
+        (0, logger_1.logComplete)(`${new content_item_handler_1.ContentItemHandler().getDescription()}: [ ${chalk_1.default.green(unpublished.length)} published ]`);
     });
     return {
         getContentItem,

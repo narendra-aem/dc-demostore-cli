@@ -20,10 +20,10 @@ const resolveSchemaBody = (schemas, dir) => __awaiter(void 0, void 0, void 0, fu
     for (const [filename, contentTypeSchema] of Object.entries(schemas)) {
         if (contentTypeSchema.body) {
             try {
-                contentTypeSchema.body = yield json_resolver_1.jsonResolver(contentTypeSchema.body, dir);
+                contentTypeSchema.body = yield (0, json_resolver_1.jsonResolver)(contentTypeSchema.body, dir);
                 if (!contentTypeSchema.schemaId) {
                     const parsedBody = JSON.parse(contentTypeSchema.body);
-                    const schemaId = exports.resolveSchemaId(parsedBody);
+                    const schemaId = (0, exports.resolveSchemaId)(parsedBody);
                     if (schemaId) {
                         contentTypeSchema.schemaId = schemaId;
                     }
