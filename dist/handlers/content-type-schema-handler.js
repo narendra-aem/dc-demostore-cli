@@ -46,6 +46,7 @@ const installSchemas = (context, schemas) => __awaiter(void 0, void 0, void 0, f
         else if (schema.body) {
             createCount++;
             schema.body = JSON.stringify(JSON.parse(schema.body), undefined, 4);
+            schema.validationLevel = dc_management_sdk_js_1.ValidationLevel.CONTENT_TYPE;
             stored = yield context.hub.related.contentTypeSchema.create(schema);
             (0, logger_1.logUpdate)(`${chalk_1.default.green('create')} schema [ ${chalk_1.default.gray(schema.schemaId)} ]`);
         }
