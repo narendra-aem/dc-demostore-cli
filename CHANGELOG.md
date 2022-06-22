@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.1.2](https://github.com/amplience/dc-demostore-cli/compare/v1.2.0...v1.1.2) (2022-06-22)
+
+
+### Bug Fixes
+
+* added validation level before creation ([0aaf3d3](https://github.com/amplience/dc-demostore-cli/commit/0aaf3d39b3dfb848cf5f1bdbfc29cf4dea2023c7))
+
 ## [1.2.0](https://github.com/amplience/dc-demostore-cli/compare/v1.1.1...v1.2.0) (2022-06-22)
 
 ### Bug Fixes
