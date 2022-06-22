@@ -1,6 +1,6 @@
 import { CleanableResourceHandler, ImportContext } from "./resource-handler"
-import { ContentTypeSchema } from "dc-management-sdk-js"
-import { getCodecs, paginator, getContentTypeSchema, CommerceAPI, CodecType } from "@amplience/dc-demostore-integration"
+import { ContentTypeSchema, ValidationLevel } from "dc-management-sdk-js"
+import { getCodecs, paginator, getContentTypeSchema, CommerceAPI } from "@amplience/dc-demostore-integration"
 import _ from 'lodash'
 import chalk from 'chalk'
 import { loadJsonFromDirectory } from "../helpers/importer"
@@ -34,6 +34,7 @@ const installSchemas = async (context: ImportContext, schemas: ContentTypeSchema
         else if (schema.body) {
             createCount++
             schema.body = JSON.stringify(JSON.parse(schema.body), undefined, 4)
+            schema.validationLevel = ValidationLevel.CONTENT_TYPE;
             stored = await context.hub.related.contentTypeSchema.create(schema)
             logUpdate(`${chalk.green('create')} schema [ ${chalk.gray(schema.schemaId)} ]`)
         }
@@ -62,7 +63,7 @@ export class ContentTypeSchemaHandler extends CleanableResourceHandler {
         }
 
         // first we will load the site/integration types (codecs)
-        let codecs = getCodecs(CodecType.commerce)
+        let codecs = getCodecs()
         let codecSchemas = codecs.map(getContentTypeSchema)
         await installSchemas(context, codecSchemas)
 
@@ -93,6 +94,7 @@ export class ContentTypeSchemaHandler extends CleanableResourceHandler {
                 }
             }]
             demostoreConfigSchema.body = JSON.stringify(schemaBody)
+            demostoreConfigSchema.validationLevel = ValidationLevel.CONTENT_TYPE;
         }
 
         await installSchemas(context, schemasToInstall)

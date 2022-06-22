@@ -46,6 +46,7 @@ const installSchemas = (context, schemas) => __awaiter(void 0, void 0, void 0, f
         else if (schema.body) {
             createCount++;
             schema.body = JSON.stringify(JSON.parse(schema.body), undefined, 4);
+            schema.validationLevel = dc_management_sdk_js_1.ValidationLevel.CONTENT_TYPE;
             stored = yield context.hub.related.contentTypeSchema.create(schema);
             (0, logger_1.logUpdate)(`${chalk_1.default.green('create')} schema [ ${chalk_1.default.gray(schema.schemaId)} ]`);
         }
@@ -68,7 +69,7 @@ class ContentTypeSchemaHandler extends resource_handler_1.CleanableResourceHandl
             if (!fs_extra_1.default.existsSync(sourceDir)) {
                 return;
             }
-            let codecs = (0, dc_demostore_integration_1.getCodecs)(dc_demostore_integration_1.CodecType.commerce);
+            let codecs = (0, dc_demostore_integration_1.getCodecs)();
             let codecSchemas = codecs.map(dc_demostore_integration_1.getContentTypeSchema);
             yield installSchemas(context, codecSchemas);
             const schemas = (0, importer_1.loadJsonFromDirectory)(sourceDir, dc_management_sdk_js_1.ContentTypeSchema);
@@ -96,6 +97,7 @@ class ContentTypeSchemaHandler extends resource_handler_1.CleanableResourceHandl
                         }
                     }];
                 demostoreConfigSchema.body = JSON.stringify(schemaBody);
+                demostoreConfigSchema.validationLevel = dc_management_sdk_js_1.ValidationLevel.CONTENT_TYPE;
             }
             yield installSchemas(context, schemasToInstall);
             (0, logger_1.logComplete)(`${this.getDescription()}: [ ${chalk_1.default.green(archiveCount)} unarchived ] [ ${chalk_1.default.green(updateCount)} updated ] [ ${chalk_1.default.green(createCount)} created ]`);

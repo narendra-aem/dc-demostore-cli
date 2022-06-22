@@ -112,13 +112,13 @@ class ContentTypeHandler extends resource_handler_1.CleanableResourceHandler {
             if (!fs_extra_1.default.existsSync(sourceDir)) {
                 return;
             }
-            yield installTypes(context, (0, dc_demostore_integration_1.getCodecs)(dc_demostore_integration_1.CodecType.commerce).map(dc_demostore_integration_1.getContentType));
+            yield installTypes(context, (0, dc_demostore_integration_1.getCodecs)().map(dc_demostore_integration_1.getContentType));
             const jsonTypes = (0, importer_1.loadJsonFromDirectory)(sourceDir, schema_helper_1.ContentTypeWithRepositoryAssignments);
             if (Object.keys(jsonTypes).length === 0) {
                 throw new Error(`No content types found in ${sourceDir}`);
             }
             (0, exports.validateNoDuplicateContentTypeUris)(jsonTypes);
-            yield installTypes(context, lodash_1.default.filter(Object.values(jsonTypes), s => !lodash_1.default.includes(lodash_1.default.map((0, dc_demostore_integration_1.getCodecs)(dc_demostore_integration_1.CodecType.commerce), 'schema.uri'), s.contentTypeUri)));
+            yield installTypes(context, lodash_1.default.filter(Object.values(jsonTypes), s => !lodash_1.default.includes(lodash_1.default.map((0, dc_demostore_integration_1.getCodecs)(), 'schema.uri'), s.contentTypeUri)));
             (0, logger_2.logComplete)(`${this.getDescription()}: [ ${chalk_1.default.green(archiveCount)} unarchived ] [ ${chalk_1.default.green(updateCount)} updated ] [ ${chalk_1.default.green(createCount)} created ] [ ${chalk_1.default.green(synchronizedCount)} synced ]`);
         });
     }
