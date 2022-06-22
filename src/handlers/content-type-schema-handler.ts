@@ -34,6 +34,7 @@ const installSchemas = async (context: ImportContext, schemas: ContentTypeSchema
         else if (schema.body) {
             createCount++
             schema.body = JSON.stringify(JSON.parse(schema.body), undefined, 4)
+            schema.validationLevel = ValidationLevel.CONTENT_TYPE;
             stored = await context.hub.related.contentTypeSchema.create(schema)
             logUpdate(`${chalk.green('create')} schema [ ${chalk.gray(schema.schemaId)} ]`)
         }
