@@ -116,7 +116,7 @@ const AmplienceHelperGenerator = (context) => {
     const getContentItem = (keyOrId) => contentMap[keyOrId];
     const getDAMMapping = () => __awaiter(void 0, void 0, void 0, function* () {
         const damService = damServiceMap[context.environment.dam.username] = damServiceMap[context.environment.dam.username] || (yield new dam_service_1.DAMService().init(context.environment.dam));
-        let assets = lodash_1.default.filter(yield damService.getAssetsListForBucket('Assets'), asset => asset.status === 'active');
+        let assets = lodash_1.default.filter(yield damService.getAssetsListForAllBuckets(), asset => asset.status === 'active');
         let endpoint = lodash_1.default.first(yield damService.getEndpoints());
         return {
             mediaEndpoint: endpoint === null || endpoint === void 0 ? void 0 : endpoint.tag,

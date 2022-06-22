@@ -102,7 +102,7 @@ const AmplienceHelperGenerator = (context: AmplienceContext): AmplienceHelper =>
 
     const getDAMMapping = async (): Promise<DAMMapping> => {
         const damService = damServiceMap[context.environment.dam.username] = damServiceMap[context.environment.dam.username] || await new DAMService().init(context.environment.dam)
-        let assets = _.filter(await damService.getAssetsListForBucket('Assets'), asset => asset.status === 'active')
+        let assets = _.filter(await damService.getAssetsListForAllBuckets(), asset => asset.status === 'active')
         let endpoint: any = _.first(await damService.getEndpoints())
         return {
             mediaEndpoint: endpoint?.tag,
