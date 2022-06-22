@@ -31,7 +31,7 @@ class ArchiveLog {
     }
     loadFromFile(path) {
         return __awaiter(this, void 0, void 0, function* () {
-            const log = yield util_1.promisify(fs_1.readFile)(path, 'utf8');
+            const log = yield (0, util_1.promisify)(fs_1.readFile)(path, 'utf8');
             const logLines = log.split('\n');
             this.switchGroup('_default');
             logLines.forEach((line, index) => {
@@ -101,10 +101,10 @@ class ArchiveLog {
                     });
                 });
                 log += this.getResultCode();
-                const dir = path_1.dirname(path);
-                yield directory_utils_1.ensureDirectoryExists(dir);
-                yield util_1.promisify(fs_1.writeFile)(path, log);
-                logger_1.logUpdate(`Log written to "${path}".`);
+                const dir = (0, path_1.dirname)(path);
+                yield (0, directory_utils_1.ensureDirectoryExists)(dir);
+                yield (0, util_1.promisify)(fs_1.writeFile)(path, log);
+                (0, logger_1.logUpdate)(`Log written to "${path}".`);
                 return true;
             }
             catch (_a) {

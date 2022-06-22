@@ -9,7 +9,7 @@ const path_1 = require("path");
 const lodash_1 = require("lodash");
 exports.command = 'configure';
 exports.desc = 'Saves the configuration options to a file';
-const CONFIG_FILENAME = (platform = process.platform) => path_1.join(process.env[platform == 'win32' ? 'USERPROFILE' : 'HOME'] || __dirname, '.amplience', 'dc-cli-config.json');
+const CONFIG_FILENAME = (platform = process.platform) => (0, path_1.join)(process.env[platform == 'win32' ? 'USERPROFILE' : 'HOME'] || __dirname, '.amplience', 'dc-cli-config.json');
 exports.CONFIG_FILENAME = CONFIG_FILENAME;
 const builder = (yargs) => {
     yargs
@@ -31,10 +31,10 @@ exports.configureCommandOptions = {
     clientId: { type: 'string', demandOption: true },
     clientSecret: { type: 'string', demandOption: true },
     hubId: { type: 'string', demandOption: true },
-    config: { type: 'string', default: exports.CONFIG_FILENAME() }
+    config: { type: 'string', default: (0, exports.CONFIG_FILENAME)() }
 };
 const writeConfigFile = (configFile, parameters) => {
-    const dir = path_1.dirname(configFile);
+    const dir = (0, path_1.dirname)(configFile);
     if (!fs_1.default.existsSync(dir)) {
         try {
             fs_1.default.mkdirSync(dir, { recursive: true });
@@ -70,7 +70,7 @@ const readConfigFile = (configFile, ignoreError) => {
 exports.readConfigFile = readConfigFile;
 const handler = (argv) => {
     const { clientId, clientSecret, hubId } = argv;
-    const storedConfig = exports.readConfigFile(argv.config);
+    const storedConfig = (0, exports.readConfigFile)(argv.config);
     const newConfig = { clientId, clientSecret, hubId };
     if (argv.dstClientId)
         newConfig.dstClientId = argv.dstClientId;
@@ -78,7 +78,7 @@ const handler = (argv) => {
         newConfig.dstSecret = argv.dstSecret;
     if (argv.dstHubId)
         newConfig.dstHubId = argv.dstHubId;
-    if (lodash_1.isEqual(storedConfig, newConfig)) {
+    if ((0, lodash_1.isEqual)(storedConfig, newConfig)) {
         console.log('Config file up-to-date.  Please use `--help` for command usage.');
         return;
     }

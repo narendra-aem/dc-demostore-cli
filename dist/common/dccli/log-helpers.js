@@ -14,14 +14,14 @@ const path_1 = require("path");
 const archive_log_1 = require("./archive-log");
 const file_log_1 = require("./file-log");
 function getDefaultLogPath(type, action, platform = process.platform) {
-    return path_1.join(process.env[platform == 'win32' ? 'USERPROFILE' : 'HOME'] || __dirname, '.amplience', `logs/${type}-${action}-<DATE>.log`);
+    return (0, path_1.join)(process.env[platform == 'win32' ? 'USERPROFILE' : 'HOME'] || __dirname, '.amplience', `logs/${type}-${action}-<DATE>.log`);
 }
 exports.getDefaultLogPath = getDefaultLogPath;
 function createLog(logFile, title) {
     const log = new file_log_1.FileLog(logFile);
     if (title !== undefined) {
         const timestamp = Date.now().toString();
-        log.title = file_log_1.versionedTitle(`${title} - ${timestamp}\n`);
+        log.title = (0, file_log_1.versionedTitle)(`${title} - ${timestamp}\n`);
     }
     return log;
 }

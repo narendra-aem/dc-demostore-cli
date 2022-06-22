@@ -1,7 +1,11 @@
 "use strict";
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
 }) : (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     o[k2] = m[k];
@@ -65,7 +69,7 @@ class ContentItemHandler extends resource_handler_1.ResourceHandler {
             if (!fs_extra_1.default.existsSync(sourceDir)) {
                 throw new Error(`source dir not found: ${sourceDir}`);
             }
-            yield utils_1.fileIterator(sourceDir, yield types_1.getMapping(context)).iterate((file) => __awaiter(this, void 0, void 0, function* () {
+            yield (0, utils_1.fileIterator)(sourceDir, yield (0, types_1.getMapping)(context)).iterate((file) => __awaiter(this, void 0, void 0, function* () {
                 var _a;
                 let mapping = lodash_1.default.find((_a = context.automation) === null || _a === void 0 ? void 0 : _a.contentItems, map => map.from === file.object.id);
                 if (mapping) {
@@ -76,9 +80,9 @@ class ContentItemHandler extends resource_handler_1.ResourceHandler {
                 }
             }));
             let importLogFile = `${context.tempDir}/item-import.log`;
-            yield dc_cli_content_item_handler_1.default({
+            yield (0, dc_cli_content_item_handler_1.default)({
                 dir: sourceDir,
-                logFile: log_helpers_1.createLog(importLogFile),
+                logFile: (0, log_helpers_1.createLog)(importLogFile),
                 clientId: context.environment.dc.clientId,
                 clientSecret: context.environment.dc.clientSecret,
                 hubId: context.environment.dc.hubId,
@@ -87,7 +91,7 @@ class ContentItemHandler extends resource_handler_1.ResourceHandler {
             let logFile = fs_extra_1.default.readFileSync(importLogFile, { encoding: "utf-8" });
             let createdCount = lodash_1.default.filter(logFile.split('\n'), l => l.startsWith('CREATE ')).length;
             let updatedCount = lodash_1.default.filter(logFile.split('\n'), l => l.startsWith('UPDATE ')).length;
-            logger_1.logComplete(`${this.getDescription()}: [ ${chalk_1.default.green(createdCount)} created ] [ ${chalk_1.default.blue(updatedCount)} updated ]`);
+            (0, logger_1.logComplete)(`${this.getDescription()}: [ ${chalk_1.default.green(createdCount)} created ] [ ${chalk_1.default.blue(updatedCount)} updated ]`);
             yield context.amplienceHelper.publishAll();
             yield context.amplienceHelper.cacheContentMap();
             yield context.amplienceHelper.updateAutomation();
@@ -98,13 +102,13 @@ class ContentItemHandler extends resource_handler_1.ResourceHandler {
     }
     cleanup(context) {
         return __awaiter(this, void 0, void 0, function* () {
-            let repositories = yield dc_demostore_integration_1.paginator(context.hub.related.contentRepositories.list);
-            let contentTypes = yield dc_demostore_integration_1.paginator(context.hub.related.contentTypes.list);
+            let repositories = yield (0, dc_demostore_integration_1.paginator)(context.hub.related.contentRepositories.list);
+            let contentTypes = yield (0, dc_demostore_integration_1.paginator)(context.hub.related.contentTypes.list);
             let archiveCount = 0;
             let folderCount = 0;
             yield Promise.all(repositories.map((repository) => __awaiter(this, void 0, void 0, function* () {
-                logger_1.logUpdate(`${prompts_1.prompts.archive} content items in repository ${chalk_1.default.cyanBright(repository.name)}...`);
-                let contentItems = lodash_1.default.filter(yield dc_demostore_integration_1.paginator(repository.related.contentItems.list, { status: 'ACTIVE' }), ci => this.shouldCleanUpItem(ci, context));
+                (0, logger_1.logUpdate)(`${prompts_1.prompts.archive} content items in repository ${chalk_1.default.cyanBright(repository.name)}...`);
+                let contentItems = lodash_1.default.filter(yield (0, dc_demostore_integration_1.paginator)(repository.related.contentItems.list, { status: 'ACTIVE' }), ci => this.shouldCleanUpItem(ci, context));
                 yield Promise.all(contentItems.map((contentItem) => __awaiter(this, void 0, void 0, function* () {
                     var _a, _b, _c;
                     let contentType = lodash_1.default.find(contentTypes, ct => ct.contentTypeUri === contentItem.body._meta.schema);
@@ -123,7 +127,7 @@ class ContentItemHandler extends resource_handler_1.ResourceHandler {
                             contentItem = yield contentItem.related.unarchive();
                         }
                         if (!lodash_1.default.isEmpty(contentItem.body._meta.deliveryKey)) {
-                            contentItem.body._meta.deliveryKey = `${contentItem.body._meta.deliveryKey}-${nanoid_1.nanoid()}`;
+                            contentItem.body._meta.deliveryKey = `${contentItem.body._meta.deliveryKey}-${(0, nanoid_1.nanoid)()}`;
                         }
                         contentItem = yield contentItem.related.update(contentItem);
                     }
@@ -132,16 +136,16 @@ class ContentItemHandler extends resource_handler_1.ResourceHandler {
                     lodash_1.default.remove((_c = context.automation) === null || _c === void 0 ? void 0 : _c.contentItems, ci => contentItem.id === ci.to);
                 })));
                 const cleanupFolder = ((folder) => __awaiter(this, void 0, void 0, function* () {
-                    let subfolders = yield dc_demostore_integration_1.paginator(folder.related.folders.list);
+                    let subfolders = yield (0, dc_demostore_integration_1.paginator)(folder.related.folders.list);
                     yield Promise.all(subfolders.map(cleanupFolder));
-                    logger_1.logUpdate(`${prompts_1.prompts.delete} folder ${folder.name}`);
+                    (0, logger_1.logUpdate)(`${prompts_1.prompts.delete} folder ${folder.name}`);
                     folderCount++;
                     return yield context.amplienceHelper.deleteFolder(folder);
                 }));
-                let folders = yield dc_demostore_integration_1.paginator(repository.related.folders.list);
+                let folders = yield (0, dc_demostore_integration_1.paginator)(repository.related.folders.list);
                 yield Promise.all(folders.map(cleanupFolder));
             })));
-            logger_1.logComplete(`${this.getDescription()}: [ ${chalk_1.default.yellow(archiveCount)} items archived ] [ ${chalk_1.default.red(folderCount)} folders deleted ]`);
+            (0, logger_1.logComplete)(`${this.getDescription()}: [ ${chalk_1.default.yellow(archiveCount)} items archived ] [ ${chalk_1.default.red(folderCount)} folders deleted ]`);
         });
     }
 }

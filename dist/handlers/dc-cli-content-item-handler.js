@@ -27,12 +27,12 @@ const question_helpers_1 = require("../common/dccli/question-helpers");
 const lodash_1 = __importDefault(require("lodash"));
 const logger_1 = require("../common/logger");
 function getDefaultMappingPath(name, platform = process.platform) {
-    return path_1.join(process.env[platform == 'win32' ? 'USERPROFILE' : 'HOME'] || __dirname, '.amplience', `imports/`, `${name}.json`);
+    return (0, path_1.join)(process.env[platform == 'win32' ? 'USERPROFILE' : 'HOME'] || __dirname, '.amplience', `imports/`, `${name}.json`);
 }
 exports.getDefaultMappingPath = getDefaultMappingPath;
 exports.command = 'import <dir>';
 exports.desc = 'Import content items';
-const LOG_FILENAME = (platform = process.platform) => log_helpers_1.getDefaultLogPath('item', 'import', platform);
+const LOG_FILENAME = (platform = process.platform) => (0, log_helpers_1.getDefaultLogPath)('item', 'import', platform);
 exports.LOG_FILENAME = LOG_FILENAME;
 const builder = (yargs) => {
     yargs
@@ -102,17 +102,17 @@ const getSubfolders = (context, folder) => {
     if (context.folderToSubfolderMap.has(folder.id)) {
         return context.folderToSubfolderMap.get(folder.id);
     }
-    const subfolders = dc_demostore_integration_1.paginator(folder.related.folders.list);
+    const subfolders = (0, dc_demostore_integration_1.paginator)(folder.related.folders.list);
     context.folderToSubfolderMap.set(folder.id, subfolders);
     return subfolders;
 };
 let getOrCreateFolderCached;
 const getOrCreateFolder = (context, rel) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const parentPath = path_1.dirname(rel);
-        const parent = yield getOrCreateFolderCached(context, path_1.resolve(context.baseDir, parentPath));
+        const parentPath = (0, path_1.dirname)(rel);
+        const parent = yield getOrCreateFolderCached(context, (0, path_1.resolve)(context.baseDir, parentPath));
         const folderInfo = {
-            name: path_1.basename(rel)
+            name: (0, path_1.basename)(rel)
         };
         const container = parent == null ? context.rootFolders : yield getSubfolders(context, parent);
         let result = container.find(target => target.name === folderInfo.name);
@@ -124,20 +124,20 @@ const getOrCreateFolder = (context, rel) => __awaiter(void 0, void 0, void 0, fu
             else {
                 result = yield parent.related.folders.create(new dc_management_sdk_js_1.Folder(folderInfo));
             }
-            logger_1.logUpdate(`Created folder in ${containerName}: '${rel}'.`);
+            (0, logger_1.logUpdate)(`Created folder in ${containerName}: '${rel}'.`);
         }
         else {
-            logger_1.logUpdate(`Found existing subfolder in ${containerName}: '${rel}'.`);
+            (0, logger_1.logUpdate)(`Found existing subfolder in ${containerName}: '${rel}'.`);
         }
         return result;
     }
     catch (e) {
-        logger_1.logUpdate(`Couldn't get or create folder ${rel}! ${e.toString()}`);
+        (0, logger_1.logUpdate)(`Couldn't get or create folder ${rel}! ${e.toString()}`);
         throw e;
     }
 });
 getOrCreateFolderCached = (context, path) => __awaiter(void 0, void 0, void 0, function* () {
-    let rel = path_1.relative(context.baseDir, path);
+    let rel = (0, path_1.relative)(context.baseDir, path);
     if (rel === '') {
         rel = '.';
     }
@@ -150,10 +150,10 @@ getOrCreateFolderCached = (context, path) => __awaiter(void 0, void 0, void 0, f
     return result;
 });
 const traverseRecursive = (path, action) => __awaiter(void 0, void 0, void 0, function* () {
-    const dir = yield util_1.promisify(fs_1.readdir)(path);
+    const dir = yield (0, util_1.promisify)(fs_1.readdir)(path);
     yield Promise.all(dir.map((contained) => __awaiter(void 0, void 0, void 0, function* () {
-        contained = path_1.join(path, contained);
-        const stat = yield util_1.promisify(fs_1.lstat)(contained);
+        contained = (0, path_1.join)(path, contained);
+        const stat = yield (0, util_1.promisify)(fs_1.lstat)(contained);
         return yield (stat.isDirectory() ? traverseRecursive(contained, action) : action(contained));
     })));
 });
@@ -216,7 +216,7 @@ const prepareContentForImport = (client, hub, repos, folder, mapping, log, argv)
             hub,
             repo: repo.repo,
             pathToFolderMap,
-            baseDir: path_1.resolve(repo.basePath),
+            baseDir: (0, path_1.resolve)(repo.basePath),
             folderToSubfolderMap: new Map(),
             mapping,
             rootFolders: [],
@@ -229,7 +229,7 @@ const prepareContentForImport = (client, hub, repos, folder, mapping, log, argv)
         const repo = repos[i].repo;
         const context = contexts.get(repo);
         try {
-            const folders = yield dc_demostore_integration_1.paginator(repo.related.folders.list);
+            const folders = yield (0, dc_demostore_integration_1.paginator)(repo.related.folders.list);
             for (let j = 0; j < folders.length; j++) {
                 const folder = folders[j];
                 let parent = null;
@@ -247,21 +247,21 @@ const prepareContentForImport = (client, hub, repos, folder, mapping, log, argv)
             log.error(`Could not get base folders for repository ${repo.label}: `, e);
             return null;
         }
-        logger_1.logUpdate(`Scanning structure and content in '${repos[i].basePath}' for repository '${repo.label}'...`);
-        yield traverseRecursive(path_1.resolve(repos[i].basePath), (path) => __awaiter(void 0, void 0, void 0, function* () {
-            if (path_1.extname(path) !== '.json') {
+        (0, logger_1.logUpdate)(`Scanning structure and content in '${repos[i].basePath}' for repository '${repo.label}'...`);
+        yield traverseRecursive((0, path_1.resolve)(repos[i].basePath), (path) => __awaiter(void 0, void 0, void 0, function* () {
+            if ((0, path_1.extname)(path) !== '.json') {
                 return;
             }
             let contentJSON;
             try {
-                const contentText = yield util_1.promisify(fs_1.readFile)(path, { encoding: 'utf8' });
+                const contentText = yield (0, util_1.promisify)(fs_1.readFile)(path, { encoding: 'utf8' });
                 contentJSON = JSON.parse(contentText);
             }
             catch (e) {
                 log.appendLine(`Couldn't read content item at '${path}': ${e.toString()}`);
                 return;
             }
-            const folder = yield getOrCreateFolderCached(context, path_1.dirname(path));
+            const folder = yield getOrCreateFolderCached(context, (0, path_1.dirname)(path));
             const filteredContent = {
                 id: contentJSON.id,
                 label: contentJSON.label,
@@ -278,11 +278,11 @@ const prepareContentForImport = (client, hub, repos, folder, mapping, log, argv)
             contentItems.push({ repo: repo, content: new dc_management_sdk_js_1.ContentItem(filteredContent) });
         }));
     }
-    logger_1.logUpdate('Done. Validating content...');
+    (0, logger_1.logUpdate)('Done. Validating content...');
     const alreadyExists = contentItems.filter(item => mapping.getContentItem(item.content.id) != null);
     if (alreadyExists.length > 0) {
         const updateExisting = force ||
-            (yield question_helpers_1.asyncQuestion(`${alreadyExists.length} of the items being imported already exist in the mapping. Would you like to update these content items instead of skipping them? (y/n) `, log));
+            (yield (0, question_helpers_1.asyncQuestion)(`${alreadyExists.length} of the items being imported already exist in the mapping. Would you like to update these content items instead of skipping them? (y/n) `, log));
         if (!updateExisting) {
             contentItems = contentItems.filter(item => mapping.getContentItem(item.content.id) == null);
         }
@@ -290,8 +290,8 @@ const prepareContentForImport = (client, hub, repos, folder, mapping, log, argv)
     let types;
     let schemas;
     try {
-        types = yield dc_demostore_integration_1.paginator(hub.related.contentTypes.list);
-        schemas = yield dc_demostore_integration_1.paginator(hub.related.contentTypeSchema.list);
+        types = yield (0, dc_demostore_integration_1.paginator)(hub.related.contentTypes.list);
+        schemas = yield (0, dc_demostore_integration_1.paginator)(hub.related.contentTypeSchema.list);
     }
     catch (e) {
         log.error('Could not load content types:', e);
@@ -310,7 +310,7 @@ const prepareContentForImport = (client, hub, repos, folder, mapping, log, argv)
                 log.appendLine(`  ${schema.schemaId}`);
             });
             const create = force ||
-                (yield question_helpers_1.asyncQuestion('Content types can be automatically created for these schemas, but it is not recommended as they will have a default name and lack any configuration. Are you sure you wish to continue? (y/n) ', log));
+                (yield (0, question_helpers_1.asyncQuestion)('Content types can be automatically created for these schemas, but it is not recommended as they will have a default name and lack any configuration. Are you sure you wish to continue? (y/n) ', log));
             if (!create) {
                 return null;
             }
@@ -319,7 +319,7 @@ const prepareContentForImport = (client, hub, repos, folder, mapping, log, argv)
                 const missing = existing[i];
                 let type = new dc_management_sdk_js_1.ContentType({
                     contentTypeUri: missing.schemaId,
-                    settings: { label: path_1.basename(missing.schemaId) }
+                    settings: { label: (0, path_1.basename)(missing.schemaId) }
                 });
                 type = yield hub.related.contentTypes.register(type);
                 types.push(type);
@@ -355,7 +355,7 @@ const prepareContentForImport = (client, hub, repos, folder, mapping, log, argv)
             log.appendLine(`  ${repo.label} - ${label} (${type.contentTypeUri})`);
         });
         const createAssignments = force ||
-            (yield question_helpers_1.asyncQuestion('These assignments will be created automatically. Are you sure you still wish to continue? (y/n) ', log));
+            (yield (0, question_helpers_1.asyncQuestion)('These assignments will be created automatically. Are you sure you still wish to continue? (y/n) ', log));
         if (!createAssignments) {
             return null;
         }
@@ -385,7 +385,7 @@ const prepareContentForImport = (client, hub, repos, folder, mapping, log, argv)
             return null;
         }
         const ignore = force ||
-            (yield question_helpers_1.asyncQuestion(`${affectedContentItems.length} out of ${beforeRemove} content items will be skipped. Are you sure you still wish to continue? (y/n) `, log));
+            (yield (0, question_helpers_1.asyncQuestion)(`${affectedContentItems.length} out of ${beforeRemove} content items will be skipped. Are you sure you still wish to continue? (y/n) `, log));
         if (!ignore) {
             return null;
         }
@@ -406,7 +406,7 @@ const prepareContentForImport = (client, hub, repos, folder, mapping, log, argv)
             tree.removeContent(invalidContentItems);
         }
         else {
-            const validator = new amplience_schema_validator_1.AmplienceSchemaValidator(amplience_schema_validator_1.defaultSchemaLookup(types, schemas));
+            const validator = new amplience_schema_validator_1.AmplienceSchemaValidator((0, amplience_schema_validator_1.defaultSchemaLookup)(types, schemas));
             const mustSkip = [];
             yield Promise.all(invalidContentItems.map((item) => __awaiter(void 0, void 0, void 0, function* () {
                 tree.removeContentDependenciesFromBody(item.owner.content.body, item.dependencies.map((dependency) => dependency.dependency));
@@ -436,14 +436,14 @@ const prepareContentForImport = (client, hub, repos, folder, mapping, log, argv)
         }
         invalidContentItems.forEach((item) => log.appendLine(`  ${item.owner.content.label}`));
         const ignore = force ||
-            (yield question_helpers_1.asyncQuestion(`${invalidContentItems.length} out of ${contentItems.length} content items will be affected. Are you sure you still wish to continue? (y/n) `, log));
+            (yield (0, question_helpers_1.asyncQuestion)(`${invalidContentItems.length} out of ${contentItems.length} content items will be affected. Are you sure you still wish to continue? (y/n) `, log));
         if (!ignore) {
             return null;
         }
         log.warn(`${invalidContentItems.length} content items ${action} due to missing references.`);
     }
-    logger_1.logUpdate(`Found ${tree.levels.length} dependency levels in ${tree.all.length} items, ${tree.circularLinks.length} referencing a circular dependency.`);
-    logger_1.logUpdate(`Importing ${tree.all.length} content items...`);
+    (0, logger_1.logUpdate)(`Found ${tree.levels.length} dependency levels in ${tree.all.length} items, ${tree.circularLinks.length} referencing a circular dependency.`);
+    (0, logger_1.logUpdate)(`Importing ${tree.all.length} content items...`);
     return tree;
 });
 const rewriteDependency = (dep, mapping, allowNull) => {
@@ -532,14 +532,14 @@ const importTree = (client, tree, mapping, log, argv) => __awaiter(void 0, void 
     });
     for (let pass = 0; pass < 2; pass++) {
         const mode = pass === 0 ? 'Creating' : 'Resolving';
-        logger_1.logUpdate(`${mode} circular dependents.`);
+        (0, logger_1.logUpdate)(`${mode} circular dependents.`);
         const circularLinksSorted = tree.circularLinks.sort(sortDependencies);
         for (let i = 0; i < circularLinksSorted.length; i++) {
             const item = circularLinksSorted[i];
             yield importContentItem(item, mapping, client, log, pass === 0, dependents[item.owner.content.id] || mapping.getContentItem(item.owner.content.id));
         }
     }
-    logger_1.logUpdate('Done!');
+    (0, logger_1.logUpdate)('Done!');
     return true;
 });
 const handler = (argv) => __awaiter(void 0, void 0, void 0, function* () {
@@ -547,7 +547,7 @@ const handler = (argv) => __awaiter(void 0, void 0, void 0, function* () {
     const force = argv.force || false;
     let { mapFile } = argv;
     argv.publish = argv.publish || argv.republish;
-    const client = dynamic_content_client_factory_1.default(argv);
+    const client = (0, dynamic_content_client_factory_1.default)(argv);
     const log = logFile.open();
     let hub;
     try {
@@ -573,10 +573,10 @@ const handler = (argv) => __awaiter(void 0, void 0, void 0, function* () {
         mapFile = getDefaultMappingPath(importTitle);
     }
     if (yield mapping.load(mapFile)) {
-        logger_1.logUpdate(`Existing mapping loaded from '${mapFile}', changes will be saved back to it.`);
+        (0, logger_1.logUpdate)(`Existing mapping loaded from '${mapFile}', changes will be saved back to it.`);
     }
     else {
-        logger_1.logUpdate(`Creating new mapping file at '${mapFile}'.`);
+        (0, logger_1.logUpdate)(`Creating new mapping file at '${mapFile}'.`);
     }
     let tree;
     if (baseFolder != null) {
@@ -609,20 +609,20 @@ const handler = (argv) => __awaiter(void 0, void 0, void 0, function* () {
     else {
         let repos;
         try {
-            repos = yield dc_demostore_integration_1.paginator(hub.related.contentRepositories.list);
+            repos = yield (0, dc_demostore_integration_1.paginator)(hub.related.contentRepositories.list);
         }
         catch (e) {
             log.error(`Couldn't get repositories:`, e);
             yield log.close();
             return false;
         }
-        const baseDirContents = yield util_1.promisify(fs_1.readdir)(dir);
+        const baseDirContents = yield (0, util_1.promisify)(fs_1.readdir)(dir);
         const importRepos = [];
         const missingRepos = [];
         for (let i = 0; i < baseDirContents.length; i++) {
             const name = baseDirContents[i];
-            const path = path_1.join(dir, name);
-            const status = yield util_1.promisify(fs_1.lstat)(path);
+            const path = (0, path_1.join)(dir, name);
+            const status = yield (0, util_1.promisify)(fs_1.lstat)(path);
             if (status.isDirectory()) {
                 const match = repos.find(repo => repo.label === name);
                 if (match) {
@@ -640,7 +640,7 @@ const handler = (argv) => __awaiter(void 0, void 0, void 0, function* () {
             });
             if (importRepos.length > 0) {
                 const ignore = force ||
-                    (yield question_helpers_1.asyncQuestion('These repositories will be skipped during the import, as they need to be added to the hub manually. Do you want to continue? (y/n) ', log));
+                    (yield (0, question_helpers_1.asyncQuestion)('These repositories will be skipped during the import, as they need to be added to the hub manually. Do you want to continue? (y/n) ', log));
                 if (!ignore) {
                     yield log.close();
                     return false;

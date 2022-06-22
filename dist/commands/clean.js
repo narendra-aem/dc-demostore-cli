@@ -23,7 +23,7 @@ const typed_result_1 = require("../handlers/typed-result");
 const { Confirm, MultiSelect } = require('enquirer');
 exports.command = 'cleanup';
 exports.desc = "Clean up hub";
-const builder = (yargs) => amplience_builder_1.default(yargs)
+const builder = (yargs) => (0, amplience_builder_1.default)(yargs)
     .options({
     include: {
         alias: 'i',
@@ -51,7 +51,7 @@ const builder = (yargs) => amplience_builder_1.default(yargs)
         }
     })]);
 exports.builder = builder;
-exports.handler = middleware_1.contextHandler((context) => __awaiter(void 0, void 0, void 0, function* () {
+exports.handler = (0, middleware_1.contextHandler)((context) => __awaiter(void 0, void 0, void 0, function* () {
     let choices = [];
     if (context.all) {
         choices = handlers_1.Cleanables;
@@ -73,7 +73,7 @@ exports.handler = middleware_1.contextHandler((context) => __awaiter(void 0, voi
     }
     if (context.skipConfirmation || (yield new Confirm({ message: `${chalk_1.default.bold(chalk_1.default.greenBright('proceed?'))}` }).run())) {
         yield async_1.default.eachSeries(choices, (choice, callback) => __awaiter(void 0, void 0, void 0, function* () {
-            typed_result_1.timed(`[ cleanup ] ${choice.resourceTypeDescription}`, () => __awaiter(void 0, void 0, void 0, function* () {
+            (0, typed_result_1.timed)(`[ cleanup ] ${choice.resourceTypeDescription}`, () => __awaiter(void 0, void 0, void 0, function* () {
                 yield choice.cleanup(context);
                 callback();
             }));

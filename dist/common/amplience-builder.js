@@ -28,7 +28,7 @@ exports.commandOptions = {
     tempDir: {
         alias: 't',
         describe: 'temporary directory for all run files',
-        default: `/tmp/demostore/demostore-${nanoid_1.nanoid()}`,
+        default: `/tmp/demostore/demostore-${(0, nanoid_1.nanoid)()}`,
         middleware: middleware_1.createTempDir
     },
     matchingSchema: {
@@ -42,9 +42,9 @@ exports.default = (yargs) => yargs
     .middleware([
     exports.commandOptions.tempDir.middleware,
     (c) => __awaiter(void 0, void 0, void 0, function* () {
-        yield middleware_1.loginDC(c);
+        yield (0, middleware_1.loginDC)(c);
         if (!lodash_1.default.includes(c._, 'show')) {
-            yield environment_manager_1.useEnvironment(c.environment);
+            yield (0, environment_manager_1.useEnvironment)(c.environment);
             yield c.amplienceHelper.cacheContentMap();
         }
     })
