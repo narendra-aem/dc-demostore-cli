@@ -1,6 +1,13 @@
-# Changelog 
+# Changelog
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
+
+## [1.2.0](https://github.com/amplience/dc-demostore-cli/compare/v1.1.1...v1.2.0) (2022-06-22)
+
+
+### Bug Fixes
+
+* validation level on codecs schema ([82a1c05](https://github.com/amplience/dc-demostore-cli/commit/82a1c05778532590098bfccff7dcc607d01d8fa9))
 
 ## [1.1.2](https://github.com/amplience/dc-demostore-cli/compare/v1.1.1...v1.1.2) (2022-06-22)
 
