@@ -18,6 +18,6 @@ const amplience_builder_1 = __importDefault(require("../common/amplience-builder
 exports.command = 'publish';
 exports.desc = "Publish unpublished content items";
 exports.builder = amplience_builder_1.default;
-exports.handler = middleware_1.contextHandler((context) => __awaiter(void 0, void 0, void 0, function* () {
+exports.handler = (0, middleware_1.contextHandler)((context) => __awaiter(void 0, void 0, void 0, function* () {
     yield context.amplienceHelper.publishAll();
 }));

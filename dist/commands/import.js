@@ -1,7 +1,11 @@
 "use strict";
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
 }) : (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     o[k2] = m[k];
@@ -54,7 +58,7 @@ const downloadZip = (branch) => __awaiter(void 0, void 0, void 0, function* () {
     let url = `https://github.com/amplience/dc-demostore-automation/archive/refs/heads/${branch}.zip`;
     logger_1.default.info(`downloading latest automation files to ${chalk_1.default.blue(automationDirPath)}...`);
     logger_1.default.info(`\t${chalk_1.default.green(url)}`);
-    const response = yield axios_1.default({
+    const response = yield (0, axios_1.default)({
         method: 'GET',
         url,
         responseType: 'stream'
@@ -64,7 +68,7 @@ const downloadZip = (branch) => __awaiter(void 0, void 0, void 0, function* () {
     return new Promise((resolve, reject) => {
         response.data.on('end', () => __awaiter(void 0, void 0, void 0, function* () {
             logger_1.default.info(`download successful, unzipping...`);
-            yield utils_1.sleep(1000);
+            yield (0, utils_1.sleep)(1000);
             let zip = new adm_zip_1.default(zipFilePath);
             zip.extractAllTo(environment_manager_1.CONFIG_PATH);
             fs_extra_1.default.moveSync(`${environment_manager_1.CONFIG_PATH}/dc-demostore-automation-${branch}`, automationDirPath);
@@ -75,7 +79,7 @@ const downloadZip = (branch) => __awaiter(void 0, void 0, void 0, function* () {
     });
 });
 const builder = (yargs) => {
-    return amplience_builder_1.default(yargs).options({
+    return (0, amplience_builder_1.default)(yargs).options({
         automationDir: {
             alias: 'a',
             describe: 'path to automation directory',
@@ -115,22 +119,22 @@ const builder = (yargs) => {
 exports.builder = builder;
 const importHandler = (handler) => (context) => __awaiter(void 0, void 0, void 0, function* () {
     context.config = (yield context.amplienceHelper.getDemoStoreConfig()).body;
-    yield import_helper_1.copyTemplateFilesToTempDir(context);
+    yield (0, import_helper_1.copyTemplateFilesToTempDir)(context);
     yield handler.import(context);
 });
-exports.handler = middleware_1.contextHandler((context) => __awaiter(void 0, void 0, void 0, function* () {
+exports.handler = (0, middleware_1.contextHandler)((context) => __awaiter(void 0, void 0, void 0, function* () {
     logger_1.default.info(`${chalk_1.default.green(exports.command)}: ${exports.desc} started at ${chalk_1.default.magentaBright(context.startTime)}`);
-    logger_1.logHeadline(`Phase 1: preparation`);
-    yield import_helper_1.copyTemplateFilesToTempDir(context);
+    (0, logger_1.logHeadline)(`Phase 1: preparation`);
+    yield (0, import_helper_1.copyTemplateFilesToTempDir)(context);
     yield new content_type_schema_handler_1.ContentTypeSchemaHandler().import(context);
-    logger_1.logHeadline(`Phase 2: import/update`);
+    (0, logger_1.logHeadline)(`Phase 2: import/update`);
     yield importHandler(new settings_handler_1.SettingsHandler())(context);
     yield importHandler(new extension_handler_1.ExtensionHandler())(context);
     yield importHandler(new search_index_handler_1.SearchIndexHandler())(context);
     if (!context.skipContentImport) {
-        logger_1.logHeadline(`Phase 3: content import`);
+        (0, logger_1.logHeadline)(`Phase 3: content import`);
         yield importHandler(new content_item_handler_1.ContentItemHandler())(context);
-        logger_1.logHeadline(`Phase 4: reentrant import`);
+        (0, logger_1.logHeadline)(`Phase 4: reentrant import`);
         yield importHandler(new content_type_schema_handler_1.ContentTypeSchemaHandler())(context);
     }
 }));

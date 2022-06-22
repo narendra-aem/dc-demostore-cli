@@ -1,7 +1,11 @@
 "use strict";
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
 }) : (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     o[k2] = m[k];
@@ -41,7 +45,7 @@ const chalk_1 = __importDefault(require("chalk"));
 const prompts_1 = require("./prompts");
 const http_status_codes_1 = require("http-status-codes");
 const loginDC = (context) => __awaiter(void 0, void 0, void 0, function* () {
-    context.amplienceHelper = amplience_helper_1.default(context);
+    context.amplienceHelper = (0, amplience_helper_1.default)(context);
     context.hub = yield context.amplienceHelper.login();
 });
 exports.loginDC = loginDC;
@@ -49,7 +53,7 @@ const createTempDir = (context) => {
     fs_extra_1.default.rmSync(context.tempDir, { recursive: true, force: true });
     fs_extra_1.default.mkdirpSync(context.tempDir);
     logger_1.default.info(`${prompts_1.prompts.created} temp dir: ${chalk_1.default.blue(context.tempDir)}`);
-    logger_1.setLogDirectory(context.tempDir);
+    (0, logger_1.setLogDirectory)(context.tempDir);
 };
 exports.createTempDir = createTempDir;
 const setupLogging = (context) => {
@@ -95,7 +99,7 @@ const contextHandler = (handler) => (context) => __awaiter(void 0, void 0, void 
         }
     }
     finally {
-        logger_1.logRunEnd(context);
+        (0, logger_1.logRunEnd)(context);
     }
 });
 exports.contextHandler = contextHandler;

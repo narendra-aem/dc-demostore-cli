@@ -1,7 +1,11 @@
 "use strict";
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
 }) : (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     o[k2] = m[k];
@@ -55,7 +59,7 @@ class CLIJob {
             (_a = child.stdout) === null || _a === void 0 ? void 0 : _a.on('data', (message) => {
                 lodash_1.default.each(message.split('\n'), line => {
                     if (line.length > 0) {
-                        logger_2.logUpdate(`${line.trim()}`);
+                        (0, logger_2.logUpdate)(`${line.trim()}`);
                         lodash_1.default.each(this.reactions, (reaction, trigger) => {
                             if (line.indexOf(trigger) > -1) {
                                 reaction(line, child);
@@ -69,9 +73,9 @@ class CLIJob {
                     logger_1.default.error(`${line.trim()}`);
                 });
             });
-            yield stringio_1.onExit(child);
+            yield (0, stringio_1.onExit)(child);
             let duration = new Date().valueOf() - startTime;
-            logger_1.logComplete(`${prompts_1.prompts.done} in ${chalk_1.default.green(duration)} ms\n`);
+            (0, logger_1.logComplete)(`${prompts_1.prompts.done} in ${chalk_1.default.green(duration)} ms\n`);
         });
     }
 }

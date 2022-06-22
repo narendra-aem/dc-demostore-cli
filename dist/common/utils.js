@@ -25,13 +25,13 @@ const fileIterator = (dir, mapping) => ({
             let path = `${dir}/${file}`;
             let stats = fs_extra_1.default.statSync(path);
             if (stats.isDirectory()) {
-                return yield exports.fileIterator(path, mapping).iterate(fn);
+                return yield (0, exports.fileIterator)(path, mapping).iterate(fn);
             }
             else {
                 let contents = {};
                 if (path.endsWith('.hbs')) {
                     let fileContents = fs_extra_1.default.readFileSync(path, 'utf-8');
-                    const template = handlebars_1.compile(fileContents);
+                    const template = (0, handlebars_1.compile)(fileContents);
                     contents = JSON.parse(template(mapping));
                     fs_extra_1.default.unlinkSync(path);
                     path = path.replace('.hbs', '');

@@ -21,12 +21,12 @@ const child_process_1 = __importDefault(require("child_process"));
 const { Select, AutoComplete } = require('enquirer');
 const logger_1 = __importDefault(require("../common/logger"));
 const fs_extra_2 = __importDefault(require("fs-extra"));
-const getConfigPath = (platform = process.platform) => path_1.join(process.env[platform == 'win32' ? 'USERPROFILE' : 'HOME'] || __dirname, '.amplience');
+const getConfigPath = (platform = process.platform) => (0, path_1.join)(process.env[platform == 'win32' ? 'USERPROFILE' : 'HOME'] || __dirname, '.amplience');
 exports.getConfigPath = getConfigPath;
-exports.CONFIG_PATH = exports.getConfigPath();
+exports.CONFIG_PATH = (0, exports.getConfigPath)();
 const ENV_FILE_PATH = `${exports.CONFIG_PATH}/environments.json`;
 fs_extra_2.default.mkdirpSync(exports.CONFIG_PATH);
-const saveConfig = () => fs_extra_1.writeFileSync(ENV_FILE_PATH, JSON.stringify(envConfig, undefined, 4), { encoding: 'utf-8' });
+const saveConfig = () => (0, fs_extra_1.writeFileSync)(ENV_FILE_PATH, JSON.stringify(envConfig, undefined, 4), { encoding: 'utf-8' });
 const updateEnvironments = () => {
     lodash_1.default.each(envConfig.envs, env => {
         if (env.envName) {
@@ -45,11 +45,11 @@ const updateEnvironments = () => {
 exports.updateEnvironments = updateEnvironments;
 const addEnvironment = (env) => {
     envConfig.envs.push(env);
-    exports.useEnvironment(env);
+    (0, exports.useEnvironment)(env);
 };
 exports.addEnvironment = addEnvironment;
 const deleteEnvironment = (argv) => __awaiter(void 0, void 0, void 0, function* () {
-    let env = yield exports.selectEnvironment(argv);
+    let env = yield (0, exports.selectEnvironment)(argv);
     lodash_1.default.remove(envConfig.envs, (e) => e.name === env.name);
     saveConfig();
 });
@@ -58,12 +58,12 @@ const getEnvironments = () => envConfig.envs.map(env => (Object.assign(Object.as
 exports.getEnvironments = getEnvironments;
 const byName = (lookup) => (obj) => obj.name === lookup;
 exports.byName = byName;
-const getEnvironment = (name) => envConfig.envs.find(exports.byName(name));
+const getEnvironment = (name) => envConfig.envs.find((0, exports.byName)(name));
 exports.getEnvironment = getEnvironment;
-const selectEnvironment = (argv) => __awaiter(void 0, void 0, void 0, function* () { return argv.env ? exports.getEnvironment(argv.env) : yield exports.chooseEnvironment(); });
+const selectEnvironment = (argv) => __awaiter(void 0, void 0, void 0, function* () { return argv.env ? (0, exports.getEnvironment)(argv.env) : yield (0, exports.chooseEnvironment)(); });
 exports.selectEnvironment = selectEnvironment;
 const chooseEnvironment = (handler) => __awaiter(void 0, void 0, void 0, function* () {
-    const envs = exports.getEnvironments();
+    const envs = (0, exports.getEnvironments)();
     const active = envs.find(env => env.active);
     const name = yield (new AutoComplete({
         name: 'env',
@@ -72,13 +72,13 @@ const chooseEnvironment = (handler) => __awaiter(void 0, void 0, void 0, functio
         multiple: false,
         choices: lodash_1.default.map(envs, 'name')
     })).run();
-    let env = envs.find(exports.byName(name));
+    let env = envs.find((0, exports.byName)(name));
     return handler ? yield handler(env) : env;
 });
 exports.chooseEnvironment = chooseEnvironment;
 const useEnvironmentFromArgs = (argv) => __awaiter(void 0, void 0, void 0, function* () {
-    let env = yield exports.selectEnvironment(argv);
-    yield exports.useEnvironment(env);
+    let env = yield (0, exports.selectEnvironment)(argv);
+    yield (0, exports.useEnvironment)(env);
 });
 exports.useEnvironmentFromArgs = useEnvironmentFromArgs;
 const useEnvironment = (env) => __awaiter(void 0, void 0, void 0, function* () {
@@ -93,12 +93,12 @@ const currentEnvironment = () => __awaiter(void 0, void 0, void 0, function* () 
     if (envConfig.envs.length === 0) {
         logger_1.default.info(`no demostore configs found, let's create one!`);
         logger_1.default.info('');
-        yield exports.createEnvironment();
+        yield (0, exports.createEnvironment)();
     }
-    let env = exports.getEnvironment(envConfig.current);
+    let env = (0, exports.getEnvironment)(envConfig.current);
     if (!env) {
-        env = yield exports.chooseEnvironment();
-        exports.useEnvironment(env);
+        env = yield (0, exports.chooseEnvironment)();
+        (0, exports.useEnvironment)(env);
     }
     return env;
 });
@@ -116,9 +116,9 @@ const hubIdHelpText = helpTag('found in hub settings -> properties');
 const deploymentHelpText = helpTag('-> https://n.amprsa.net/deployment-instructions');
 const createEnvironment = () => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        let environments = exports.getEnvironments();
+        let environments = (0, exports.getEnvironments)();
         let name = yield ask(`name this config:`);
-        if (environments.find(exports.byName(name))) {
+        if (environments.find((0, exports.byName)(name))) {
             throw new Error(`config already exists: ${name}`);
         }
         sectionHeader(`${appTag} configuration ${deploymentHelpText}`);
@@ -130,7 +130,7 @@ const createEnvironment = () => __awaiter(void 0, void 0, void 0, function* () {
         sectionHeader(`${damTag} configuration ${credentialsHelpText}`);
         let username = yield ask(`username:`);
         let password = yield secureAsk(`password:`);
-        exports.addEnvironment({
+        (0, exports.addEnvironment)({
             name,
             url,
             dc: {
@@ -150,7 +150,7 @@ const createEnvironment = () => __awaiter(void 0, void 0, void 0, function* () {
 });
 exports.createEnvironment = createEnvironment;
 const listEnvironments = () => {
-    exports.getEnvironments().forEach(env => {
+    (0, exports.getEnvironments)().forEach(env => {
         let str = `  ${env.name}`;
         if (env.active) {
             str = chalk_1.default.greenBright(`* ${env.name}`);
@@ -159,6 +159,6 @@ const listEnvironments = () => {
     });
 };
 exports.listEnvironments = listEnvironments;
-fs_extra_1.mkdirpSync(exports.CONFIG_PATH);
-let envConfig = fs_extra_1.existsSync(ENV_FILE_PATH) ? fs_extra_1.readJsonSync(ENV_FILE_PATH) : { envs: [], current: null };
-exports.updateEnvironments();
+(0, fs_extra_1.mkdirpSync)(exports.CONFIG_PATH);
+let envConfig = (0, fs_extra_1.existsSync)(ENV_FILE_PATH) ? (0, fs_extra_1.readJsonSync)(ENV_FILE_PATH) : { envs: [], current: null };
+(0, exports.updateEnvironments)();

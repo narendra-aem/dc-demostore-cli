@@ -1,7 +1,11 @@
 "use strict";
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
 }) : (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     o[k2] = m[k];
@@ -47,13 +51,13 @@ class SettingsHandler extends resource_handler_1.ResourceHandler {
     import(context) {
         return __awaiter(this, void 0, void 0, function* () {
             let { hub } = context;
-            logger_1.logSubheading(`[ import ] settings`);
+            (0, logger_1.logSubheading)(`[ import ] settings`);
             let settingsJSONFile = `${context.tempDir}/content/settings/settings.json`;
             if (!fs_extra_1.default.existsSync(settingsJSONFile)) {
                 logger_1.default.info(`skipped, no settings.json found`);
                 return;
             }
-            let hubWorkflowStates = yield dc_demostore_integration_1.paginator(hub.related.workflowStates.list);
+            let hubWorkflowStates = yield (0, dc_demostore_integration_1.paginator)(hub.related.workflowStates.list);
             let { settings, workflowStates } = fs_extra_1.default.readJsonSync(settingsJSONFile);
             settings = lodash_1.default.isEqualWith(lodash_1.default.pick(hub.settings, Object.keys(settings)), settings, (a, b) => {
                 return Array.isArray(a) && Array.isArray(b) ? lodash_1.default.isEqual(lodash_1.default.sortBy(a), lodash_1.default.sortBy(b)) : undefined;

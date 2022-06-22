@@ -1,5 +1,5 @@
 import { CleanableResourceHandler, ImportContext } from "./resource-handler"
-import { ContentTypeSchema } from "dc-management-sdk-js"
+import { ContentTypeSchema, ValidationLevel } from "dc-management-sdk-js"
 import { getCodecs, paginator, getContentTypeSchema, CommerceAPI } from "@amplience/dc-demostore-integration"
 import _ from 'lodash'
 import chalk from 'chalk'
@@ -93,6 +93,7 @@ export class ContentTypeSchemaHandler extends CleanableResourceHandler {
                 }
             }]
             demostoreConfigSchema.body = JSON.stringify(schemaBody)
+            demostoreConfigSchema.validationLevel = ValidationLevel.CONTENT_TYPE;
         }
 
         await installSchemas(context, schemasToInstall)

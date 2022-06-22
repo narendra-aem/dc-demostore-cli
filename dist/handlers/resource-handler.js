@@ -48,14 +48,14 @@ class CleanableResourceHandler extends ResourceHandler {
                 console.log(`not cleaning up for ${this.resourceTypeDescription}`);
                 return;
             }
-            let pageables = yield dc_demostore_integration_1.paginator(pagableFn, { status: 'ACTIVE' });
+            let pageables = yield (0, dc_demostore_integration_1.paginator)(pagableFn, { status: 'ACTIVE' });
             let actionCount = 0;
             yield Promise.all(pageables.map((y) => __awaiter(this, void 0, void 0, function* () {
                 actionCount++;
                 yield y.related[this.resourceAction]();
             })));
             let color = this.resourceAction === 'delete' ? chalk_1.default.red : chalk_1.default.yellow;
-            logger_1.logComplete(`${this.getDescription()}: [ ${color(actionCount)} ${this.resourceAction}d ]`);
+            (0, logger_1.logComplete)(`${this.getDescription()}: [ ${color(actionCount)} ${this.resourceAction}d ]`);
         });
     }
 }
