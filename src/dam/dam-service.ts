@@ -1,3 +1,4 @@
+import _ from 'lodash';
 import { Arguments } from 'yargs';
 import { DAMClient, ConfigurationParameters } from './dam-client';
 
@@ -73,6 +74,14 @@ export class DAMService {
         let bucket = await this.getBucketByName(bucketName)
         const assetsList = await this.client.fetchPaginatedResourcesList(`/assets?filter=bucketID:${bucket.id}`);
         return assetsList;
+    }
+
+    async getAssetsListForAllBuckets(): Promise<any[]> {
+        const buckets = await this.getBucketsList()
+        const assets = await Promise.all(buckets.map(async bucket => {
+            return await this.getAssetsList(bucket.id)
+        }))
+        return _.flatMap(assets)
     }
 
     async getEndpoints(): Promise<any> {

@@ -8,8 +8,12 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.DAMService = void 0;
+const lodash_1 = __importDefault(require("lodash"));
 const dam_client_1 = require("./dam-client");
 class DAMService {
     constructor() {
@@ -63,6 +67,15 @@ class DAMService {
             let bucket = yield this.getBucketByName(bucketName);
             const assetsList = yield this.client.fetchPaginatedResourcesList(`/assets?filter=bucketID:${bucket.id}`);
             return assetsList;
+        });
+    }
+    getAssetsListForAllBuckets() {
+        return __awaiter(this, void 0, void 0, function* () {
+            const buckets = yield this.getBucketsList();
+            const assets = yield Promise.all(buckets.map((bucket) => __awaiter(this, void 0, void 0, function* () {
+                return yield this.getAssetsList(bucket.id);
+            })));
+            return lodash_1.default.flatMap(assets);
         });
     }
     getEndpoints() {
