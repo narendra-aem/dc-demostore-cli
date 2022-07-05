@@ -47,7 +47,8 @@
   },
   "homepage": "https://github.com/amplience/dc-demostore-cli#readme",
   "dependencies": {
-    "@amplience/dc-demostore-integration": "https://github.com/amplience/dc-demostore-integration.git#r2",
+    "@amplience/dc-demostore-integration": "github:amplience/dc-demostore-integration#v1.1.2",
+    "@justindfuller/async-lodash": "^1.0.9",
     "@rauschma/stringio": "^1.4.0",
     "adm-zip": "^0.5.9",
     "ajv": "^8.10.0",
