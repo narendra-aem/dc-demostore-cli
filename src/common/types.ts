@@ -57,6 +57,7 @@ export type Mapping = {
 }
 
 export type CMSMapping = AmplienceConfig & {
+    hubId:                  string
     repositories:           Dictionary<string | undefined>
     workflowStates:         Dictionary<string | undefined>
 }
@@ -78,6 +79,7 @@ export const getMapping = async (context: ImportContext): Promise<Mapping> => {
         url: context.environment.url,
         cms: {
             hub: context.hub.name!,
+            hubId: context.hub.id!,
             stagingApi: context.hub.settings?.virtualStagingEnvironment?.hostname || '',
             imageHub: context.config?.cms.imageHub,
             repositories: _.zipObject(_.map(repositories, r => r.name!), _.map(repositories, 'id')),
