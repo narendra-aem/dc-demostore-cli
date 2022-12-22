@@ -78,14 +78,17 @@ export class SearchIndexHandler extends ResourceHandler implements Cleanable {
                 
                 searchIndexCount++
     
-                await retrier(() => createdIndex.related.settings.update(item.settings), `apply settings: ${chalk.cyanBright(item.indexDetails.name)}`)
-    
+                
                 // reload published indexes
                 publishedIndexes = await paginator(searchIndexPaginator(hub))
-    
+                
                 // Get list of replicas settings
                 const replicasSettings: any[] = item.replicasSettings;
                 const replicasIndexes = _.map(replicasSettings, (item: any) => _.find(publishedIndexes, i => i.name === item.name))
+
+                await retrier(() => createdIndex.related.settings.update(item.settings, {
+                    waitUntilApplied: replicasIndexes.length > 0 ? ['replicas'] : false
+                }), `apply settings: ${chalk.cyanBright(item.indexDetails.name)}`)
     
                 await Promise.all(replicasIndexes.map(async (replicaIndex: SearchIndex, index: number) => {
                     await retrier(() => replicaIndex.related.settings.update(replicasSettings[index].settings), `apply replica settings: ${chalk.cyanBright(replicaIndex.name)}`)
