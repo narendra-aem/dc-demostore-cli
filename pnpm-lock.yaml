@@ -19,7 +19,7 @@ specifiers:
   chalk: 4.1.2
   cli-table: ^0.3.11
   cross-os: ^1.4.0
-  dc-management-sdk-js: ^1.17.1
+  dc-management-sdk-js: ^1.18.0
   enquirer: ^2.3.6
   fs-extra: ^10.0.1
   handlebars: ^4.7.6
@@ -44,7 +44,7 @@ dependencies:
   axios: 0.27.2
   chalk: 4.1.2
   cli-table: 0.3.11
-  dc-management-sdk-js: 1.17.1
+  dc-management-sdk-js: 1.18.0
   enquirer: 2.3.6
   fs-extra: 10.1.0
   handlebars: 4.7.7
@@ -257,14 +257,6 @@ packages:
 
   /asynckit/0.4.0:
     resolution: {integrity: sha512-Oei9OH4tRh0YqU3GxhX79dM/mwVgvbZJaSNaRk+bshkj0S5cfHcgYakreBjrHwatXKbz+IoIdYLxrKim2MjW0Q==}
-    dev: false
-
-  /axios/0.21.4:
-    resolution: {integrity: sha512-ut5vewkiu8jjGBdqpM44XxjuCjq9LAKeHVmoVfHVzy8eHgxxq8SbAVQNovDA8mVi05kP0Ea/n/UzcSHcTJQfNg==}
-    dependencies:
-      follow-redirects: 1.15.1
-    transitivePeerDependencies:
-      - debug
     dev: false
 
   /axios/0.26.1:
@@ -625,11 +617,11 @@ packages:
     resolution: {integrity: sha512-jyCETtSl3VMZMWeRo7iY1FL19ges1t55hMo5yaam4Jrsm5EPL89UQkoQRyiI+Yf4k8r2ZpdngkV8hr1lIdjb3Q==}
     dev: true
 
-  /dc-management-sdk-js/1.17.1:
-    resolution: {integrity: sha512-k8xxZoMHGt36xtmhujisGAMvFZ91ddqJ/AXcv4Mjv7eZy6dSpWmI8IIBS8GblA920GCApaQuxky3xUYKJFR6yg==}
+  /dc-management-sdk-js/1.18.0:
+    resolution: {integrity: sha512-Zi+cjKcnvkpIX+8LHDpIZENA0VSPtv0Rt3YzXOQbTaD6wmYowxQE3o3eUWk4qpyRvrBrBX+4I+442e100EOGIQ==}
     engines: {node: '>=10'}
     dependencies:
-      axios: 0.21.4
+      axios: 0.27.2
       url-template: 2.0.8
     transitivePeerDependencies:
       - debug
@@ -2067,7 +2059,7 @@ packages:
     dev: false
 
   /url-template/2.0.8:
-    resolution: {integrity: sha1-/FZaPMy/93MMd19WQflVV5FDnyE=}
+    resolution: {integrity: sha512-XdVKMF4SJ0nP/O7XIPB0JwAEuT9lDIYnNsK8yGVe43y0AWoKeJNdv3ZNWh7ksJ6KqQFjOO6ox/VEitLnaVNufw==}
     dev: false
 
   /util-deprecate/1.0.2:
@@ -2223,7 +2215,7 @@ packages:
       axios: 0.26.1
       crypto-js: 4.1.1
       currency.js: 2.0.4
-      dc-management-sdk-js: 1.17.1
+      dc-management-sdk-js: 1.18.0
       http: 0.0.1-security
       https: 1.0.0
       isomorphic-unfetch: 3.1.0

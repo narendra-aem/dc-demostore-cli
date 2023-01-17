@@ -56,7 +56,7 @@
     "axios": "^0.27.2",
     "chalk": "4.1.2",
     "cli-table": "^0.3.11",
-    "dc-management-sdk-js": "^1.17.1",
+    "dc-management-sdk-js": "^1.18.0",
     "enquirer": "^2.3.6",
     "fs-extra": "^10.0.1",
     "handlebars": "^4.7.6",
