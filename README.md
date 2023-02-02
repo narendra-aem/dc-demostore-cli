@@ -19,6 +19,17 @@ Run `demostore --help` to get a list of available commands.
 
 <!-- /MarkdownTOC -->
 
+## Building
+
+You need to have [Node Version Manager](https://github.com/nvm-sh/nvm) installed.
+
+```
+nvm install 16
+nvm use
+npm install -g pnpm
+pnpm install
+```
+
 
 
 ## Installation
@@ -65,11 +76,11 @@ By default the configuration is saved to a file in the directory `<HOME_DIR>/.am
 
 ### Options
 
-| Option Name    | Type                                                       | Description                                                  |
-| -------------- | ---------------------------------------------------------- | ------------------------------------------------------------ |
-| --version      | [boolean]                                                  | Show version number                                          |
-| --config       | [string]<br />[default: "~/.amplience/dc-cli-config.json"] | Path to JSON config file                                     |
-| --help         | [boolean]                                                  | Show help                                                    |
+| Option Name | Type                                                       | Description              |
+| ----------- | ---------------------------------------------------------- | ------------------------ |
+| --version   | [boolean]                                                  | Show version number      |
+| --config    | [string]<br />[default: "~/.amplience/dc-cli-config.json"] | Path to JSON config file |
+| --help      | [boolean]                                                  | Show help                |
 
 ## Command categories
 
@@ -81,8 +92,8 @@ By default the configuration is saved to a file in the directory `<HOME_DIR>/.am
   - [import](#import)
   - [cleanup](#cleanup)
   - [publish](#publish)
-  
-  
+
+
 
 <!-- /MarkdownTOC -->
 
@@ -90,10 +101,10 @@ By default the configuration is saved to a file in the directory `<HOME_DIR>/.am
 
 The following options are available for all **content-type-schema** commands.
 
-| Option Name    | Type                                                       | Description                      |
-| -------------- | ---------------------------------------------------------- | -------------------------------- |
-| --version      | [boolean]                                                  | Show version number              |
-| --help         | [boolean]                                                  | Show help                        |
+| Option Name | Type      | Description         |
+| ----------- | --------- | ------------------- |
+| --version   | [boolean] | Show version number |
+| --help      | [boolean] | Show help           |
 
 ## Commands
 
@@ -103,14 +114,14 @@ Clean a hub.
 
 #### Options
 
-| Option Name               | Type          | Description                                          |
-| ------------------------- | ------------- | ---------------------------------------------------- |
-| --logRequests, -r         | [boolean]     | log http requests/responses                          |
-| --tempDir, -t             | [string]      | temp dir for run files                               |
-| --matchingSchema, -m      | [array]       | apply to (types, schemas, items) matching schema id  |
-| --include, -i             | [array]       | types to include                                     |
-| --skipConfirmation, -c    | [boolean]     | don't ask for confirmation                           |
-| --all, -a                 | [boolean]     | clean up all resource types                          |
+| Option Name            | Type      | Description                                         |
+| ---------------------- | --------- | --------------------------------------------------- |
+| --logRequests, -r      | [boolean] | log http requests/responses                         |
+| --tempDir, -t          | [string]  | temp dir for run files                              |
+| --matchingSchema, -m   | [array]   | apply to (types, schemas, items) matching schema id |
+| --include, -i          | [array]   | types to include                                    |
+| --skipConfirmation, -c | [boolean] | don't ask for confirmation                          |
+| --all, -a              | [boolean] | clean up all resource types                         |
 
 Valid resource types are `contentTypeSchema`, `contentTypes`, `contentItems`, `searchIndexes`, `extensions`, `webhooks`, and `events`.
 
@@ -130,14 +141,14 @@ Import data.
 
 #### Options
 
-| Option Name               | Type          | Description                                          |
-| ------------------------- | ------------- | ---------------------------------------------------- |
-| --logRequests, -r         | [boolean]     | log http requests/responses                          |
-| --tempDir, -t             | [string]      | temp dir for run files                               |
-| --matchingSchema, -m      | [array]       | apply to (types, schemas, items) matching schema id  |
-| --automationDir, -a       | [string]      | path to import directory                             |
-| --skipContentImport, -s   | [boolean]     | skip content import                                  |
-| --latest, -l              | [boolean]     | using this flag will download the latest automation  |
+| Option Name             | Type      | Description                                         |
+| ----------------------- | --------- | --------------------------------------------------- |
+| --logRequests, -r       | [boolean] | log http requests/responses                         |
+| --tempDir, -t           | [string]  | temp dir for run files                              |
+| --matchingSchema, -m    | [array]   | apply to (types, schemas, items) matching schema id |
+| --automationDir, -a     | [string]  | path to import directory                            |
+| --skipContentImport, -s | [boolean] | skip content import                                 |
+| --latest, -l            | [boolean] | using this flag will download the latest automation |
 
 #### Examples
 
@@ -155,11 +166,11 @@ Publish all unpublished content items.
 
 #### Options
 
-| Option Name               | Type          | Description                                          |
-| ------------------------- | ------------- | ---------------------------------------------------- |
-| --logRequests, -r         | [boolean]     | log http requests/responses                          |
-| --tempDir, -t             | [string]      | temp dir for run files                               |
-| --matchingSchema, -m      | [array]       | apply to (types, schemas, items) matching schema id  |
+| Option Name          | Type      | Description                                         |
+| -------------------- | --------- | --------------------------------------------------- |
+| --logRequests, -r    | [boolean] | log http requests/responses                         |
+| --tempDir, -t        | [string]  | temp dir for run files                              |
+| --matchingSchema, -m | [array]   | apply to (types, schemas, items) matching schema id |
 
 #### Examples
 
@@ -180,4 +191,4 @@ Show the status of an demostore environment.
 This category includes interactions with environments.
 
 [View commands for **env**](docs/env.md)
- 
+

@@ -72,6 +72,11 @@ const retry = (count) => (fn, message) => __awaiter(void 0, void 0, void 0, func
     }
 });
 const retrier = retry(3);
+const ensureSearchIndexSettings = (settings) => {
+    return settings instanceof dc_management_sdk_js_1.SearchIndexSettings
+        ? settings
+        : new dc_management_sdk_js_1.SearchIndexSettings(settings);
+};
 class SearchIndexHandler extends resource_handler_1.ResourceHandler {
     constructor() {
         super(dc_management_sdk_js_1.SearchIndex, 'searchIndexes');
@@ -104,12 +109,14 @@ class SearchIndexHandler extends resource_handler_1.ResourceHandler {
                         throw new Error(`failed to create search index [ ${item.indexDetails.name} ] after 3 attempts`);
                     }
                     searchIndexCount++;
-                    yield retrier(() => createdIndex.related.settings.update(item.settings), `apply settings: ${chalk_1.default.cyanBright(item.indexDetails.name)}`);
                     publishedIndexes = yield (0, dc_demostore_integration_1.paginator)((0, dc_demostore_integration_1.searchIndexPaginator)(hub));
                     const replicasSettings = item.replicasSettings;
                     const replicasIndexes = lodash_1.default.map(replicasSettings, (item) => lodash_1.default.find(publishedIndexes, i => i.name === item.name));
+                    yield retrier(() => createdIndex.related.settings.update(ensureSearchIndexSettings(item.settings), {
+                        waitUntilApplied: replicasIndexes.length > 0 ? ['replicas'] : false
+                    }), `apply settings: ${chalk_1.default.cyanBright(item.indexDetails.name)}`);
                     yield Promise.all(replicasIndexes.map((replicaIndex, index) => __awaiter(this, void 0, void 0, function* () {
-                        yield retrier(() => replicaIndex.related.settings.update(replicasSettings[index].settings), `apply replica settings: ${chalk_1.default.cyanBright(replicaIndex.name)}`);
+                        yield retrier(() => replicaIndex.related.settings.update(ensureSearchIndexSettings(replicasSettings[index].settings)), `apply replica settings: ${chalk_1.default.cyanBright(replicaIndex.name)}`);
                         replicaCount++;
                     })));
                     const types = yield (0, dc_demostore_integration_1.paginator)(createdIndex.related.assignedContentTypes.list);
