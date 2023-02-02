@@ -1,6 +1,6 @@
 {
   "name": "@amplience/dc-demostore-cli",
-  "version": "1.2.0",
+  "version": "1.1.4",
   "description": "Amplience Demo Store CLI",
   "man": "./dist/demo-cli.1",
   "bin": {
@@ -17,7 +17,7 @@
       "linux": "chmod +x dist/index.js",
       "win32": "cd ."
     },
-    "version:patch": "standard-version",
+    "version:patch": "standard-version --release-as patch",
     "version:minor": "standard-version --release-as minor",
     "version:major": "standard-version --release-as major",
     "prepare-patch-release": "run-s build version:patch",

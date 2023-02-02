@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.1.4](https://github.com/amplience/dc-demostore-cli/compare/v1.1.3...v1.1.4) (2023-02-02)
+
+
+### Features
+
+* latest (1.18.0) dc-management-sdk-js ([fa10d60](https://github.com/amplience/dc-demostore-cli/commit/fa10d605fb30baa470c67549852e0116ebf65fb5))
+* **search indexes:** support for async search index settings ([85ce19b](https://github.com/amplience/dc-demostore-cli/commit/85ce19b08d1afd1b0be6f869abcb3f1b7e9400ff))
+
+
+### Bug Fixes
+
+* build with node 16 & pnpm ([8871f4e](https://github.com/amplience/dc-demostore-cli/commit/8871f4ee54e25a19e1c1bc1d4525c896fa1eca24))
+* ensure the settings are instances of SearchIndexSettings() ([b66ba25](https://github.com/amplience/dc-demostore-cli/commit/b66ba25c4c7055f7d55f2d0f2d788fadf589f7ef))
+
 ## [1.2.0](https://github.com/amplience/dc-demostore-cli/compare/v1.1.3...v1.2.0) (2023-02-02)
 
 
