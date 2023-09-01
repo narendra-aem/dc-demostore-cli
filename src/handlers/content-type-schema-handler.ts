@@ -64,7 +64,22 @@ export class ContentTypeSchemaHandler extends CleanableResourceHandler {
 
         // first we will load the site/integration types (codecs)
         let codecs = getCodecs()
-        let codecSchemas = codecs.map(getContentTypeSchema)
+        let codecSchemas = codecs.map(codec => {
+            const schema = getContentTypeSchema(codec)
+            const lastSlash = codec.schema.uri.lastIndexOf('/')
+            const body = JSON.parse(schema.body || '{}');
+            body.properties = {
+                vendor: {
+                    type: 'string',
+                    title: 'vendor',
+                    const: codec.schema.uri.slice(lastSlash + 1)
+                },
+                ...body.properties
+            }
+            schema.body = JSON.stringify(body);
+
+            return schema;
+        })
         await installSchemas(context, codecSchemas)
 
         const schemas = loadJsonFromDirectory<ContentTypeSchema>(sourceDir, ContentTypeSchema);
