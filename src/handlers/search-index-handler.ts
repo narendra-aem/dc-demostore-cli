@@ -153,7 +153,7 @@ export class SearchIndexHandler extends ResourceHandler implements Cleanable {
 
                 if(!context.config){
                     let tempMapping = await context.amplienceHelper.getDemoStoreConfig()
-                    context.config = tempMapping.body
+                    context.config = tempMapping
                 }
                 context.config.algolia = {
                     appId: key.applicationId,

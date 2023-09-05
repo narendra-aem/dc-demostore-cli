@@ -8,10 +8,10 @@ export const desc = "Update hub retail pointers";
 
 export const builder = amplienceBuilder
 export const handler = contextHandler(async (context: AmplienceContext): Promise<void> => {
-    let demoStoreConfig = (await context.amplienceHelper.getDemoStoreConfig()).body
-    let commerce = (await context.amplienceHelper.getContentItem(demoStoreConfig.commerce.id)).body
+    let demoStoreConfig = await context.amplienceHelper.getDemoStoreConfig()
+    //let commerce = (await context.amplienceHelper.getContentItem(demoStoreConfig.commerce.id)).body
 
-    if (!commerce) {
-        throw new Error(`commerce integration not found!`)
-    }
+    //if (!commerce) {
+        //throw new Error(`commerce integration not found!`)
+    //}
 })

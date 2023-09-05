@@ -48,19 +48,13 @@ const dc_demostore_integration_1 = require("@amplience/dc-demostore-integration"
 const paginator_1 = require("../common/dccli/paginator");
 const dam_service_1 = require("../dam/dam-service");
 exports.deliveryKeys = {
-    config: `demostore/config/default`,
-    automation: `demostore/automation`,
-    rest: `demostore/integration/rest`
+    automation: `demostore/automation`
 };
 exports.labels = {
-    config: `demostore config`,
-    automation: `demostore automation`,
-    rest: `generic rest commerce configuration`
+    automation: `demostore automation`
 };
 exports.schemas = {
-    config: `https://demostore.amplience.com/site/demostoreconfig`,
-    automation: `https://demostore.amplience.com/site/automation`,
-    rest: `https://demostore.amplience.com/site/integration/rest`
+    automation: `https://demostore.amplience.com/site/automation`
 };
 const baseURL = `https://demostore-catalog.s3.us-east-2.amazonaws.com`;
 const restMap = {};
@@ -130,38 +124,22 @@ const AmplienceHelperGenerator = (context) => {
             workflowStates: []
         });
     });
-    const getRestConfig = () => __awaiter(void 0, void 0, void 0, function* () {
-        return yield ensureContentItem('rest', {
-            productURL: `${baseURL}/products.json`,
-            categoryURL: `${baseURL}/categories.json`,
-            customerGroupURL: `${baseURL}/customerGroups.json`,
-            translationsURL: `${baseURL}/translations.json`
-        });
-    });
     const getDemoStoreConfig = () => __awaiter(void 0, void 0, void 0, function* () {
         var _a, _b;
-        return yield ensureContentItem('config', {
+        return {
             url: context.environment.url,
             algolia: {
                 appId: '',
                 apiKey: ''
-            },
-            commerce: {
-                _meta: {
-                    schema: "http://bigcontent.io/cms/schema/v1/core#/definitions/content-reference"
-                },
-                id: (yield getRestConfig()).id,
-                contentType: exports.schemas.rest
             },
             cms: {
                 hub: context.environment.name,
                 stagingApi: ((_b = (_a = context.hub.settings) === null || _a === void 0 ? void 0 : _a.virtualStagingEnvironment) === null || _b === void 0 ? void 0 : _b.hostname) || '',
                 imageHub: 'willow'
             }
-        });
+        };
     });
     const updateDemoStoreConfig = () => __awaiter(void 0, void 0, void 0, function* () {
-        yield updateContentItem('config', context.config);
     });
     const updateAutomation = () => __awaiter(void 0, void 0, void 0, function* () {
         let mappingStats = fs_extra_1.default.statSync(`${context.tempDir}/old_mapping.json`);

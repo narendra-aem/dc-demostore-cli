@@ -7,7 +7,6 @@ import { Arguments, Argv } from 'yargs';
 import { contextHandler } from '../common/middleware';
 import amplienceBuilder from '../common/amplience-builder';
 import { timed } from "../handlers/typed-result";
-import { AmplienceHelper } from '../common/amplience-helper';
 
 const { Confirm, MultiSelect } = require('enquirer');
 

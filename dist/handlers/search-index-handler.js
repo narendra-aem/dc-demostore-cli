@@ -153,7 +153,7 @@ class SearchIndexHandler extends resource_handler_1.ResourceHandler {
                 if (key && key.applicationId && key.key) {
                     if (!context.config) {
                         let tempMapping = yield context.amplienceHelper.getDemoStoreConfig();
-                        context.config = tempMapping.body;
+                        context.config = tempMapping;
                     }
                     context.config.algolia = {
                         appId: key.applicationId,

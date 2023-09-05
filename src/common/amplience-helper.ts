@@ -14,28 +14,20 @@ import { DAMMapping } from "./types"
 import { DAMService } from "../dam/dam-service"
 
 type IntegrationConstants = {
-    config: string
     automation: string
-    rest: string
 }
 
 // constants
 export const deliveryKeys: IntegrationConstants = {
-    config: `demostore/config/default`,
-    automation: `demostore/automation`,
-    rest: `demostore/integration/rest`
+    automation: `demostore/automation`
 }
 
 export const labels: IntegrationConstants = {
-    config: `demostore config`,
-    automation: `demostore automation`,
-    rest: `generic rest commerce configuration`
+    automation: `demostore automation`
 }
 
 export const schemas: IntegrationConstants = {
-    config: `https://demostore.amplience.com/site/demostoreconfig`,
-    automation: `https://demostore.amplience.com/site/automation`,
-    rest: `https://demostore.amplience.com/site/integration/rest`
+    automation: `https://demostore.amplience.com/site/automation`
 }
 
 const baseURL = `https://demostore-catalog.s3.us-east-2.amazonaws.com`
@@ -116,35 +108,23 @@ const AmplienceHelperGenerator = (context: AmplienceContext): AmplienceHelper =>
         workflowStates: []
     })
 
-    const getRestConfig = async (): Promise<ContentItem> => await ensureContentItem('rest', {
-        productURL: `${baseURL}/products.json`,
-        categoryURL: `${baseURL}/categories.json`,
-        customerGroupURL: `${baseURL}/customerGroups.json`,
-        translationsURL: `${baseURL}/translations.json`
-    })
-
-    const getDemoStoreConfig = async (): Promise<ContentItem> => await ensureContentItem('config', {
-        url: context.environment.url,
-        algolia: {
-            appId: '',
-            apiKey: ''
-        },
-        commerce: {
-            _meta: {
-                schema: "http://bigcontent.io/cms/schema/v1/core#/definitions/content-reference"
+    const getDemoStoreConfig = async (): Promise<any> => {
+        return {
+            url: context.environment.url,
+            algolia: {
+                appId: '',
+                apiKey: ''
             },
-            id: (await getRestConfig()).id,
-            contentType: schemas.rest
-        },
-        cms: {
-            hub: context.environment.name,
-            stagingApi: context.hub.settings?.virtualStagingEnvironment?.hostname || '',
-            imageHub: 'willow'
+            cms: {
+                hub: context.environment.name,
+                stagingApi: context.hub.settings?.virtualStagingEnvironment?.hostname || '',
+                imageHub: 'willow'
+            }
         }
-    })
+    }
 
     const updateDemoStoreConfig = async () => {
-        await updateContentItem('config', context.config)
+        //await updateContentItem('config', context.config)
     }
 
     const updateAutomation = async () => {
@@ -270,7 +250,7 @@ export default AmplienceHelperGenerator
 export type AmplienceHelper = {
     getContentItem: (keyOrId: string) => ContentItem
     publishAll: () => Promise<void>
-    getDemoStoreConfig: () => Promise<ContentItem>
+    getDemoStoreConfig: () => Promise<any>
     updateDemoStoreConfig: () => Promise<void>
     getAutomation: () => Promise<ContentItem>
     updateAutomation: () => Promise<void>
