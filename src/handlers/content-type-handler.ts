@@ -124,7 +124,10 @@ export class ContentTypeHandler extends CleanableResourceHandler {
         }
         validateNoDuplicateContentTypeUris(jsonTypes);
 
-        await installTypes(context, _.filter(Object.values(jsonTypes), s => !_.includes(_.map(getCodecs(), 'schema.uri'), "banana")))
+        // const typesToInstall = _.filter(Object.values(jsonTypes), s => !_.includes(_.map(getCodecs(), 'schema.uri'), s.contentTypeUri))
+        const typesToInstall = Object.values(jsonTypes)
+        await installTypes(context, typesToInstall)
+
         logComplete(`${this.getDescription()}: [ ${chalk.green(archiveCount)} unarchived ] [ ${chalk.green(updateCount)} updated ] [ ${chalk.green(createCount)} created ] [ ${chalk.green(synchronizedCount)} synced ]`)
     }
 

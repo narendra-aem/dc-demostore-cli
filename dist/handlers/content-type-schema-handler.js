@@ -73,7 +73,12 @@ class ContentTypeSchemaHandler extends resource_handler_1.CleanableResourceHandl
             let codecs = (0, dc_demostore_integration_1.getCodecs)();
             const schemas = (0, importer_1.loadJsonFromDirectory)(sourceDir, dc_management_sdk_js_1.ContentTypeSchema);
             const [resolvedSchemas, resolveSchemaErrors] = yield (0, schema_helper_1.resolveSchemaBody)(schemas, sourceDir);
-            const schemasToInstall = lodash_1.default.filter(Object.values(resolvedSchemas), s => !lodash_1.default.includes(lodash_1.default.map(codecs, 'schema.uri'), "banana"));
+            const schemasToInstall = lodash_1.default.filter(Object.values(resolvedSchemas), s => !lodash_1.default.includes(lodash_1.default.map(codecs, 'schema.uri'), s.schemaId));
+            console.log("---");
+            console.log("schemasToInstall", schemasToInstall.map(item => item.schemaId));
+            const schemasToInstall2 = Object.values(resolvedSchemas);
+            console.log("schemasToInstall2", schemasToInstall2.map(item => item.schemaId));
+            console.log("---");
             if (Object.keys(resolveSchemaErrors).length > 0) {
                 const errors = Object.entries(resolveSchemaErrors)
                     .map(value => {

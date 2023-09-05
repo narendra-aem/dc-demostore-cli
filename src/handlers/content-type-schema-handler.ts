@@ -85,7 +85,8 @@ export class ContentTypeSchemaHandler extends CleanableResourceHandler {
 
         const schemas = loadJsonFromDirectory<ContentTypeSchema>(sourceDir, ContentTypeSchema);
         const [resolvedSchemas, resolveSchemaErrors] = await resolveSchemaBody(schemas, sourceDir);
-        const schemasToInstall = _.filter(Object.values(resolvedSchemas), s => !_.includes(_.map(codecs, 'schema.uri'), "banana"))
+        // const schemasToInstall = _.filter(Object.values(resolvedSchemas), s => !_.includes(_.map(codecs, 'schema.uri'), s.schemaId))
+        const schemasToInstall = Object.values(resolvedSchemas)
 
         if (Object.keys(resolveSchemaErrors).length > 0) {
             const errors = Object.entries(resolveSchemaErrors)
