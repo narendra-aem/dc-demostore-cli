@@ -1,6 +1,7 @@
 import { Hub } from 'dc-management-sdk-js';
 import _, { Dictionary } from 'lodash';
-import { DemoStoreConfiguration, paginator, AlgoliaConfig, AmplienceConfig } from '@amplience/dc-demostore-integration';
+import { DemoStoreConfiguration, AlgoliaConfig, AmplienceConfig } from '@amplience/dc-demostore-integration';
+import { paginator } from '../common/dccli/paginator'
 import { AmplienceHelper } from './amplience-helper';
 import { ImportContext } from '../handlers/resource-handler';
 

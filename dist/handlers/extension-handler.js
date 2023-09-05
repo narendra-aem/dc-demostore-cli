@@ -38,7 +38,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.ExtensionHandler = void 0;
 const resource_handler_1 = require("./resource-handler");
 const dc_management_sdk_js_1 = require("dc-management-sdk-js");
-const dc_demostore_integration_1 = require("@amplience/dc-demostore-integration");
+const paginator_1 = require("../common/dccli/paginator");
 const lodash_1 = __importDefault(require("lodash"));
 const logger_1 = __importStar(require("../common/logger"));
 const chalk_1 = __importDefault(require("chalk"));
@@ -63,7 +63,7 @@ class ExtensionHandler extends resource_handler_1.ResourceHandler {
                 return;
             }
             let extensions = fs_extra_1.default.readJsonSync(extensionsFile);
-            const existingExtensions = yield (0, dc_demostore_integration_1.paginator)(hub.related.extensions.list);
+            const existingExtensions = yield (0, paginator_1.paginator)(hub.related.extensions.list);
             let createCount = 0;
             yield Promise.all(extensions.map((ext) => __awaiter(this, void 0, void 0, function* () {
                 try {
@@ -90,7 +90,7 @@ class ExtensionHandler extends resource_handler_1.ResourceHandler {
             (0, logger_1.logSubheading)(`[ cleanup ] extensions`);
             try {
                 let deleteCount = 0;
-                let extensions = yield (0, dc_demostore_integration_1.paginator)(context.hub.related.extensions.list);
+                let extensions = yield (0, paginator_1.paginator)(context.hub.related.extensions.list);
                 yield Promise.all(extensions.map((ext) => __awaiter(this, void 0, void 0, function* () {
                     let oldName = ext.name;
                     ext.name = nanoid();

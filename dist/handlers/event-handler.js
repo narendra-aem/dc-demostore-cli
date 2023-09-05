@@ -15,7 +15,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.EventHandler = void 0;
 const resource_handler_1 = require("./resource-handler");
 const dc_management_sdk_js_1 = require("dc-management-sdk-js");
-const dc_demostore_integration_1 = require("@amplience/dc-demostore-integration");
+const paginator_1 = require("../common/dccli/paginator");
 const lodash_1 = __importDefault(require("lodash"));
 const logger_1 = __importDefault(require("../common/logger"));
 const chalk_1 = __importDefault(require("chalk"));
@@ -27,9 +27,9 @@ class EventHandler extends resource_handler_1.ResourceHandler {
     }
     cleanup(context) {
         return __awaiter(this, void 0, void 0, function* () {
-            let events = yield (0, dc_demostore_integration_1.paginator)(context.hub.related.events.list, { status: 'ACTIVE' });
+            let events = yield (0, paginator_1.paginator)(context.hub.related.events.list, { status: 'ACTIVE' });
             yield Promise.all(events.map((event) => __awaiter(this, void 0, void 0, function* () {
-                let editions = yield (0, dc_demostore_integration_1.paginator)(event.related.editions.list, { status: 'ACTIVE' });
+                let editions = yield (0, paginator_1.paginator)(event.related.editions.list, { status: 'ACTIVE' });
                 let publishedEditions = lodash_1.default.filter(editions, e => e.publishingStatus === dc_management_sdk_js_1.PublishingStatus.PUBLISHED);
                 yield Promise.all(editions.map((edition) => __awaiter(this, void 0, void 0, function* () {
                     if (edition.publishingStatus !== dc_management_sdk_js_1.PublishingStatus.PUBLISHED) {

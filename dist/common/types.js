@@ -14,11 +14,11 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getMapping = void 0;
 const lodash_1 = __importDefault(require("lodash"));
-const dc_demostore_integration_1 = require("@amplience/dc-demostore-integration");
+const paginator_1 = require("../common/dccli/paginator");
 const getMapping = (context) => __awaiter(void 0, void 0, void 0, function* () {
     var _a, _b, _c, _d;
-    let repositories = yield (0, dc_demostore_integration_1.paginator)(context.hub.related.contentRepositories.list);
-    let workflowStates = yield (0, dc_demostore_integration_1.paginator)(context.hub.related.workflowStates.list);
+    let repositories = yield (0, paginator_1.paginator)(context.hub.related.contentRepositories.list);
+    let workflowStates = yield (0, paginator_1.paginator)(context.hub.related.workflowStates.list);
     return {
         url: context.environment.url,
         cms: {

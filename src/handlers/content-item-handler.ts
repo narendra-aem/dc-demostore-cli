@@ -1,17 +1,16 @@
 import { ResourceHandler, Cleanable, ImportContext, CleanupContext } from "./resource-handler"
 import { ContentItem, ContentRepository, ContentType, Folder } from "dc-management-sdk-js"
-import { paginator } from "@amplience/dc-demostore-integration"
+import { paginator } from '../common/dccli/paginator'
 import chalk from 'chalk'
 import { prompts } from "../common/prompts"
 import fs from 'fs-extra'
-import { AmplienceHelper } from '../common/amplience-helper'
 import logger, { logUpdate, logComplete } from "../common/logger"
 import _ from "lodash"
 import { fileIterator } from "../common/utils"
 import { nanoid } from "nanoid"
 import DCCLIContentItemHandler from './dc-cli-content-item-handler'
 import { createLog } from '../common/dccli/log-helpers'
-import { getMapping, Mapping } from "../common/types"
+import { getMapping } from "../common/types"
 
 export class ContentItemHandler extends ResourceHandler implements Cleanable {
     sortPriority = 0.03

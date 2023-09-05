@@ -1,7 +1,7 @@
 import { ResourceHandler, ImportContext } from "./resource-handler"
 import fs from 'fs-extra'
 import _ from 'lodash'
-import { paginator } from "@amplience/dc-demostore-integration"
+import { paginator } from "../common/dccli/paginator"
 import { CLIJob } from "../helpers/exec-helper"
 import logger, { logSubheading } from "../common/logger"
 import chalk from "chalk"

@@ -1,4 +1,4 @@
-import { ContentType, Folder, ContentItem, DynamicContent, Status, Pageable, Sortable, Hub, ContentRepository } from "dc-management-sdk-js"
+import { Folder, ContentItem, DynamicContent, Status, Pageable, Sortable, Hub, ContentRepository } from "dc-management-sdk-js"
 import logger, { logComplete } from "./logger"
 import chalk from "chalk"
 import { logUpdate } from "./logger"
@@ -7,7 +7,8 @@ import { ContentItemHandler } from "../handlers/content-item-handler"
 import { AmplienceContext } from '../handlers/resource-handler';
 import fs from 'fs-extra'
 import { sleep } from "./utils"
-import { OAuthRestClient, paginator, StatusQuery } from "@amplience/dc-demostore-integration"
+import { OAuthRestClient, StatusQuery } from "@amplience/dc-demostore-integration"
+import { paginator } from '../common/dccli/paginator'
 import { OAuthRestClientInterface } from "@amplience/dc-demostore-integration/dist/common/rest-client"
 import { DAMMapping } from "./types"
 import { DAMService } from "../dam/dam-service"

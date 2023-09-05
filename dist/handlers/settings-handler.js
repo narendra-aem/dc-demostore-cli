@@ -39,7 +39,7 @@ exports.SettingsHandler = void 0;
 const resource_handler_1 = require("./resource-handler");
 const fs_extra_1 = __importDefault(require("fs-extra"));
 const lodash_1 = __importDefault(require("lodash"));
-const dc_demostore_integration_1 = require("@amplience/dc-demostore-integration");
+const paginator_1 = require("../common/dccli/paginator");
 const exec_helper_1 = require("../helpers/exec-helper");
 const logger_1 = __importStar(require("../common/logger"));
 const chalk_1 = __importDefault(require("chalk"));
@@ -57,7 +57,7 @@ class SettingsHandler extends resource_handler_1.ResourceHandler {
                 logger_1.default.info(`skipped, no settings.json found`);
                 return;
             }
-            let hubWorkflowStates = yield (0, dc_demostore_integration_1.paginator)(hub.related.workflowStates.list);
+            let hubWorkflowStates = yield (0, paginator_1.paginator)(hub.related.workflowStates.list);
             let { settings, workflowStates } = fs_extra_1.default.readJsonSync(settingsJSONFile);
             settings = lodash_1.default.isEqualWith(lodash_1.default.pick(hub.settings, Object.keys(settings)), settings, (a, b) => {
                 return Array.isArray(a) && Array.isArray(b) ? lodash_1.default.isEqual(lodash_1.default.sortBy(a), lodash_1.default.sortBy(b)) : undefined;

@@ -106,7 +106,7 @@ export const builder = (yargs: Argv): Argv => {
 }
 
 const importHandler = (handler: Importable) => async (context: ImportContext): Promise<void> => {
-    context.config = (await context.amplienceHelper.getDemoStoreConfig()).body
+    //context.config = (await context.amplienceHelper.getDemoStoreConfig()).body
     await copyTemplateFilesToTempDir(context)
     await handler.import(context)
 }

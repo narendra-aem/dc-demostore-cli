@@ -38,7 +38,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.ContentItemHandler = void 0;
 const resource_handler_1 = require("./resource-handler");
 const dc_management_sdk_js_1 = require("dc-management-sdk-js");
-const dc_demostore_integration_1 = require("@amplience/dc-demostore-integration");
+const paginator_1 = require("../common/dccli/paginator");
 const chalk_1 = __importDefault(require("chalk"));
 const prompts_1 = require("../common/prompts");
 const fs_extra_1 = __importDefault(require("fs-extra"));
@@ -102,13 +102,13 @@ class ContentItemHandler extends resource_handler_1.ResourceHandler {
     }
     cleanup(context) {
         return __awaiter(this, void 0, void 0, function* () {
-            let repositories = yield (0, dc_demostore_integration_1.paginator)(context.hub.related.contentRepositories.list);
-            let contentTypes = yield (0, dc_demostore_integration_1.paginator)(context.hub.related.contentTypes.list);
+            let repositories = yield (0, paginator_1.paginator)(context.hub.related.contentRepositories.list);
+            let contentTypes = yield (0, paginator_1.paginator)(context.hub.related.contentTypes.list);
             let archiveCount = 0;
             let folderCount = 0;
             yield Promise.all(repositories.map((repository) => __awaiter(this, void 0, void 0, function* () {
                 (0, logger_1.logUpdate)(`${prompts_1.prompts.archive} content items in repository ${chalk_1.default.cyanBright(repository.name)}...`);
-                let contentItems = lodash_1.default.filter(yield (0, dc_demostore_integration_1.paginator)(repository.related.contentItems.list, { status: 'ACTIVE' }), ci => this.shouldCleanUpItem(ci, context));
+                let contentItems = lodash_1.default.filter(yield (0, paginator_1.paginator)(repository.related.contentItems.list, { status: 'ACTIVE' }), ci => this.shouldCleanUpItem(ci, context));
                 yield Promise.all(contentItems.map((contentItem) => __awaiter(this, void 0, void 0, function* () {
                     var _a, _b, _c;
                     let contentType = lodash_1.default.find(contentTypes, ct => ct.contentTypeUri === contentItem.body._meta.schema);
@@ -136,13 +136,13 @@ class ContentItemHandler extends resource_handler_1.ResourceHandler {
                     lodash_1.default.remove((_c = context.automation) === null || _c === void 0 ? void 0 : _c.contentItems, ci => contentItem.id === ci.to);
                 })));
                 const cleanupFolder = ((folder) => __awaiter(this, void 0, void 0, function* () {
-                    let subfolders = yield (0, dc_demostore_integration_1.paginator)(folder.related.folders.list);
+                    let subfolders = yield (0, paginator_1.paginator)(folder.related.folders.list);
                     yield Promise.all(subfolders.map(cleanupFolder));
                     (0, logger_1.logUpdate)(`${prompts_1.prompts.delete} folder ${folder.name}`);
                     folderCount++;
                     return yield context.amplienceHelper.deleteFolder(folder);
                 }));
-                let folders = yield (0, dc_demostore_integration_1.paginator)(repository.related.folders.list);
+                let folders = yield (0, paginator_1.paginator)(repository.related.folders.list);
                 yield Promise.all(folders.map(cleanupFolder));
             })));
             (0, logger_1.logComplete)(`${this.getDescription()}: [ ${chalk_1.default.yellow(archiveCount)} items archived ] [ ${chalk_1.default.red(folderCount)} folders deleted ]`);

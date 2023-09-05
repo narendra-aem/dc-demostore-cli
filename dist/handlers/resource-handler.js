@@ -13,7 +13,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CleanableResourceHandler = exports.ResourceHandler = void 0;
-const dc_demostore_integration_1 = require("@amplience/dc-demostore-integration");
+const paginator_1 = require("../common/dccli/paginator");
 const lodash_1 = __importDefault(require("lodash"));
 const chalk_1 = __importDefault(require("chalk"));
 const prompts_1 = require("../common/prompts");
@@ -48,7 +48,7 @@ class CleanableResourceHandler extends ResourceHandler {
                 console.log(`not cleaning up for ${this.resourceTypeDescription}`);
                 return;
             }
-            let pageables = yield (0, dc_demostore_integration_1.paginator)(pagableFn, { status: 'ACTIVE' });
+            let pageables = yield (0, paginator_1.paginator)(pagableFn, { status: 'ACTIVE' });
             let actionCount = 0;
             yield Promise.all(pageables.map((y) => __awaiter(this, void 0, void 0, function* () {
                 actionCount++;

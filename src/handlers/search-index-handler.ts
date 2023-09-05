@@ -1,6 +1,6 @@
-import { Cleanable, ResourceHandler, Context, ImportContext, CleanupContext } from "./resource-handler"
+import { Cleanable, ResourceHandler, ImportContext, CleanupContext } from "./resource-handler"
 import { SearchIndex, SearchIndexSettings, Webhook } from "dc-management-sdk-js"
-import { paginator, searchIndexPaginator, replicaPaginator } from "@amplience/dc-demostore-integration"
+import { paginator, searchIndexPaginator, replicaPaginator } from '../common/dccli/paginator'
 import _ from 'lodash'
 import logger, { logComplete, logUpdate } from "../common/logger"
 import chalk from 'chalk'
@@ -150,6 +150,11 @@ export class SearchIndexHandler extends ResourceHandler implements Cleanable {
         if (index) {
             let key = await index!.related.keys.get()
             if (key && key.applicationId && key.key) {
+
+                if(!context.config){
+                    let tempMapping = await context.amplienceHelper.getDemoStoreConfig()
+                    context.config = tempMapping.body
+                }
                 context.config.algolia = {
                     appId: key.applicationId,
                     apiKey: key.key

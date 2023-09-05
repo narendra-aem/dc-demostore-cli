@@ -118,7 +118,6 @@ const builder = (yargs) => {
 };
 exports.builder = builder;
 const importHandler = (handler) => (context) => __awaiter(void 0, void 0, void 0, function* () {
-    context.config = (yield context.amplienceHelper.getDemoStoreConfig()).body;
     yield (0, import_helper_1.copyTemplateFilesToTempDir)(context);
     yield handler.import(context);
 });

@@ -45,6 +45,7 @@ const content_item_handler_1 = require("../handlers/content-item-handler");
 const fs_extra_1 = __importDefault(require("fs-extra"));
 const utils_1 = require("./utils");
 const dc_demostore_integration_1 = require("@amplience/dc-demostore-integration");
+const paginator_1 = require("../common/dccli/paginator");
 const dam_service_1 = require("../dam/dam-service");
 exports.deliveryKeys = {
     config: `demostore/config/default`,
@@ -75,8 +76,8 @@ const AmplienceHelperGenerator = (context) => {
         }
     });
     const getContentItems = (hub, opts) => __awaiter(void 0, void 0, void 0, function* () {
-        return lodash_1.default.flatMap(yield Promise.all((yield (0, dc_demostore_integration_1.paginator)(hub.related.contentRepositories.list)).map((repo) => __awaiter(void 0, void 0, void 0, function* () {
-            return yield (0, dc_demostore_integration_1.paginator)(repo.related.contentItems.list, opts);
+        return lodash_1.default.flatMap(yield Promise.all((yield (0, paginator_1.paginator)(hub.related.contentRepositories.list)).map((repo) => __awaiter(void 0, void 0, void 0, function* () {
+            return yield (0, paginator_1.paginator)(repo.related.contentItems.list, opts);
         }))));
     });
     const timedBlock = (tag, fn) => __awaiter(void 0, void 0, void 0, function* () {
@@ -190,7 +191,7 @@ const AmplienceHelperGenerator = (context) => {
         return item;
     });
     const getContentRepository = (key) => __awaiter(void 0, void 0, void 0, function* () {
-        let repositories = yield (0, dc_demostore_integration_1.paginator)(context.hub.related.contentRepositories.list);
+        let repositories = yield (0, paginator_1.paginator)(context.hub.related.contentRepositories.list);
         let repo = repositories.find(repo => repo.name === key);
         if (!repo) {
             throw new Error(`repository [ ${key} ] not found`);
@@ -198,7 +199,7 @@ const AmplienceHelperGenerator = (context) => {
         return repo;
     });
     const getContentItemsInRepository = (key) => __awaiter(void 0, void 0, void 0, function* () {
-        return yield (0, dc_demostore_integration_1.paginator)((yield getContentRepository(key)).related.contentItems.list, { status: 'ACTIVE' });
+        return yield (0, paginator_1.paginator)((yield getContentRepository(key)).related.contentItems.list, { status: 'ACTIVE' });
     });
     const updateContentItem = (key, body) => __awaiter(void 0, void 0, void 0, function* () {
         let item = yield ensureContentItem(key, body);

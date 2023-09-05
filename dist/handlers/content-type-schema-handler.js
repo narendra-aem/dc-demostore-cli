@@ -16,6 +16,7 @@ exports.ContentTypeSchemaHandler = void 0;
 const resource_handler_1 = require("./resource-handler");
 const dc_management_sdk_js_1 = require("dc-management-sdk-js");
 const dc_demostore_integration_1 = require("@amplience/dc-demostore-integration");
+const paginator_1 = require("../common/dccli/paginator");
 const lodash_1 = __importDefault(require("lodash"));
 const chalk_1 = __importDefault(require("chalk"));
 const importer_1 = require("../helpers/importer");
@@ -27,7 +28,7 @@ let archiveCount = 0;
 let updateCount = 0;
 let createCount = 0;
 const installSchemas = (context, schemas) => __awaiter(void 0, void 0, void 0, function* () {
-    const storedSchemas = yield (0, dc_demostore_integration_1.paginator)(context.hub.related.contentTypeSchema.list);
+    const storedSchemas = yield (0, paginator_1.paginator)(context.hub.related.contentTypeSchema.list);
     yield Promise.all(schemas.map((schema) => __awaiter(void 0, void 0, void 0, function* () {
         let stored = lodash_1.default.find(storedSchemas, s => s.schemaId === schema.schemaId);
         if (stored) {
@@ -70,11 +71,9 @@ class ContentTypeSchemaHandler extends resource_handler_1.CleanableResourceHandl
                 return;
             }
             let codecs = (0, dc_demostore_integration_1.getCodecs)();
-            let codecSchemas = codecs.map(dc_demostore_integration_1.getContentTypeSchema);
-            yield installSchemas(context, codecSchemas);
             const schemas = (0, importer_1.loadJsonFromDirectory)(sourceDir, dc_management_sdk_js_1.ContentTypeSchema);
             const [resolvedSchemas, resolveSchemaErrors] = yield (0, schema_helper_1.resolveSchemaBody)(schemas, sourceDir);
-            const schemasToInstall = lodash_1.default.filter(Object.values(resolvedSchemas), s => !lodash_1.default.includes(lodash_1.default.map(codecs, 'schema.uri'), s.schemaId));
+            const schemasToInstall = lodash_1.default.filter(Object.values(resolvedSchemas), s => !lodash_1.default.includes(lodash_1.default.map(codecs, 'schema.uri'), "banana"));
             if (Object.keys(resolveSchemaErrors).length > 0) {
                 const errors = Object.entries(resolveSchemaErrors)
                     .map(value => {
@@ -83,21 +82,6 @@ class ContentTypeSchemaHandler extends resource_handler_1.CleanableResourceHandl
                 })
                     .join('\n');
                 throw new Error(`Unable to resolve the body for the following files:\n${errors}`);
-            }
-            let demostoreConfigSchema = lodash_1.default.find(schemasToInstall, s => s.schemaId === 'https://demostore.amplience.com/site/demostoreconfig');
-            if (demostoreConfigSchema === null || demostoreConfigSchema === void 0 ? void 0 : demostoreConfigSchema.body) {
-                let schemaBody = JSON.parse(demostoreConfigSchema.body);
-                schemaBody.properties.commerce.allOf = [{
-                        "$ref": "http://bigcontent.io/cms/schema/v1/core#/definitions/content-reference"
-                    }, {
-                        properties: {
-                            contentType: {
-                                enum: codecs.map(c => c.schema.uri)
-                            }
-                        }
-                    }];
-                demostoreConfigSchema.body = JSON.stringify(schemaBody);
-                demostoreConfigSchema.validationLevel = dc_management_sdk_js_1.ValidationLevel.CONTENT_TYPE;
             }
             yield installSchemas(context, schemasToInstall);
             (0, logger_1.logComplete)(`${this.getDescription()}: [ ${chalk_1.default.green(archiveCount)} unarchived ] [ ${chalk_1.default.green(updateCount)} updated ] [ ${chalk_1.default.green(createCount)} created ]`);
