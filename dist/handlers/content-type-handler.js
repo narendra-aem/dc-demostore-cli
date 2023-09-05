@@ -15,7 +15,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.ContentTypeHandler = exports.validateNoDuplicateContentTypeUris = void 0;
 const resource_handler_1 = require("./resource-handler");
 const dc_management_sdk_js_1 = require("dc-management-sdk-js");
-const dc_demostore_integration_1 = require("@amplience/dc-demostore-integration");
 const paginator_1 = require("../common/dccli/paginator");
 const lodash_1 = __importDefault(require("lodash"));
 const logger_1 = require("../common/logger");
@@ -118,7 +117,7 @@ class ContentTypeHandler extends resource_handler_1.CleanableResourceHandler {
                 throw new Error(`No content types found in ${sourceDir}`);
             }
             (0, exports.validateNoDuplicateContentTypeUris)(jsonTypes);
-            const typesToInstall = lodash_1.default.filter(Object.values(jsonTypes), s => !lodash_1.default.includes(lodash_1.default.map((0, dc_demostore_integration_1.getCodecs)(), 'schema.uri'), s.contentTypeUri));
+            const typesToInstall = Object.values(jsonTypes);
             yield installTypes(context, typesToInstall);
             (0, logger_2.logComplete)(`${this.getDescription()}: [ ${chalk_1.default.green(archiveCount)} unarchived ] [ ${chalk_1.default.green(updateCount)} updated ] [ ${chalk_1.default.green(createCount)} created ] [ ${chalk_1.default.green(synchronizedCount)} synced ]`);
         });
