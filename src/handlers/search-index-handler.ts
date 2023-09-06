@@ -161,9 +161,6 @@ export class SearchIndexHandler extends ResourceHandler implements Cleanable {
                 }
             }
         }
-
-        // save the env config here, since we've just gotten the app id and api key from algolia
-        await context.amplienceHelper.updateDemoStoreConfig()
     }
 
     async cleanup(context: CleanupContext): Promise<any> {

@@ -1,5 +1,5 @@
 import { Folder, ContentItem, DynamicContent, Status, Pageable, Sortable, Hub, ContentRepository } from "dc-management-sdk-js"
-import logger, { logComplete } from "./logger"
+import logger, { logComplete, logSubheading } from "./logger"
 import chalk from "chalk"
 import { logUpdate } from "./logger"
 import _, { Dictionary } from 'lodash'
@@ -124,7 +124,15 @@ const AmplienceHelperGenerator = (context: AmplienceContext): AmplienceHelper =>
     }
 
     const updateDemoStoreConfig = async () => {
-        //await updateContentItem('config', context.config)
+        // generate demostore config environment variable
+        logSubheading('.env.local file format')
+        console.log('----------------------- COPY START ----------------------')
+        console.log(`NEXT_PUBLIC_DEMOSTORE_CONFIG_JSON='${JSON.stringify(context.config)}'`)
+        console.log('------------------------ COPY END -----------------------')
+        logSubheading('Vercel format')
+        console.log('----------------------- COPY START ----------------------')
+        console.log(JSON.stringify(context.config))
+        console.log('------------------------ COPY END -----------------------')
     }
 
     const updateAutomation = async () => {
@@ -225,7 +233,7 @@ const AmplienceHelperGenerator = (context: AmplienceContext): AmplienceHelper =>
     return {
         getContentItem,
         getDemoStoreConfig,
-        updateDemoStoreConfig,
+        generateDemoStoreConfig: updateDemoStoreConfig,
 
         get,
         getAutomation,
@@ -251,7 +259,7 @@ export type AmplienceHelper = {
     getContentItem: (keyOrId: string) => ContentItem
     publishAll: () => Promise<void>
     getDemoStoreConfig: () => Promise<any>
-    updateDemoStoreConfig: () => Promise<void>
+    generateDemoStoreConfig: () => Promise<void>
     getAutomation: () => Promise<ContentItem>
     updateAutomation: () => Promise<void>
     cacheContentMap: () => Promise<void>

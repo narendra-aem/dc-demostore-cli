@@ -136,4 +136,6 @@ exports.handler = (0, middleware_1.contextHandler)((context) => __awaiter(void 0
         (0, logger_1.logHeadline)(`Phase 4: reentrant import`);
         yield importHandler(new content_type_schema_handler_1.ContentTypeSchemaHandler())(context);
     }
+    (0, logger_1.logHeadline)(`Phase 5: generate demostore configuration`);
+    yield context.amplienceHelper.generateDemoStoreConfig();
 }));
