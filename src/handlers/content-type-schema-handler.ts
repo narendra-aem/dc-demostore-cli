@@ -1,6 +1,5 @@
 import { CleanableResourceHandler, ImportContext } from "./resource-handler"
 import { ContentTypeSchema, ValidationLevel } from "dc-management-sdk-js"
-import { getCodecs } from "@amplience/dc-demostore-integration"
 import { paginator } from '../common/dccli/paginator'
 import _ from 'lodash'
 import chalk from 'chalk'
@@ -64,7 +63,7 @@ export class ContentTypeSchemaHandler extends CleanableResourceHandler {
         }
 
         // first we will load the site/integration types (codecs)
-        let codecs = getCodecs()
+        //let codecs = getCodecs()
         /*let codecSchemas = codecs.map(codec => {
             const schema = getContentTypeSchema(codec)
             const lastSlash = codec.schema.uri.lastIndexOf('/')

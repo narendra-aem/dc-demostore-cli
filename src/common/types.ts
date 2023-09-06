@@ -1,6 +1,5 @@
 import { Hub } from 'dc-management-sdk-js';
 import _, { Dictionary } from 'lodash';
-import { DemoStoreConfiguration, AlgoliaConfig, AmplienceConfig } from '@amplience/dc-demostore-integration';
 import { paginator } from '../common/dccli/paginator'
 import { AmplienceHelper } from './amplience-helper';
 import { ImportContext } from '../handlers/resource-handler';
@@ -34,6 +33,21 @@ export type LoggableArgs = AmplienceArgs & {
     startTime:              Date
     logRequests:            boolean
     tempDir:                string
+}
+
+export interface AlgoliaConfig {
+    appId: string;
+    apiKey: string;
+}
+export interface AmplienceConfig {
+    hub: string;
+    stagingApi: string;
+    imageHub?: string;
+}
+export interface DemoStoreConfiguration {
+    algolia: AlgoliaConfig;
+    url?: string;
+    cms: AmplienceConfig;
 }
 
 export type ImportArgs = LoggableArgs & {

@@ -1,9 +1,8 @@
 import { CleanableResourceHandler, CleanupContext, ImportContext } from "./resource-handler"
 import { ContentType, ContentRepository } from "dc-management-sdk-js"
-import { getCodecs } from "@amplience/dc-demostore-integration"
 import { paginator } from '../common/dccli/paginator'
 import _ from 'lodash'
-import logger, { logSubheading } from "../common/logger"
+import { logSubheading } from "../common/logger"
 import chalk from 'chalk'
 import { loadJsonFromDirectory } from "../helpers/importer"
 import { ContentTypeWithRepositoryAssignments } from '../helpers/schema-helper'

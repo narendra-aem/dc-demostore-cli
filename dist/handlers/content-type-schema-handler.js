@@ -15,7 +15,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.ContentTypeSchemaHandler = void 0;
 const resource_handler_1 = require("./resource-handler");
 const dc_management_sdk_js_1 = require("dc-management-sdk-js");
-const dc_demostore_integration_1 = require("@amplience/dc-demostore-integration");
 const paginator_1 = require("../common/dccli/paginator");
 const lodash_1 = __importDefault(require("lodash"));
 const chalk_1 = __importDefault(require("chalk"));
@@ -70,7 +69,6 @@ class ContentTypeSchemaHandler extends resource_handler_1.CleanableResourceHandl
             if (!fs_extra_1.default.existsSync(sourceDir)) {
                 return;
             }
-            let codecs = (0, dc_demostore_integration_1.getCodecs)();
             const schemas = (0, importer_1.loadJsonFromDirectory)(sourceDir, dc_management_sdk_js_1.ContentTypeSchema);
             const [resolvedSchemas, resolveSchemaErrors] = yield (0, schema_helper_1.resolveSchemaBody)(schemas, sourceDir);
             const schemasToInstall = Object.values(resolvedSchemas);

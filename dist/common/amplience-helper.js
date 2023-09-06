@@ -44,7 +44,7 @@ const lodash_1 = __importDefault(require("lodash"));
 const content_item_handler_1 = require("../handlers/content-item-handler");
 const fs_extra_1 = __importDefault(require("fs-extra"));
 const utils_1 = require("./utils");
-const dc_demostore_integration_1 = require("@amplience/dc-demostore-integration");
+const dc_integration_middleware_1 = require("@amplience/dc-integration-middleware");
 const paginator_1 = require("../common/dccli/paginator");
 const dam_service_1 = require("../dam/dam-service");
 exports.deliveryKeys = {
@@ -61,7 +61,7 @@ const restMap = {};
 const damServiceMap = {};
 let contentMap = {};
 const AmplienceHelperGenerator = (context) => {
-    const rest = restMap[context.environment.dc.clientId] = restMap[context.environment.dc.clientId] || (0, dc_demostore_integration_1.OAuthRestClient)({
+    const rest = restMap[context.environment.dc.clientId] = restMap[context.environment.dc.clientId] || (0, dc_integration_middleware_1.OAuthRestClient)({
         api_url: `https://api.amplience.net/v2/content`,
         auth_url: `https://auth.amplience.net/oauth/token?client_id=${context.environment.dc.clientId}&client_secret=${context.environment.dc.clientSecret}&grant_type=client_credentials`
     }, {}, {

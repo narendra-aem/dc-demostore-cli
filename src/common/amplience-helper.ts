@@ -7,9 +7,9 @@ import { ContentItemHandler } from "../handlers/content-item-handler"
 import { AmplienceContext } from '../handlers/resource-handler';
 import fs from 'fs-extra'
 import { sleep } from "./utils"
-import { OAuthRestClient, StatusQuery } from "@amplience/dc-demostore-integration"
-import { paginator } from '../common/dccli/paginator'
-import { OAuthRestClientInterface } from "@amplience/dc-demostore-integration/dist/common/rest-client"
+import { OAuthRestClient } from "@amplience/dc-integration-middleware"
+import { paginator, StatusQuery } from '../common/dccli/paginator'
+import { OAuthRestClientInterface } from "@amplience/dc-integration-middleware"
 import { DAMMapping } from "./types"
 import { DAMService } from "../dam/dam-service"
 
