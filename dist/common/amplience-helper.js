@@ -140,6 +140,14 @@ const AmplienceHelperGenerator = (context) => {
         };
     });
     const updateDemoStoreConfig = () => __awaiter(void 0, void 0, void 0, function* () {
+        (0, logger_1.logSubheading)('.env.local file format');
+        console.log('----------------------- COPY START ----------------------');
+        console.log(`NEXT_PUBLIC_DEMOSTORE_CONFIG_JSON='${JSON.stringify(context.config)}'`);
+        console.log('------------------------ COPY END -----------------------');
+        (0, logger_1.logSubheading)('Vercel format');
+        console.log('----------------------- COPY START ----------------------');
+        console.log(JSON.stringify(context.config));
+        console.log('------------------------ COPY END -----------------------');
     });
     const updateAutomation = () => __awaiter(void 0, void 0, void 0, function* () {
         let mappingStats = fs_extra_1.default.statSync(`${context.tempDir}/old_mapping.json`);
@@ -213,7 +221,7 @@ const AmplienceHelperGenerator = (context) => {
     return {
         getContentItem,
         getDemoStoreConfig,
-        updateDemoStoreConfig,
+        generateDemoStoreConfig: updateDemoStoreConfig,
         get,
         getAutomation,
         updateAutomation,

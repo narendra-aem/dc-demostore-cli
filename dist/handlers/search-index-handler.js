@@ -161,7 +161,6 @@ class SearchIndexHandler extends resource_handler_1.ResourceHandler {
                     };
                 }
             }
-            yield context.amplienceHelper.updateDemoStoreConfig();
         });
     }
     cleanup(context) {

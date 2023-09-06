@@ -106,7 +106,6 @@ export const builder = (yargs: Argv): Argv => {
 }
 
 const importHandler = (handler: Importable) => async (context: ImportContext): Promise<void> => {
-    //context.config = (await context.amplienceHelper.getDemoStoreConfig()).body
     await copyTemplateFilesToTempDir(context)
     await handler.import(context)
 }
@@ -143,4 +142,8 @@ export const handler = contextHandler(async (context: ImportContext): Promise<vo
         // that point to a specific hierarchy node
         await importHandler(new ContentTypeSchemaHandler())(context)
     }
+
+    // process step 6: generate .env.local file
+    logHeadline(`Phase 5: generate demostore configuration`)
+    await context.amplienceHelper.generateDemoStoreConfig()
 })
