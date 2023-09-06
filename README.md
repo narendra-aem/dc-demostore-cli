@@ -4,9 +4,11 @@ Demonstration Command line interface for Amplience Demo Store.
 
 ## Description
 
-**demostore** is a command line interface application to manage an installation of the Amplience Demo Store (demostore). It builds on top of the [Amplience DC CLI](https://github.com/amplience/dc-cli) and [Amplience Management APIs](https://amplience.com/docs/api/dynamic-content/management/)
+`dc-demostore-cli` or CLI alias **demostore** is a command line interface application to manage an installation of the Amplience Demo Store (demostore). It builds on top of the [Amplience DC CLI](https://github.com/amplience/dc-cli) and [Amplience Management APIs](https://amplience.com/docs/api/dynamic-content/management/)
 
 Run `demostore --help` to get a list of available commands.
+
+> See [v2.0.0 Changes](docs/v2.0.0-changes.md) if you already have an existing version of demostore that you wish to update.
 
 <!-- MarkdownTOC levels="2,3" autolink="true" -->
 - [Prerequisites](#prerequisites)
@@ -21,15 +23,17 @@ Run `demostore --help` to get a list of available commands.
 
 ## Building
 
-You need to have [Node Version Manager](https://github.com/nvm-sh/nvm) installed.
+This demo appliction was developed and tested with:
+
+- Node version 18.x
+- NPM version 9.x
+
+To switch to the correct node version it is recommended to have [Node Version Manager](https://github.com/nvm-sh/nvm) installed.
 
 ```
-nvm install 16
+nvm install 18
 nvm use
-npm install -g pnpm
-pnpm install
 ```
-
 
 
 ## Installation
@@ -51,7 +55,7 @@ npm install -g @amplience/dc-demostore-cli
   - [App URL](https://github.com/amplience/dc-demostore-core/blob/main/docs/ForkDeploy.md) - ( link to your deployed `dc-demostore-core` app )
   - Client ID / Secret - Sent via support@amplience.com - One Time Secret
   - [Hub ID](docs/screenshots.md)
-  - Username & Password for Content Hub
+  - Username & Password for Content Hub (used to map media)
 
 On your first invocation of any `demostore` command, the CLI will prompt you to create an environment:
 
@@ -137,7 +141,26 @@ Valid resource types are `contentTypeSchema`, `contentTypes`, `contentItems`, `s
 
 ### import
 
-Import data.
+Import data using automation packages found in [dc-demostore-automation](https://github.com/amplience/dc-demostore-automation)
+
+When running an import you get provided with the environment variables to configure for your Front End deployment of [dc-demostore-core](https://github.com/amplience/dc-demostore-core). See specific information in the docs on this project about how to use.
+
+Example output after import where all values marked as `XXX` will be specific to your account configuration
+
+```
+info: .env.local file format
+info: 
+----------------------- COPY START ----------------------
+NEXT_PUBLIC_DEMOSTORE_CONFIG_JSON='{"url":"XXX","algolia":{"appId":"XXX","apiKey":"XXX"},"cms":{"hub":"XXX","stagingApi":"XXX","imageHub":"XXX"}}'
+------------------------ COPY END -----------------------
+info: 
+info: Vercel format
+info: 
+----------------------- COPY START ----------------------
+{"url":"XXX","algolia":{"appId":"XXX","apiKey":"XXX"},"cms":{"hub":"XXX","stagingApi":"XXX","imageHub":"XXX"}}
+------------------------ COPY END -----------------------
+```
+
 
 #### Options
 
