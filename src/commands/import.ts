@@ -4,7 +4,6 @@ import chalk from 'chalk'
 import logger, { logHeadline } from '../common/logger';
 
 import { ContentTypeSchemaHandler } from '../handlers/content-type-schema-handler';
-import { ContentTypeHandler } from '../handlers/content-type-handler';
 import { ContentItemHandler } from '../handlers/content-item-handler';
 import { ExtensionHandler } from '../handlers/extension-handler';
 import { SearchIndexHandler } from '../handlers/search-index-handler';
@@ -80,6 +79,12 @@ export const builder = (yargs: Argv): Argv => {
             describe: 'use latest automation files',
             type: 'boolean'
         },
+        openaiKey: {
+            alias: 'o',
+            describe: 'OpenAI Key (required for rich text AI features)',
+            type: 'string',
+            default: ''
+        },
         branch: {
             alias: 'b',
             describe: 'branch of dc-demostore-automation to use',
@@ -116,6 +121,7 @@ export const handler = contextHandler(async (context: ImportContext): Promise<vo
     logHeadline(`Phase 1: preparation`)
 
     await copyTemplateFilesToTempDir(context)
+
     await new ContentTypeSchemaHandler().import(context)
 
     logHeadline(`Phase 2: import/update`)

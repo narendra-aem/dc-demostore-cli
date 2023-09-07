@@ -21,6 +21,7 @@ const getMapping = (context) => __awaiter(void 0, void 0, void 0, function* () {
     let workflowStates = yield (0, paginator_1.paginator)(context.hub.related.workflowStates.list);
     return {
         url: context.environment.url,
+        openaiKey: context.openaiKey,
         cms: {
             hub: context.hub.name,
             hubId: context.hub.id,

@@ -56,6 +56,7 @@ export type ImportArgs = LoggableArgs & {
     latest:                 boolean
     branch:                 string
     config:                 DemoStoreConfiguration
+    openaiKey:              string
 }
 
 export type CleanupArgs = LoggableArgs & {
@@ -65,6 +66,7 @@ export type CleanupArgs = LoggableArgs & {
 
 export type Mapping = {
     url:                    string
+    openaiKey?:             string
     cms?:                   CMSMapping
     algolia?:               AlgoliaConfig
     dam:                    DAMMapping
@@ -92,6 +94,7 @@ export const getMapping = async (context: ImportContext): Promise<Mapping> => {
     let workflowStates = await paginator(context.hub.related.workflowStates.list)
     return {
         url: context.environment.url,
+        openaiKey: context.openaiKey,
         cms: {
             hub: context.hub.name!,
             hubId: context.hub.id!,

@@ -95,6 +95,12 @@ const builder = (yargs) => {
             describe: 'use latest automation files',
             type: 'boolean'
         },
+        openaiKey: {
+            alias: 'o',
+            describe: 'OpenAI Key (required for rich text AI features)',
+            type: 'string',
+            default: ''
+        },
         branch: {
             alias: 'b',
             describe: 'branch of dc-demostore-automation to use',

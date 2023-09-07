@@ -21,7 +21,7 @@ var LogErrorLevel;
     LogErrorLevel[LogErrorLevel["WARNING"] = 1] = "WARNING";
     LogErrorLevel[LogErrorLevel["ERROR"] = 2] = "ERROR";
     LogErrorLevel[LogErrorLevel["INVALID"] = 3] = "INVALID";
-})(LogErrorLevel || (exports.LogErrorLevel = LogErrorLevel = {}));
+})(LogErrorLevel = exports.LogErrorLevel || (exports.LogErrorLevel = {}));
 class ArchiveLog {
     constructor(title) {
         this.title = title;

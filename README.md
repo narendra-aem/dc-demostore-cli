@@ -164,14 +164,15 @@ info:
 
 #### Options
 
-| Option Name             | Type      | Description                                         |
-| ----------------------- | --------- | --------------------------------------------------- |
-| --logRequests, -r       | [boolean] | log http requests/responses                         |
-| --tempDir, -t           | [string]  | temp dir for run files                              |
-| --matchingSchema, -m    | [array]   | apply to (types, schemas, items) matching schema id |
-| --automationDir, -a     | [string]  | path to import directory                            |
-| --skipContentImport, -s | [boolean] | skip content import                                 |
-| --latest, -l            | [boolean] | using this flag will download the latest automation |
+| Option Name             | Type      | Description                                             |
+| ----------------------- | --------- | ------------------------------------------------------- |
+| --logRequests, -r       | [boolean] | log http requests/responses                             |
+| --tempDir, -t           | [string]  | temp dir for run files                                  |
+| --matchingSchema, -m    | [array]   | apply to (types, schemas, items) matching schema id     |
+| --automationDir, -a     | [string]  | path to import directory                                |
+| --skipContentImport, -s | [boolean] | skip content import                                     |
+| --latest, -l            | [boolean] | using this flag will download the latest automation     |
+| --openaiKey, -o         | [string]  | optional openai key for generative rich text automation |
 
 #### Examples
 
