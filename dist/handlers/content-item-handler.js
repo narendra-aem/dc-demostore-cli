@@ -49,6 +49,10 @@ const nanoid_1 = require("nanoid");
 const dc_cli_content_item_handler_1 = __importDefault(require("./dc-cli-content-item-handler"));
 const log_helpers_1 = require("../common/dccli/log-helpers");
 const types_1 = require("../common/types");
+const activeProps = [
+    'filterActive',
+    'active'
+];
 class ContentItemHandler extends resource_handler_1.ResourceHandler {
     constructor() {
         super(dc_management_sdk_js_1.ContentItem, 'contentItems');
@@ -110,19 +114,22 @@ class ContentItemHandler extends resource_handler_1.ResourceHandler {
                 (0, logger_1.logUpdate)(`${prompts_1.prompts.archive} content items in repository ${chalk_1.default.cyanBright(repository.name)}...`);
                 let contentItems = lodash_1.default.filter(yield (0, paginator_1.paginator)(repository.related.contentItems.list, { status: 'ACTIVE' }), ci => this.shouldCleanUpItem(ci, context));
                 yield Promise.all(contentItems.map((contentItem) => __awaiter(this, void 0, void 0, function* () {
-                    var _a, _b, _c;
+                    var _a, _b;
                     let contentType = lodash_1.default.find(contentTypes, ct => ct.contentTypeUri === contentItem.body._meta.schema);
                     let effectiveContentTypeLink = lodash_1.default.get(contentType, '_links.effective-content-type.href');
                     if (!effectiveContentTypeLink) {
                         return;
                     }
                     let effectiveContentType = yield context.amplienceHelper.get(effectiveContentTypeLink);
-                    if ((_a = effectiveContentType === null || effectiveContentType === void 0 ? void 0 : effectiveContentType.properties) === null || _a === void 0 ? void 0 : _a.filterActive) {
-                        contentItem.body.filterActive = false;
+                    let activePropsType = activeProps.filter(prop => { var _a; return (effectiveContentType === null || effectiveContentType === void 0 ? void 0 : effectiveContentType.properties) && ((_a = effectiveContentType.properties[prop]) === null || _a === void 0 ? void 0 : _a.type) === 'boolean'; });
+                    if (activePropsType.length > 0) {
+                        for (const prop of activePropsType) {
+                            contentItem.body[prop] = false;
+                        }
                         contentItem = yield contentItem.related.update(contentItem);
                         yield context.amplienceHelper.publishContentItem(contentItem);
                     }
-                    if (((_b = contentItem.body._meta.deliveryKey) === null || _b === void 0 ? void 0 : _b.length) > 0) {
+                    if (((_a = contentItem.body._meta.deliveryKey) === null || _a === void 0 ? void 0 : _a.length) > 0) {
                         if (contentItem.status === 'ARCHIVED') {
                             contentItem = yield contentItem.related.unarchive();
                         }
@@ -133,7 +140,7 @@ class ContentItemHandler extends resource_handler_1.ResourceHandler {
                     }
                     archiveCount++;
                     yield contentItem.related.archive();
-                    lodash_1.default.remove((_c = context.automation) === null || _c === void 0 ? void 0 : _c.contentItems, ci => contentItem.id === ci.to);
+                    lodash_1.default.remove((_b = context.automation) === null || _b === void 0 ? void 0 : _b.contentItems, ci => contentItem.id === ci.to);
                 })));
                 const cleanupFolder = ((folder) => __awaiter(this, void 0, void 0, function* () {
                     let subfolders = yield (0, paginator_1.paginator)(folder.related.folders.list);
