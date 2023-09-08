@@ -12,6 +12,14 @@ import DCCLIContentItemHandler from './dc-cli-content-item-handler'
 import { createLog } from '../common/dccli/log-helpers'
 import { getMapping } from "../common/types"
 
+/**
+ * Root level properties to set as false when archiving a content item.
+ */
+const activeProps = [
+    'filterActive',
+    'active'
+]
+
 export class ContentItemHandler extends ResourceHandler implements Cleanable {
     sortPriority = 0.03
     icon = '📄'
@@ -97,8 +105,14 @@ export class ContentItemHandler extends ResourceHandler implements Cleanable {
                 }
 
                 let effectiveContentType: any = await context.amplienceHelper.get(effectiveContentTypeLink)
-                if (effectiveContentType?.properties?.filterActive) {
-                    contentItem.body.filterActive = false
+                let activePropsType = activeProps.filter(prop => 
+                    effectiveContentType?.properties && effectiveContentType.properties[prop]?.type === 'boolean')
+
+                if (activePropsType.length > 0) {
+                    for (const prop of activePropsType) {
+                        contentItem.body[prop] = false
+                    }
+
                     contentItem = await contentItem.related.update(contentItem)
                     await context.amplienceHelper.publishContentItem(contentItem)
                 }
