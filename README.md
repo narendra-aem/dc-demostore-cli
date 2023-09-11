@@ -32,7 +32,7 @@ To switch to the correct node version it is recommended to have [Node Version Ma
 
 ```
 nvm install 18
-nvm use
+nvm use 18
 ```
 
 
