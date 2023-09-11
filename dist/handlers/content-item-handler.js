@@ -114,7 +114,8 @@ class ContentItemHandler extends resource_handler_1.ResourceHandler {
                 (0, logger_1.logUpdate)(`${prompts_1.prompts.archive} content items in repository ${chalk_1.default.cyanBright(repository.name)}...`);
                 let contentItems = lodash_1.default.filter(yield (0, paginator_1.paginator)(repository.related.contentItems.list, { status: 'ACTIVE' }), ci => this.shouldCleanUpItem(ci, context));
                 yield Promise.all(contentItems.map((contentItem) => __awaiter(this, void 0, void 0, function* () {
-                    var _a, _b;
+                    var _a;
+                    let needsUpdate = false;
                     let contentType = lodash_1.default.find(contentTypes, ct => ct.contentTypeUri === contentItem.body._meta.schema);
                     let effectiveContentTypeLink = lodash_1.default.get(contentType, '_links.effective-content-type.href');
                     if (!effectiveContentTypeLink) {
@@ -125,18 +126,34 @@ class ContentItemHandler extends resource_handler_1.ResourceHandler {
                     if (activePropsType.length > 0) {
                         for (const prop of activePropsType) {
                             contentItem.body[prop] = false;
+                            needsUpdate = true;
                         }
-                        contentItem = yield contentItem.related.update(contentItem);
-                        yield context.amplienceHelper.publishContentItem(contentItem);
                     }
                     if (((_a = contentItem.body._meta.deliveryKey) === null || _a === void 0 ? void 0 : _a.length) > 0) {
-                        if (contentItem.status === 'ARCHIVED') {
-                            contentItem = yield contentItem.related.unarchive();
-                        }
                         if (!lodash_1.default.isEmpty(contentItem.body._meta.deliveryKey)) {
                             contentItem.body._meta.deliveryKey = `${contentItem.body._meta.deliveryKey}-${(0, nanoid_1.nanoid)()}`;
+                            needsUpdate = true;
                         }
+                    }
+                    if (needsUpdate) {
+                        (0, logger_1.logUpdate)(`updating content item active flag / delivery key`);
                         contentItem = yield contentItem.related.update(contentItem);
+                        yield (0, utils_1.sleep)(1000);
+                        (0, logger_1.logUpdate)(`publishing updates`);
+                        yield context.amplienceHelper.publishContentItem(contentItem);
+                        yield (0, utils_1.sleep)(1000);
+                    }
+                })));
+            })));
+            yield Promise.all(repositories.map((repository) => __awaiter(this, void 0, void 0, function* () {
+                (0, logger_1.logUpdate)(`${prompts_1.prompts.archive} content items in repository ${chalk_1.default.cyanBright(repository.name)}...`);
+                let contentItems = lodash_1.default.filter(yield (0, paginator_1.paginator)(repository.related.contentItems.list, { status: 'ACTIVE' }), ci => this.shouldCleanUpItem(ci, context));
+                yield Promise.all(contentItems.map((contentItem) => __awaiter(this, void 0, void 0, function* () {
+                    var _b;
+                    let contentType = lodash_1.default.find(contentTypes, ct => ct.contentTypeUri === contentItem.body._meta.schema);
+                    let effectiveContentTypeLink = lodash_1.default.get(contentType, '_links.effective-content-type.href');
+                    if (!effectiveContentTypeLink) {
+                        return;
                     }
                     archiveCount++;
                     yield contentItem.related.archive();

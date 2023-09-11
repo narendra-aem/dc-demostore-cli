@@ -6,7 +6,7 @@ import { prompts } from "../common/prompts"
 import fs from 'fs-extra'
 import logger, { logUpdate, logComplete } from "../common/logger"
 import _ from "lodash"
-import { fileIterator } from "../common/utils"
+import { fileIterator, sleep } from "../common/utils"
 import { nanoid } from "nanoid"
 import DCCLIContentItemHandler from './dc-cli-content-item-handler'
 import { createLog } from '../common/dccli/log-helpers'
@@ -91,6 +91,52 @@ export class ContentItemHandler extends ResourceHandler implements Cleanable {
         let archiveCount = 0
         let folderCount = 0
 
+        // First pass, update active flags and delivery keys
+        await Promise.all(repositories.map(async (repository: ContentRepository) => {
+            logUpdate(`${prompts.archive} content items in repository ${chalk.cyanBright(repository.name)}...`)
+            let contentItems: ContentItem[] = _.filter(await paginator(repository.related.contentItems.list, { status: 'ACTIVE' }), ci => this.shouldCleanUpItem(ci, context))
+
+            await Promise.all(contentItems.map(async (contentItem: ContentItem) => {
+                let needsUpdate = false
+                let contentType = _.find(contentTypes, ct => ct.contentTypeUri === contentItem.body._meta.schema)
+
+                // get the effective content type
+                let effectiveContentTypeLink = _.get(contentType, '_links.effective-content-type.href')
+                if (!effectiveContentTypeLink) {
+                    return
+                }
+                let effectiveContentType: any = await context.amplienceHelper.get(effectiveContentTypeLink)
+                let activePropsType = activeProps.filter(prop => 
+                    effectiveContentType?.properties && effectiveContentType.properties[prop]?.type === 'boolean')
+    
+                // Updating active flags
+                if (activePropsType.length > 0) {
+                    for (const prop of activePropsType) {
+                        contentItem.body[prop] = false
+                        needsUpdate = true
+                    }
+                }
+
+                // Updating delivery key
+                if (contentItem.body._meta.deliveryKey?.length > 0) {
+                    if (!_.isEmpty(contentItem.body._meta.deliveryKey)) {
+                        contentItem.body._meta.deliveryKey = `${contentItem.body._meta.deliveryKey}-${nanoid()}`
+                        needsUpdate = true
+                    }
+                }
+
+                if (needsUpdate) {
+                    logUpdate(`updating content item active flag / delivery key`)
+                    contentItem = await contentItem.related.update(contentItem)
+                    await sleep(1000)
+                    logUpdate(`publishing updates`)
+                    await context.amplienceHelper.publishContentItem(contentItem)
+                    await sleep(1000)
+                }
+            }))
+        }))
+
+        // Second pass, archive content and remove folders
         await Promise.all(repositories.map(async (repository: ContentRepository) => {
             logUpdate(`${prompts.archive} content items in repository ${chalk.cyanBright(repository.name)}...`)
             let contentItems: ContentItem[] = _.filter(await paginator(repository.related.contentItems.list, { status: 'ACTIVE' }), ci => this.shouldCleanUpItem(ci, context))
@@ -103,32 +149,6 @@ export class ContentItemHandler extends ResourceHandler implements Cleanable {
                 if (!effectiveContentTypeLink) {
                     return
                 }
-
-                let effectiveContentType: any = await context.amplienceHelper.get(effectiveContentTypeLink)
-                let activePropsType = activeProps.filter(prop => 
-                    effectiveContentType?.properties && effectiveContentType.properties[prop]?.type === 'boolean')
-
-                if (activePropsType.length > 0) {
-                    for (const prop of activePropsType) {
-                        contentItem.body[prop] = false
-                    }
-
-                    contentItem = await contentItem.related.update(contentItem)
-                    await context.amplienceHelper.publishContentItem(contentItem)
-                }
-
-                if (contentItem.body._meta.deliveryKey?.length > 0) {
-                    if (contentItem.status === 'ARCHIVED') {
-                        contentItem = await contentItem.related.unarchive()
-                    }
-
-                    if (!_.isEmpty(contentItem.body._meta.deliveryKey)) {
-                        contentItem.body._meta.deliveryKey = `${contentItem.body._meta.deliveryKey}-${nanoid()}`
-                    }
-
-                    contentItem = await contentItem.related.update(contentItem)
-                }
-
                 archiveCount++
                 await contentItem.related.archive()
                 _.remove(context.automation?.contentItems, ci => contentItem.id === ci.to)
