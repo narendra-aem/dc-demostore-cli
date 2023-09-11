@@ -216,3 +216,5 @@ This category includes interactions with environments.
 
 [View commands for **env**](docs/env.md)
 
+## [FAQ](docs/faq.md)
+
