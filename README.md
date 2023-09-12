@@ -12,13 +12,12 @@ Run `demostore --help` to get a list of available commands.
 
 <!-- MarkdownTOC levels="2,3" autolink="true" -->
 - [Prerequisites](#prerequisites)
-- [Installation](#installation)
 - [Configuration](#configuration)
+- [Installation](#installation)
 - [Command categories](#command-categories)
-  - [using an demostore environment](#using-an-demostore-environment)
+  - [using a demostore environment](#using-a-demostore-environment)
   - [env management](#env)
 - [Configure your own Automated Content](#automation-bespoke)
-
 <!-- /MarkdownTOC -->
 
 ## Building
@@ -46,11 +45,11 @@ npm install -g @amplience/dc-demostore-cli
 
 ## Configuration
 
-**demostore** requires an demostore environment configuration to run.
+**demostore** requires a demostore environment configuration to run.
 
 ### PreRequisites
 - Amplience account
-- Details and where to get then from.
+- Details and where to get them from.
   - [Hub Name](docs/screenshots.md)
   - [App URL](https://github.com/amplience/dc-demostore-core/blob/main/docs/ForkDeploy.md) - ( link to your deployed `dc-demostore-core` app )
   - Client ID / Secret - Sent via support@amplience.com - One Time Secret
@@ -88,17 +87,15 @@ By default the configuration is saved to a file in the directory `<HOME_DIR>/.am
 
 ## Command categories
 
-### using an demostore environment
+### Using a demostore environment
 
+<!-- MarkdownTOC levels="2,3" autolink="true" -->
 - [Commands](#commands)
-  - [show](#show)
-  - [env](#env)
-  - [import](#import)
   - [cleanup](#cleanup)
   - [publish](#publish)
-
-
-
+  - [import](#import)
+  - [show](#show)
+  - [env](#env)
 <!-- /MarkdownTOC -->
 
 ## Common Options
@@ -204,7 +201,7 @@ Publish all unpublished content items.
 
 ### show
 
-Show the status of an demostore environment.
+Show the status of a demostore environment.
 
 #### Examples
 
