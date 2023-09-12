@@ -47,7 +47,7 @@ npm install -g @amplience/dc-demostore-cli
 
 **demostore** requires a demostore environment configuration to run.
 
-### PreRequisites
+### Prerequisites
 - Amplience account
 - Details and where to get them from.
   - [Hub Name](docs/screenshots.md)
