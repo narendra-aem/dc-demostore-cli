@@ -126,6 +126,19 @@ Clean a hub.
 
 Valid resource types are `contentTypeSchema`, `contentTypes`, `contentItems`, `searchIndexes`, `extensions`, `webhooks`, and `events`.
 
+#### Active properties handling
+
+Content Items containing one of the following active field will go through an additional process:
+
+- `filterActive`
+- `active`
+
+If these properties are `true`, the cleanup process will:
+
+- update the delivery key (adding a random string at the end)
+- set the active flag to `false`
+- publish the content 
+
 #### Examples
 
 ##### Clean a hub
