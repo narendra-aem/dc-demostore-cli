@@ -2,6 +2,24 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [2.0.0](https://github.com/amplience/dc-demostore-cli/compare/v1.1.4...v2.0.0) (2023-09-13)
+
+
+### Features
+
+* add vendor const to codec schemas ([05a15b8](https://github.com/amplience/dc-demostore-cli/commit/05a15b8ea2923366f19c8c855dd7a7b436d3c2fa))
+* generating demostore config ([a0a7c8b](https://github.com/amplience/dc-demostore-cli/commit/a0a7c8bf876b6a76c4468b84abd1d2636cbbf43a))
+* Open AI Key in automation options for import ([bc147b8](https://github.com/amplience/dc-demostore-cli/commit/bc147b8c7660204f53aed1117efa4dde102a2710))
+* unset "active" boolean when cleaning hub ([1957db9](https://github.com/amplience/dc-demostore-cli/commit/1957db96dbda6e47c56f2b35c105d89b783824b1))
+
+
+### Bug Fixes
+
+* added missing typescript package ([7e2d3ca](https://github.com/amplience/dc-demostore-cli/commit/7e2d3caddadbc4635a97e9d5f2f5c3c0eb7bf270))
+* archiving in two passes ([2fa684c](https://github.com/amplience/dc-demostore-cli/commit/2fa684cf6b719bdb33af4b6092a6b2d3d14c6ca0))
+* removed ([36f913e](https://github.com/amplience/dc-demostore-cli/commit/36f913ef2eab3702b967e31f16508c392ffee94e))
+* removed filtering of integration types and schemas ([68e44e5](https://github.com/amplience/dc-demostore-cli/commit/68e44e561607d5851de52b0730ea62de29dd9c7d))
+
 ### [1.1.4](https://github.com/amplience/dc-demostore-cli/compare/v1.1.3...v1.1.4) (2023-02-02)
 
 
