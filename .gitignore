@@ -5,5 +5,3 @@ repositories
 node_modules
 /packages
 *.log
-package-lock.json
-yarn.lock
