@@ -44,29 +44,24 @@ const lodash_1 = __importDefault(require("lodash"));
 const content_item_handler_1 = require("../handlers/content-item-handler");
 const fs_extra_1 = __importDefault(require("fs-extra"));
 const utils_1 = require("./utils");
-const dc_demostore_integration_1 = require("@amplience/dc-demostore-integration");
+const dc_integration_middleware_1 = require("@amplience/dc-integration-middleware");
+const paginator_1 = require("../common/dccli/paginator");
 const dam_service_1 = require("../dam/dam-service");
 exports.deliveryKeys = {
-    config: `demostore/config/default`,
-    automation: `demostore/automation`,
-    rest: `demostore/integration/rest`
+    automation: `demostore/automation`
 };
 exports.labels = {
-    config: `demostore config`,
-    automation: `demostore automation`,
-    rest: `generic rest commerce configuration`
+    automation: `demostore automation`
 };
 exports.schemas = {
-    config: `https://demostore.amplience.com/site/demostoreconfig`,
-    automation: `https://demostore.amplience.com/site/automation`,
-    rest: `https://demostore.amplience.com/site/integration/rest`
+    automation: `https://demostore.amplience.com/site/automation`
 };
 const baseURL = `https://demostore-catalog.s3.us-east-2.amazonaws.com`;
 const restMap = {};
 const damServiceMap = {};
 let contentMap = {};
 const AmplienceHelperGenerator = (context) => {
-    const rest = restMap[context.environment.dc.clientId] = restMap[context.environment.dc.clientId] || (0, dc_demostore_integration_1.OAuthRestClient)({
+    const rest = restMap[context.environment.dc.clientId] = restMap[context.environment.dc.clientId] || (0, dc_integration_middleware_1.OAuthRestClient)({
         api_url: `https://api.amplience.net/v2/content`,
         auth_url: `https://auth.amplience.net/oauth/token?client_id=${context.environment.dc.clientId}&client_secret=${context.environment.dc.clientSecret}&grant_type=client_credentials`
     }, {}, {
@@ -75,8 +70,8 @@ const AmplienceHelperGenerator = (context) => {
         }
     });
     const getContentItems = (hub, opts) => __awaiter(void 0, void 0, void 0, function* () {
-        return lodash_1.default.flatMap(yield Promise.all((yield (0, dc_demostore_integration_1.paginator)(hub.related.contentRepositories.list)).map((repo) => __awaiter(void 0, void 0, void 0, function* () {
-            return yield (0, dc_demostore_integration_1.paginator)(repo.related.contentItems.list, opts);
+        return lodash_1.default.flatMap(yield Promise.all((yield (0, paginator_1.paginator)(hub.related.contentRepositories.list)).map((repo) => __awaiter(void 0, void 0, void 0, function* () {
+            return yield (0, paginator_1.paginator)(repo.related.contentItems.list, opts);
         }))));
     });
     const timedBlock = (tag, fn) => __awaiter(void 0, void 0, void 0, function* () {
@@ -129,38 +124,30 @@ const AmplienceHelperGenerator = (context) => {
             workflowStates: []
         });
     });
-    const getRestConfig = () => __awaiter(void 0, void 0, void 0, function* () {
-        return yield ensureContentItem('rest', {
-            productURL: `${baseURL}/products.json`,
-            categoryURL: `${baseURL}/categories.json`,
-            customerGroupURL: `${baseURL}/customerGroups.json`,
-            translationsURL: `${baseURL}/translations.json`
-        });
-    });
     const getDemoStoreConfig = () => __awaiter(void 0, void 0, void 0, function* () {
         var _a, _b;
-        return yield ensureContentItem('config', {
+        return {
             url: context.environment.url,
             algolia: {
                 appId: '',
                 apiKey: ''
-            },
-            commerce: {
-                _meta: {
-                    schema: "http://bigcontent.io/cms/schema/v1/core#/definitions/content-reference"
-                },
-                id: (yield getRestConfig()).id,
-                contentType: exports.schemas.rest
             },
             cms: {
                 hub: context.environment.name,
                 stagingApi: ((_b = (_a = context.hub.settings) === null || _a === void 0 ? void 0 : _a.virtualStagingEnvironment) === null || _b === void 0 ? void 0 : _b.hostname) || '',
                 imageHub: 'willow'
             }
-        });
+        };
     });
     const updateDemoStoreConfig = () => __awaiter(void 0, void 0, void 0, function* () {
-        yield updateContentItem('config', context.config);
+        (0, logger_1.logSubheading)('.env.local file format');
+        console.log('----------------------- COPY START ----------------------');
+        console.log(`NEXT_PUBLIC_DEMOSTORE_CONFIG_JSON='${JSON.stringify(context.config)}'`);
+        console.log('------------------------ COPY END -----------------------');
+        (0, logger_1.logSubheading)('Vercel format');
+        console.log('----------------------- COPY START ----------------------');
+        console.log(JSON.stringify(context.config));
+        console.log('------------------------ COPY END -----------------------');
     });
     const updateAutomation = () => __awaiter(void 0, void 0, void 0, function* () {
         let mappingStats = fs_extra_1.default.statSync(`${context.tempDir}/old_mapping.json`);
@@ -190,7 +177,7 @@ const AmplienceHelperGenerator = (context) => {
         return item;
     });
     const getContentRepository = (key) => __awaiter(void 0, void 0, void 0, function* () {
-        let repositories = yield (0, dc_demostore_integration_1.paginator)(context.hub.related.contentRepositories.list);
+        let repositories = yield (0, paginator_1.paginator)(context.hub.related.contentRepositories.list);
         let repo = repositories.find(repo => repo.name === key);
         if (!repo) {
             throw new Error(`repository [ ${key} ] not found`);
@@ -198,7 +185,7 @@ const AmplienceHelperGenerator = (context) => {
         return repo;
     });
     const getContentItemsInRepository = (key) => __awaiter(void 0, void 0, void 0, function* () {
-        return yield (0, dc_demostore_integration_1.paginator)((yield getContentRepository(key)).related.contentItems.list, { status: 'ACTIVE' });
+        return yield (0, paginator_1.paginator)((yield getContentRepository(key)).related.contentItems.list, { status: 'ACTIVE' });
     });
     const updateContentItem = (key, body) => __awaiter(void 0, void 0, void 0, function* () {
         let item = yield ensureContentItem(key, body);
@@ -234,7 +221,7 @@ const AmplienceHelperGenerator = (context) => {
     return {
         getContentItem,
         getDemoStoreConfig,
-        updateDemoStoreConfig,
+        generateDemoStoreConfig: updateDemoStoreConfig,
         get,
         getAutomation,
         updateAutomation,

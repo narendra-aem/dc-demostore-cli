@@ -1,5 +1,5 @@
-import { ContentType, Folder, ContentItem, DynamicContent, Status, Pageable, Sortable, Hub, ContentRepository } from "dc-management-sdk-js"
-import logger, { logComplete } from "./logger"
+import { Folder, ContentItem, DynamicContent, Status, Pageable, Sortable, Hub, ContentRepository } from "dc-management-sdk-js"
+import logger, { logComplete, logSubheading } from "./logger"
 import chalk from "chalk"
 import { logUpdate } from "./logger"
 import _, { Dictionary } from 'lodash'
@@ -7,34 +7,27 @@ import { ContentItemHandler } from "../handlers/content-item-handler"
 import { AmplienceContext } from '../handlers/resource-handler';
 import fs from 'fs-extra'
 import { sleep } from "./utils"
-import { OAuthRestClient, paginator, StatusQuery } from "@amplience/dc-demostore-integration"
-import { OAuthRestClientInterface } from "@amplience/dc-demostore-integration/dist/common/rest-client"
+import { OAuthRestClient } from "@amplience/dc-integration-middleware"
+import { paginator, StatusQuery } from '../common/dccli/paginator'
+import { OAuthRestClientInterface } from "@amplience/dc-integration-middleware"
 import { DAMMapping } from "./types"
 import { DAMService } from "../dam/dam-service"
 
 type IntegrationConstants = {
-    config: string
     automation: string
-    rest: string
 }
 
 // constants
 export const deliveryKeys: IntegrationConstants = {
-    config: `demostore/config/default`,
-    automation: `demostore/automation`,
-    rest: `demostore/integration/rest`
+    automation: `demostore/automation`
 }
 
 export const labels: IntegrationConstants = {
-    config: `demostore config`,
-    automation: `demostore automation`,
-    rest: `generic rest commerce configuration`
+    automation: `demostore automation`
 }
 
 export const schemas: IntegrationConstants = {
-    config: `https://demostore.amplience.com/site/demostoreconfig`,
-    automation: `https://demostore.amplience.com/site/automation`,
-    rest: `https://demostore.amplience.com/site/integration/rest`
+    automation: `https://demostore.amplience.com/site/automation`
 }
 
 const baseURL = `https://demostore-catalog.s3.us-east-2.amazonaws.com`
@@ -115,35 +108,31 @@ const AmplienceHelperGenerator = (context: AmplienceContext): AmplienceHelper =>
         workflowStates: []
     })
 
-    const getRestConfig = async (): Promise<ContentItem> => await ensureContentItem('rest', {
-        productURL: `${baseURL}/products.json`,
-        categoryURL: `${baseURL}/categories.json`,
-        customerGroupURL: `${baseURL}/customerGroups.json`,
-        translationsURL: `${baseURL}/translations.json`
-    })
-
-    const getDemoStoreConfig = async (): Promise<ContentItem> => await ensureContentItem('config', {
-        url: context.environment.url,
-        algolia: {
-            appId: '',
-            apiKey: ''
-        },
-        commerce: {
-            _meta: {
-                schema: "http://bigcontent.io/cms/schema/v1/core#/definitions/content-reference"
+    const getDemoStoreConfig = async (): Promise<any> => {
+        return {
+            url: context.environment.url,
+            algolia: {
+                appId: '',
+                apiKey: ''
             },
-            id: (await getRestConfig()).id,
-            contentType: schemas.rest
-        },
-        cms: {
-            hub: context.environment.name,
-            stagingApi: context.hub.settings?.virtualStagingEnvironment?.hostname || '',
-            imageHub: 'willow'
+            cms: {
+                hub: context.environment.name,
+                stagingApi: context.hub.settings?.virtualStagingEnvironment?.hostname || '',
+                imageHub: 'willow'
+            }
         }
-    })
+    }
 
     const updateDemoStoreConfig = async () => {
-        await updateContentItem('config', context.config)
+        // generate demostore config environment variable
+        logSubheading('.env.local file format')
+        console.log('----------------------- COPY START ----------------------')
+        console.log(`NEXT_PUBLIC_DEMOSTORE_CONFIG_JSON='${JSON.stringify(context.config)}'`)
+        console.log('------------------------ COPY END -----------------------')
+        logSubheading('Vercel format')
+        console.log('----------------------- COPY START ----------------------')
+        console.log(JSON.stringify(context.config))
+        console.log('------------------------ COPY END -----------------------')
     }
 
     const updateAutomation = async () => {
@@ -244,7 +233,7 @@ const AmplienceHelperGenerator = (context: AmplienceContext): AmplienceHelper =>
     return {
         getContentItem,
         getDemoStoreConfig,
-        updateDemoStoreConfig,
+        generateDemoStoreConfig: updateDemoStoreConfig,
 
         get,
         getAutomation,
@@ -269,8 +258,8 @@ export default AmplienceHelperGenerator
 export type AmplienceHelper = {
     getContentItem: (keyOrId: string) => ContentItem
     publishAll: () => Promise<void>
-    getDemoStoreConfig: () => Promise<ContentItem>
-    updateDemoStoreConfig: () => Promise<void>
+    getDemoStoreConfig: () => Promise<any>
+    generateDemoStoreConfig: () => Promise<void>
     getAutomation: () => Promise<ContentItem>
     updateAutomation: () => Promise<void>
     cacheContentMap: () => Promise<void>

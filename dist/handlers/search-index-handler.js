@@ -38,7 +38,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.SearchIndexHandler = void 0;
 const resource_handler_1 = require("./resource-handler");
 const dc_management_sdk_js_1 = require("dc-management-sdk-js");
-const dc_demostore_integration_1 = require("@amplience/dc-demostore-integration");
+const paginator_1 = require("../common/dccli/paginator");
 const lodash_1 = __importDefault(require("lodash"));
 const logger_1 = __importStar(require("../common/logger"));
 const chalk_1 = __importDefault(require("chalk"));
@@ -96,7 +96,7 @@ class SearchIndexHandler extends resource_handler_1.ResourceHandler {
                 let testIndexes = fs_extra_1.default.readJsonSync(`${context.tempDir}/content/indexes/test-index.json`);
                 let importIndexes = fs_extra_1.default.readJsonSync(indexesFile);
                 const indexes = importIndexes;
-                let publishedIndexes = yield (0, dc_demostore_integration_1.paginator)((0, dc_demostore_integration_1.searchIndexPaginator)(hub));
+                let publishedIndexes = yield (0, paginator_1.paginator)((0, paginator_1.searchIndexPaginator)(hub));
                 let unpublishedIndexes = lodash_1.default.filter(indexes, idx => !lodash_1.default.includes(lodash_1.default.map(publishedIndexes, 'name'), idx.indexDetails.name));
                 let searchIndexCount = 0;
                 let replicaCount = 0;
@@ -109,7 +109,7 @@ class SearchIndexHandler extends resource_handler_1.ResourceHandler {
                         throw new Error(`failed to create search index [ ${item.indexDetails.name} ] after 3 attempts`);
                     }
                     searchIndexCount++;
-                    publishedIndexes = yield (0, dc_demostore_integration_1.paginator)((0, dc_demostore_integration_1.searchIndexPaginator)(hub));
+                    publishedIndexes = yield (0, paginator_1.paginator)((0, paginator_1.searchIndexPaginator)(hub));
                     const replicasSettings = item.replicasSettings;
                     const replicasIndexes = lodash_1.default.map(replicasSettings, (item) => lodash_1.default.find(publishedIndexes, i => i.name === item.name));
                     yield retrier(() => createdIndex.related.settings.update(ensureSearchIndexSettings(item.settings), {
@@ -119,12 +119,12 @@ class SearchIndexHandler extends resource_handler_1.ResourceHandler {
                         yield retrier(() => replicaIndex.related.settings.update(ensureSearchIndexSettings(replicasSettings[index].settings)), `apply replica settings: ${chalk_1.default.cyanBright(replicaIndex.name)}`);
                         replicaCount++;
                     })));
-                    const types = yield (0, dc_demostore_integration_1.paginator)(createdIndex.related.assignedContentTypes.list);
+                    const types = yield (0, paginator_1.paginator)(createdIndex.related.assignedContentTypes.list);
                     if (types.length > 0) {
                         const type = types[0];
                         const activeContentWebhookId = type._links['active-content-webhook'].href.split('/').slice(-1)[0];
                         const archivedContentWebhookId = type._links['archived-content-webhook'].href.split('/').slice(-1)[0];
-                        const webhooks = yield (0, dc_demostore_integration_1.paginator)(hub.related.webhooks.list);
+                        const webhooks = yield (0, paginator_1.paginator)(hub.related.webhooks.list);
                         const activeContentWebhook = lodash_1.default.find(webhooks, hook => hook.id === activeContentWebhookId);
                         const archivedContentWebhook = lodash_1.default.find(webhooks, hook => hook.id === archivedContentWebhookId);
                         if (activeContentWebhook && archivedContentWebhook) {
@@ -146,28 +146,31 @@ class SearchIndexHandler extends resource_handler_1.ResourceHandler {
                 }));
                 (0, logger_1.logComplete)(`${this.getDescription()}: [ ${chalk_1.default.green(searchIndexCount)} created ] [ ${chalk_1.default.green(replicaCount)} replicas created ] [ ${chalk_1.default.green(webhookCount)} webhooks created ]`);
             }
-            publishedIndexes = yield (0, dc_demostore_integration_1.paginator)((0, dc_demostore_integration_1.searchIndexPaginator)(hub));
+            publishedIndexes = yield (0, paginator_1.paginator)((0, paginator_1.searchIndexPaginator)(hub));
             const index = lodash_1.default.first(publishedIndexes);
             if (index) {
                 let key = yield index.related.keys.get();
                 if (key && key.applicationId && key.key) {
+                    if (!context.config) {
+                        let tempMapping = yield context.amplienceHelper.getDemoStoreConfig();
+                        context.config = tempMapping;
+                    }
                     context.config.algolia = {
                         appId: key.applicationId,
                         apiKey: key.key
                     };
                 }
             }
-            yield context.amplienceHelper.updateDemoStoreConfig();
         });
     }
     cleanup(context) {
         return __awaiter(this, void 0, void 0, function* () {
-            let searchIndexes = yield (0, dc_demostore_integration_1.paginator)((0, dc_demostore_integration_1.searchIndexPaginator)(context.hub));
+            let searchIndexes = yield (0, paginator_1.paginator)((0, paginator_1.searchIndexPaginator)(context.hub));
             let searchIndexCount = 0;
             let replicaCount = 0;
             yield async_1.default.each(searchIndexes, ((searchIndex, callback) => __awaiter(this, void 0, void 0, function* () {
                 if (searchIndex.replicaCount && searchIndex.replicaCount > 0) {
-                    let replicas = yield (0, dc_demostore_integration_1.paginator)((0, dc_demostore_integration_1.replicaPaginator)(searchIndex));
+                    let replicas = yield (0, paginator_1.paginator)((0, paginator_1.replicaPaginator)(searchIndex));
                     yield Promise.all(replicas.map((replica) => __awaiter(this, void 0, void 0, function* () {
                         yield retrier(() => replica.related.delete(), `${prompts_1.prompts.delete} replica index ${chalk_1.default.cyan(replica.name)}...`);
                         replicaCount++;

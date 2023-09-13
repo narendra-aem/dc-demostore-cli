@@ -1,6 +1,6 @@
 {
   "name": "@amplience/dc-demostore-cli",
-  "version": "1.1.4",
+  "version": "1.2.0",
   "description": "Amplience Demo Store CLI",
   "man": "./dist/demo-cli.1",
   "bin": {
@@ -47,7 +47,7 @@
   },
   "homepage": "https://github.com/amplience/dc-demostore-cli#readme",
   "dependencies": {
-    "@amplience/dc-demostore-integration": "github:amplience/dc-demostore-integration#v1.1.2",
+    "@amplience/dc-integration-middleware": "github:amplience/dc-integration-middleware#v2.2.0",
     "@justindfuller/async-lodash": "^1.0.9",
     "@rauschma/stringio": "^1.4.0",
     "adm-zip": "^0.5.9",
@@ -80,6 +80,7 @@
     "@types/yargs": "^17.0.9",
     "cross-os": "^1.4.0",
     "npm-run-all": "^4.1.5",
-    "standard-version": "^9.3.2"
+    "standard-version": "^9.3.2",
+    "typescript": "^5.2.2"
   }
 }

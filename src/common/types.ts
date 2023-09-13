@@ -1,6 +1,6 @@
 import { Hub } from 'dc-management-sdk-js';
 import _, { Dictionary } from 'lodash';
-import { DemoStoreConfiguration, paginator, AlgoliaConfig, AmplienceConfig } from '@amplience/dc-demostore-integration';
+import { paginator } from '../common/dccli/paginator'
 import { AmplienceHelper } from './amplience-helper';
 import { ImportContext } from '../handlers/resource-handler';
 
@@ -35,12 +35,28 @@ export type LoggableArgs = AmplienceArgs & {
     tempDir:                string
 }
 
+export interface AlgoliaConfig {
+    appId: string;
+    apiKey: string;
+}
+export interface AmplienceConfig {
+    hub: string;
+    stagingApi: string;
+    imageHub?: string;
+}
+export interface DemoStoreConfiguration {
+    algolia: AlgoliaConfig;
+    url?: string;
+    cms: AmplienceConfig;
+}
+
 export type ImportArgs = LoggableArgs & {
     skipContentImport:      boolean
     automationDir:          string
     latest:                 boolean
     branch:                 string
     config:                 DemoStoreConfiguration
+    openaiKey:              string
 }
 
 export type CleanupArgs = LoggableArgs & {
@@ -50,6 +66,7 @@ export type CleanupArgs = LoggableArgs & {
 
 export type Mapping = {
     url:                    string
+    openaiKey?:             string
     cms?:                   CMSMapping
     algolia?:               AlgoliaConfig
     dam:                    DAMMapping
@@ -77,6 +94,7 @@ export const getMapping = async (context: ImportContext): Promise<Mapping> => {
     let workflowStates = await paginator(context.hub.related.workflowStates.list)
     return {
         url: context.environment.url,
+        openaiKey: context.openaiKey,
         cms: {
             hub: context.hub.name!,
             hubId: context.hub.id!,

@@ -17,7 +17,7 @@ const dynamic_content_client_factory_1 = __importDefault(require("../common/dccl
 const path_1 = require("path");
 const fs_1 = require("fs");
 const util_1 = require("util");
-const dc_demostore_integration_1 = require("@amplience/dc-demostore-integration");
+const paginator_1 = require("../common/dccli/paginator");
 const dc_management_sdk_js_1 = require("dc-management-sdk-js");
 const content_mapping_1 = require("../common/dccli/content-mapping");
 const content_dependency_tree_1 = require("../common/dccli/content-item/content-dependency-tree");
@@ -102,7 +102,7 @@ const getSubfolders = (context, folder) => {
     if (context.folderToSubfolderMap.has(folder.id)) {
         return context.folderToSubfolderMap.get(folder.id);
     }
-    const subfolders = (0, dc_demostore_integration_1.paginator)(folder.related.folders.list);
+    const subfolders = (0, paginator_1.paginator)(folder.related.folders.list);
     context.folderToSubfolderMap.set(folder.id, subfolders);
     return subfolders;
 };
@@ -229,7 +229,7 @@ const prepareContentForImport = (client, hub, repos, folder, mapping, log, argv)
         const repo = repos[i].repo;
         const context = contexts.get(repo);
         try {
-            const folders = yield (0, dc_demostore_integration_1.paginator)(repo.related.folders.list);
+            const folders = yield (0, paginator_1.paginator)(repo.related.folders.list);
             for (let j = 0; j < folders.length; j++) {
                 const folder = folders[j];
                 let parent = null;
@@ -290,8 +290,8 @@ const prepareContentForImport = (client, hub, repos, folder, mapping, log, argv)
     let types;
     let schemas;
     try {
-        types = yield (0, dc_demostore_integration_1.paginator)(hub.related.contentTypes.list);
-        schemas = yield (0, dc_demostore_integration_1.paginator)(hub.related.contentTypeSchema.list);
+        types = yield (0, paginator_1.paginator)(hub.related.contentTypes.list);
+        schemas = yield (0, paginator_1.paginator)(hub.related.contentTypeSchema.list);
     }
     catch (e) {
         log.error('Could not load content types:', e);
@@ -609,7 +609,7 @@ const handler = (argv) => __awaiter(void 0, void 0, void 0, function* () {
     else {
         let repos;
         try {
-            repos = yield (0, dc_demostore_integration_1.paginator)(hub.related.contentRepositories.list);
+            repos = yield (0, paginator_1.paginator)(hub.related.contentRepositories.list);
         }
         catch (e) {
             log.error(`Couldn't get repositories:`, e);

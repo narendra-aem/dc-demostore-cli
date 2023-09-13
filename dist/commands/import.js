@@ -95,6 +95,12 @@ const builder = (yargs) => {
             describe: 'use latest automation files',
             type: 'boolean'
         },
+        openaiKey: {
+            alias: 'o',
+            describe: 'OpenAI Key (required for rich text AI features)',
+            type: 'string',
+            default: ''
+        },
         branch: {
             alias: 'b',
             describe: 'branch of dc-demostore-automation to use',
@@ -118,7 +124,6 @@ const builder = (yargs) => {
 };
 exports.builder = builder;
 const importHandler = (handler) => (context) => __awaiter(void 0, void 0, void 0, function* () {
-    context.config = (yield context.amplienceHelper.getDemoStoreConfig()).body;
     yield (0, import_helper_1.copyTemplateFilesToTempDir)(context);
     yield handler.import(context);
 });
@@ -137,4 +142,6 @@ exports.handler = (0, middleware_1.contextHandler)((context) => __awaiter(void 0
         (0, logger_1.logHeadline)(`Phase 4: reentrant import`);
         yield importHandler(new content_type_schema_handler_1.ContentTypeSchemaHandler())(context);
     }
+    (0, logger_1.logHeadline)(`Phase 5: generate demostore configuration`);
+    yield context.amplienceHelper.generateDemoStoreConfig();
 }));

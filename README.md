@@ -4,32 +4,35 @@ Demonstration Command line interface for Amplience Demo Store.
 
 ## Description
 
-**demostore** is a command line interface application to manage an installation of the Amplience Demo Store (demostore). It builds on top of the [Amplience DC CLI](https://github.com/amplience/dc-cli) and [Amplience Management APIs](https://amplience.com/docs/api/dynamic-content/management/)
+`dc-demostore-cli` or CLI alias **demostore** is a command line interface application to manage an installation of the Amplience Demo Store (demostore). It builds on top of the [Amplience DC CLI](https://github.com/amplience/dc-cli) and [Amplience Management APIs](https://amplience.com/docs/api/dynamic-content/management/)
 
 Run `demostore --help` to get a list of available commands.
 
+> See [v2.0.0 Changes](docs/v2.0.0-changes.md) if you already have an existing version of demostore that you wish to update.
+
 <!-- MarkdownTOC levels="2,3" autolink="true" -->
 - [Prerequisites](#prerequisites)
-- [Installation](#installation)
 - [Configuration](#configuration)
+- [Installation](#installation)
 - [Command categories](#command-categories)
-  - [using an demostore environment](#using-an-demostore-environment)
+  - [using a demostore environment](#using-a-demostore-environment)
   - [env management](#env)
 - [Configure your own Automated Content](#automation-bespoke)
-
 <!-- /MarkdownTOC -->
 
 ## Building
 
-You need to have [Node Version Manager](https://github.com/nvm-sh/nvm) installed.
+This demo appliction was developed and tested with:
+
+- Node version 18.x
+- NPM version 9.x
+
+To switch to the correct node version it is recommended to have [Node Version Manager](https://github.com/nvm-sh/nvm) installed.
 
 ```
-nvm install 16
-nvm use
-npm install -g pnpm
-pnpm install
+nvm install 18
+nvm use 18
 ```
-
 
 
 ## Installation
@@ -42,16 +45,16 @@ npm install -g @amplience/dc-demostore-cli
 
 ## Configuration
 
-**demostore** requires an demostore environment configuration to run.
+**demostore** requires a demostore environment configuration to run.
 
-### PreRequisites
+### Prerequisites
 - Amplience account
-- Details and where to get then from.
+- Details and where to get them from.
   - [Hub Name](docs/screenshots.md)
   - [App URL](https://github.com/amplience/dc-demostore-core/blob/main/docs/ForkDeploy.md) - ( link to your deployed `dc-demostore-core` app )
   - Client ID / Secret - Sent via support@amplience.com - One Time Secret
   - [Hub ID](docs/screenshots.md)
-  - Username & Password for Content Hub
+  - Username & Password for Content Hub (used to map media)
 
 On your first invocation of any `demostore` command, the CLI will prompt you to create an environment:
 
@@ -84,17 +87,15 @@ By default the configuration is saved to a file in the directory `<HOME_DIR>/.am
 
 ## Command categories
 
-### using an demostore environment
+### Using a demostore environment
 
+<!-- MarkdownTOC levels="2,3" autolink="true" -->
 - [Commands](#commands)
-  - [show](#show)
-  - [env](#env)
-  - [import](#import)
   - [cleanup](#cleanup)
   - [publish](#publish)
-
-
-
+  - [import](#import)
+  - [show](#show)
+  - [env](#env)
 <!-- /MarkdownTOC -->
 
 ## Common Options
@@ -125,6 +126,19 @@ Clean a hub.
 
 Valid resource types are `contentTypeSchema`, `contentTypes`, `contentItems`, `searchIndexes`, `extensions`, `webhooks`, and `events`.
 
+#### Active properties handling
+
+Content Items containing one of the following active field will go through an additional process:
+
+- `filterActive`
+- `active`
+
+If these properties are `true`, the cleanup process will:
+
+- update the delivery key (adding a random string at the end)
+- set the active flag to `false`
+- publish the content 
+
 #### Examples
 
 ##### Clean a hub
@@ -137,18 +151,38 @@ Valid resource types are `contentTypeSchema`, `contentTypes`, `contentItems`, `s
 
 ### import
 
-Import data.
+Import data using automation packages found in [dc-demostore-automation](https://github.com/amplience/dc-demostore-automation)
+
+When running an import you get provided with the environment variables to configure for your Front End deployment of [dc-demostore-core](https://github.com/amplience/dc-demostore-core). See specific information in the docs on this project about how to use.
+
+Example output after import where all values marked as `XXX` will be specific to your account configuration
+
+```
+info: .env.local file format
+info: 
+----------------------- COPY START ----------------------
+NEXT_PUBLIC_DEMOSTORE_CONFIG_JSON='{"url":"XXX","algolia":{"appId":"XXX","apiKey":"XXX"},"cms":{"hub":"XXX","stagingApi":"XXX","imageHub":"XXX"}}'
+------------------------ COPY END -----------------------
+info: 
+info: Vercel format
+info: 
+----------------------- COPY START ----------------------
+{"url":"XXX","algolia":{"appId":"XXX","apiKey":"XXX"},"cms":{"hub":"XXX","stagingApi":"XXX","imageHub":"XXX"}}
+------------------------ COPY END -----------------------
+```
+
 
 #### Options
 
-| Option Name             | Type      | Description                                         |
-| ----------------------- | --------- | --------------------------------------------------- |
-| --logRequests, -r       | [boolean] | log http requests/responses                         |
-| --tempDir, -t           | [string]  | temp dir for run files                              |
-| --matchingSchema, -m    | [array]   | apply to (types, schemas, items) matching schema id |
-| --automationDir, -a     | [string]  | path to import directory                            |
-| --skipContentImport, -s | [boolean] | skip content import                                 |
-| --latest, -l            | [boolean] | using this flag will download the latest automation |
+| Option Name             | Type      | Description                                             |
+| ----------------------- | --------- | ------------------------------------------------------- |
+| --logRequests, -r       | [boolean] | log http requests/responses                             |
+| --tempDir, -t           | [string]  | temp dir for run files                                  |
+| --matchingSchema, -m    | [array]   | apply to (types, schemas, items) matching schema id     |
+| --automationDir, -a     | [string]  | path to import directory                                |
+| --skipContentImport, -s | [boolean] | skip content import                                     |
+| --latest, -l            | [boolean] | using this flag will download the latest automation     |
+| --openaiKey, -o         | [string]  | optional openai key for generative rich text automation |
 
 #### Examples
 
@@ -180,7 +214,7 @@ Publish all unpublished content items.
 
 ### show
 
-Show the status of an demostore environment.
+Show the status of a demostore environment.
 
 #### Examples
 
@@ -191,4 +225,6 @@ Show the status of an demostore environment.
 This category includes interactions with environments.
 
 [View commands for **env**](docs/env.md)
+
+## [FAQ](docs/faq.md)
 

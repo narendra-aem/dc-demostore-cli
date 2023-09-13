@@ -15,7 +15,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.ContentTypeHandler = exports.validateNoDuplicateContentTypeUris = void 0;
 const resource_handler_1 = require("./resource-handler");
 const dc_management_sdk_js_1 = require("dc-management-sdk-js");
-const dc_demostore_integration_1 = require("@amplience/dc-demostore-integration");
+const paginator_1 = require("../common/dccli/paginator");
 const lodash_1 = __importDefault(require("lodash"));
 const logger_1 = require("../common/logger");
 const chalk_1 = __importDefault(require("chalk"));
@@ -53,8 +53,8 @@ let updateCount = 0;
 let createCount = 0;
 let assignedCount = 0;
 const installTypes = (context, types) => __awaiter(void 0, void 0, void 0, function* () {
-    const activeContentTypes = yield (0, dc_demostore_integration_1.paginator)(context.hub.related.contentTypes.list, { status: 'ACTIVE' });
-    const archivedContentTypes = yield (0, dc_demostore_integration_1.paginator)(context.hub.related.contentTypes.list, { status: 'ARCHIVED' });
+    const activeContentTypes = yield (0, paginator_1.paginator)(context.hub.related.contentTypes.list, { status: 'ACTIVE' });
+    const archivedContentTypes = yield (0, paginator_1.paginator)(context.hub.related.contentTypes.list, { status: 'ARCHIVED' });
     const storedContentTypes = [...activeContentTypes, ...archivedContentTypes];
     yield Promise.all(types.map((fileContentType) => __awaiter(void 0, void 0, void 0, function* () {
         let stored = lodash_1.default.find(storedContentTypes, ct => ct.contentTypeUri === fileContentType.contentTypeUri);
@@ -75,8 +75,8 @@ const installTypes = (context, types) => __awaiter(void 0, void 0, void 0, funct
             (0, logger_2.logUpdate)(`${prompts_1.prompts.create} content type [ ${chalk_1.default.gray(fileContentType.contentTypeUri)} ]`);
         }
     })));
-    let repos = yield (0, dc_demostore_integration_1.paginator)(context.hub.related.contentRepositories.list);
-    let activeTypes = yield (0, dc_demostore_integration_1.paginator)(context.hub.related.contentTypes.list, { status: 'ACTIVE' });
+    let repos = yield (0, paginator_1.paginator)(context.hub.related.contentRepositories.list);
+    let activeTypes = yield (0, paginator_1.paginator)(context.hub.related.contentTypes.list, { status: 'ACTIVE' });
     yield Promise.all(repos.map((repo) => __awaiter(void 0, void 0, void 0, function* () {
         yield Promise.all(types.map((fileContentType) => __awaiter(void 0, void 0, void 0, function* () {
             fileContentType.repositories = fileContentType.repositories || ['sitestructure'];
@@ -112,13 +112,13 @@ class ContentTypeHandler extends resource_handler_1.CleanableResourceHandler {
             if (!fs_extra_1.default.existsSync(sourceDir)) {
                 return;
             }
-            yield installTypes(context, (0, dc_demostore_integration_1.getCodecs)().map(dc_demostore_integration_1.getContentType));
             const jsonTypes = (0, importer_1.loadJsonFromDirectory)(sourceDir, schema_helper_1.ContentTypeWithRepositoryAssignments);
             if (Object.keys(jsonTypes).length === 0) {
                 throw new Error(`No content types found in ${sourceDir}`);
             }
             (0, exports.validateNoDuplicateContentTypeUris)(jsonTypes);
-            yield installTypes(context, lodash_1.default.filter(Object.values(jsonTypes), s => !lodash_1.default.includes(lodash_1.default.map((0, dc_demostore_integration_1.getCodecs)(), 'schema.uri'), s.contentTypeUri)));
+            const typesToInstall = Object.values(jsonTypes);
+            yield installTypes(context, typesToInstall);
             (0, logger_2.logComplete)(`${this.getDescription()}: [ ${chalk_1.default.green(archiveCount)} unarchived ] [ ${chalk_1.default.green(updateCount)} updated ] [ ${chalk_1.default.green(createCount)} created ] [ ${chalk_1.default.green(synchronizedCount)} synced ]`);
         });
     }
@@ -128,7 +128,7 @@ class ContentTypeHandler extends resource_handler_1.CleanableResourceHandler {
         });
         return __awaiter(this, void 0, void 0, function* () {
             (0, logger_1.logSubheading)(`[ cleanup ] content-types`);
-            let repos = yield (0, dc_demostore_integration_1.paginator)(context.hub.related.contentRepositories.list);
+            let repos = yield (0, paginator_1.paginator)(context.hub.related.contentRepositories.list);
             let unassignedCount = 0;
             yield Promise.all(repos.map((repo) => __awaiter(this, void 0, void 0, function* () {
                 let repoTypes = repo.contentTypes;

@@ -1,4 +1,4 @@
-import { paginator } from "@amplience/dc-demostore-integration"
+import { paginator } from '../common/dccli/paginator'
 import _ from 'lodash'
 import chalk from 'chalk'
 import { Arguments } from "yargs"

@@ -38,7 +38,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.ContentItemHandler = void 0;
 const resource_handler_1 = require("./resource-handler");
 const dc_management_sdk_js_1 = require("dc-management-sdk-js");
-const dc_demostore_integration_1 = require("@amplience/dc-demostore-integration");
+const paginator_1 = require("../common/dccli/paginator");
 const chalk_1 = __importDefault(require("chalk"));
 const prompts_1 = require("../common/prompts");
 const fs_extra_1 = __importDefault(require("fs-extra"));
@@ -49,6 +49,10 @@ const nanoid_1 = require("nanoid");
 const dc_cli_content_item_handler_1 = __importDefault(require("./dc-cli-content-item-handler"));
 const log_helpers_1 = require("../common/dccli/log-helpers");
 const types_1 = require("../common/types");
+const activeProps = [
+    'filterActive',
+    'active'
+];
 class ContentItemHandler extends resource_handler_1.ResourceHandler {
     constructor() {
         super(dc_management_sdk_js_1.ContentItem, 'contentItems');
@@ -102,47 +106,67 @@ class ContentItemHandler extends resource_handler_1.ResourceHandler {
     }
     cleanup(context) {
         return __awaiter(this, void 0, void 0, function* () {
-            let repositories = yield (0, dc_demostore_integration_1.paginator)(context.hub.related.contentRepositories.list);
-            let contentTypes = yield (0, dc_demostore_integration_1.paginator)(context.hub.related.contentTypes.list);
+            let repositories = yield (0, paginator_1.paginator)(context.hub.related.contentRepositories.list);
+            let contentTypes = yield (0, paginator_1.paginator)(context.hub.related.contentTypes.list);
             let archiveCount = 0;
             let folderCount = 0;
             yield Promise.all(repositories.map((repository) => __awaiter(this, void 0, void 0, function* () {
                 (0, logger_1.logUpdate)(`${prompts_1.prompts.archive} content items in repository ${chalk_1.default.cyanBright(repository.name)}...`);
-                let contentItems = lodash_1.default.filter(yield (0, dc_demostore_integration_1.paginator)(repository.related.contentItems.list, { status: 'ACTIVE' }), ci => this.shouldCleanUpItem(ci, context));
+                let contentItems = lodash_1.default.filter(yield (0, paginator_1.paginator)(repository.related.contentItems.list, { status: 'ACTIVE' }), ci => this.shouldCleanUpItem(ci, context));
                 yield Promise.all(contentItems.map((contentItem) => __awaiter(this, void 0, void 0, function* () {
-                    var _a, _b, _c;
+                    var _a;
+                    let needsUpdate = false;
                     let contentType = lodash_1.default.find(contentTypes, ct => ct.contentTypeUri === contentItem.body._meta.schema);
                     let effectiveContentTypeLink = lodash_1.default.get(contentType, '_links.effective-content-type.href');
                     if (!effectiveContentTypeLink) {
                         return;
                     }
                     let effectiveContentType = yield context.amplienceHelper.get(effectiveContentTypeLink);
-                    if ((_a = effectiveContentType === null || effectiveContentType === void 0 ? void 0 : effectiveContentType.properties) === null || _a === void 0 ? void 0 : _a.filterActive) {
-                        contentItem.body.filterActive = false;
-                        contentItem = yield contentItem.related.update(contentItem);
-                        yield context.amplienceHelper.publishContentItem(contentItem);
-                    }
-                    if (((_b = contentItem.body._meta.deliveryKey) === null || _b === void 0 ? void 0 : _b.length) > 0) {
-                        if (contentItem.status === 'ARCHIVED') {
-                            contentItem = yield contentItem.related.unarchive();
+                    let activePropsType = activeProps.filter(prop => { var _a; return (effectiveContentType === null || effectiveContentType === void 0 ? void 0 : effectiveContentType.properties) && ((_a = effectiveContentType.properties[prop]) === null || _a === void 0 ? void 0 : _a.type) === 'boolean'; });
+                    if (activePropsType.length > 0) {
+                        for (const prop of activePropsType) {
+                            contentItem.body[prop] = false;
+                            needsUpdate = true;
                         }
+                    }
+                    if (((_a = contentItem.body._meta.deliveryKey) === null || _a === void 0 ? void 0 : _a.length) > 0) {
                         if (!lodash_1.default.isEmpty(contentItem.body._meta.deliveryKey)) {
                             contentItem.body._meta.deliveryKey = `${contentItem.body._meta.deliveryKey}-${(0, nanoid_1.nanoid)()}`;
+                            needsUpdate = true;
                         }
+                    }
+                    if (needsUpdate) {
+                        (0, logger_1.logUpdate)(`updating content item active flag / delivery key`);
                         contentItem = yield contentItem.related.update(contentItem);
+                        yield (0, utils_1.sleep)(1000);
+                        (0, logger_1.logUpdate)(`publishing updates`);
+                        yield context.amplienceHelper.publishContentItem(contentItem);
+                        yield (0, utils_1.sleep)(1000);
+                    }
+                })));
+            })));
+            yield Promise.all(repositories.map((repository) => __awaiter(this, void 0, void 0, function* () {
+                (0, logger_1.logUpdate)(`${prompts_1.prompts.archive} content items in repository ${chalk_1.default.cyanBright(repository.name)}...`);
+                let contentItems = lodash_1.default.filter(yield (0, paginator_1.paginator)(repository.related.contentItems.list, { status: 'ACTIVE' }), ci => this.shouldCleanUpItem(ci, context));
+                yield Promise.all(contentItems.map((contentItem) => __awaiter(this, void 0, void 0, function* () {
+                    var _b;
+                    let contentType = lodash_1.default.find(contentTypes, ct => ct.contentTypeUri === contentItem.body._meta.schema);
+                    let effectiveContentTypeLink = lodash_1.default.get(contentType, '_links.effective-content-type.href');
+                    if (!effectiveContentTypeLink) {
+                        return;
                     }
                     archiveCount++;
                     yield contentItem.related.archive();
-                    lodash_1.default.remove((_c = context.automation) === null || _c === void 0 ? void 0 : _c.contentItems, ci => contentItem.id === ci.to);
+                    lodash_1.default.remove((_b = context.automation) === null || _b === void 0 ? void 0 : _b.contentItems, ci => contentItem.id === ci.to);
                 })));
                 const cleanupFolder = ((folder) => __awaiter(this, void 0, void 0, function* () {
-                    let subfolders = yield (0, dc_demostore_integration_1.paginator)(folder.related.folders.list);
+                    let subfolders = yield (0, paginator_1.paginator)(folder.related.folders.list);
                     yield Promise.all(subfolders.map(cleanupFolder));
                     (0, logger_1.logUpdate)(`${prompts_1.prompts.delete} folder ${folder.name}`);
                     folderCount++;
                     return yield context.amplienceHelper.deleteFolder(folder);
                 }));
-                let folders = yield (0, dc_demostore_integration_1.paginator)(repository.related.folders.list);
+                let folders = yield (0, paginator_1.paginator)(repository.related.folders.list);
                 yield Promise.all(folders.map(cleanupFolder));
             })));
             (0, logger_1.logComplete)(`${this.getDescription()}: [ ${chalk_1.default.yellow(archiveCount)} items archived ] [ ${chalk_1.default.red(folderCount)} folders deleted ]`);

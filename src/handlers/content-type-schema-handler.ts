@@ -1,6 +1,6 @@
 import { CleanableResourceHandler, ImportContext } from "./resource-handler"
 import { ContentTypeSchema, ValidationLevel } from "dc-management-sdk-js"
-import { getCodecs, paginator, getContentTypeSchema, CommerceAPI } from "@amplience/dc-demostore-integration"
+import { paginator } from '../common/dccli/paginator'
 import _ from 'lodash'
 import chalk from 'chalk'
 import { loadJsonFromDirectory } from "../helpers/importer"
@@ -63,13 +63,29 @@ export class ContentTypeSchemaHandler extends CleanableResourceHandler {
         }
 
         // first we will load the site/integration types (codecs)
-        let codecs = getCodecs()
-        let codecSchemas = codecs.map(getContentTypeSchema)
-        await installSchemas(context, codecSchemas)
+        //let codecs = getCodecs()
+        /*let codecSchemas = codecs.map(codec => {
+            const schema = getContentTypeSchema(codec)
+            const lastSlash = codec.schema.uri.lastIndexOf('/')
+            const body = JSON.parse(schema.body || '{}');
+            body.properties = {
+                vendor: {
+                    type: 'string',
+                    title: 'vendor',
+                    const: codec.schema.uri.slice(lastSlash + 1)
+                },
+                ...body.properties
+            }
+            schema.body = JSON.stringify(body);
+
+            return schema;
+        })
+        await installSchemas(context, codecSchemas)*/
 
         const schemas = loadJsonFromDirectory<ContentTypeSchema>(sourceDir, ContentTypeSchema);
         const [resolvedSchemas, resolveSchemaErrors] = await resolveSchemaBody(schemas, sourceDir);
-        const schemasToInstall = _.filter(Object.values(resolvedSchemas), s => !_.includes(_.map(codecs, 'schema.uri'), s.schemaId))
+        // const schemasToInstall = _.filter(Object.values(resolvedSchemas), s => !_.includes(_.map(codecs, 'schema.uri'), s.schemaId))
+        const schemasToInstall = Object.values(resolvedSchemas)
 
         if (Object.keys(resolveSchemaErrors).length > 0) {
             const errors = Object.entries(resolveSchemaErrors)
@@ -80,7 +96,9 @@ export class ContentTypeSchemaHandler extends CleanableResourceHandler {
                 .join('\n');
             throw new Error(`Unable to resolve the body for the following files:\n${errors}`);
         }
-
+        
+        // No longer required as in automation
+        /*
         let demostoreConfigSchema = _.find(schemasToInstall, s => s.schemaId === 'https://demostore.amplience.com/site/demostoreconfig')
         if (demostoreConfigSchema?.body) {
             let schemaBody = JSON.parse(demostoreConfigSchema.body)
@@ -95,7 +113,7 @@ export class ContentTypeSchemaHandler extends CleanableResourceHandler {
             }]
             demostoreConfigSchema.body = JSON.stringify(schemaBody)
             demostoreConfigSchema.validationLevel = ValidationLevel.CONTENT_TYPE;
-        }
+        }*/
 
         await installSchemas(context, schemasToInstall)
         logComplete(`${this.getDescription()}: [ ${chalk.green(archiveCount)} unarchived ] [ ${chalk.green(updateCount)} updated ] [ ${chalk.green(createCount)} created ]`)

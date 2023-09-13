@@ -9,7 +9,7 @@ import { AxiosHttpClient, HttpRequest, HttpResponse } from 'dc-management-sdk-js
 import { lstat, readdir, readFile } from 'fs';
 import { promisify } from 'util';
 import { ImportItemBuilderOptions } from '../common/dccli/interfaces/import-item-builder-options.interface';
-import { paginator } from '@amplience/dc-demostore-integration';
+import { paginator } from '../common/dccli/paginator'
 import {
   ContentItem,
   Folder,
