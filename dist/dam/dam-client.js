@@ -61,8 +61,8 @@ class DAMClient {
         });
     }
     fetchPaginatedResourcesList(endpointUri) {
-        var _a, _b;
         return __awaiter(this, void 0, void 0, function* () {
+            var _a, _b;
             let resourcesList = [];
             if (this.accessToken) {
                 const additionalParamsSeparator = endpointUri.indexOf('?') > 0 ? '&' : '?';

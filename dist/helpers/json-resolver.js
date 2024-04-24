@@ -40,8 +40,8 @@ const axios_1 = __importDefault(require("axios"));
 const url_1 = require("url");
 const fs = __importStar(require("fs"));
 const path = __importStar(require("path"));
-function jsonResolver(jsonToResolve = '', relativeDir = __dirname) {
-    return __awaiter(this, void 0, void 0, function* () {
+function jsonResolver() {
+    return __awaiter(this, arguments, void 0, function* (jsonToResolve = '', relativeDir = __dirname) {
         try {
             const resolvedJson = JSON.parse(jsonToResolve);
             if (resolvedJson && (Array.isArray(resolvedJson) || typeof resolvedJson === 'object')) {

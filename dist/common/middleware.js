@@ -59,8 +59,8 @@ exports.createTempDir = createTempDir;
 const setupLogging = (context) => {
     let _request = dc_management_sdk_js_1.AxiosHttpClient.prototype.request;
     dc_management_sdk_js_1.AxiosHttpClient.prototype.request = function (request) {
-        var _a, _b;
         return __awaiter(this, void 0, void 0, function* () {
+            var _a, _b;
             try {
                 let start = new Date();
                 let startString = start.valueOf();

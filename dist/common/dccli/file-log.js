@@ -48,8 +48,8 @@ class FileLog extends archive_log_1.ArchiveLog {
         this.openedCount++;
         return this;
     }
-    close(writeIfClosed = true) {
-        return __awaiter(this, void 0, void 0, function* () {
+    close() {
+        return __awaiter(this, arguments, void 0, function* (writeIfClosed = true) {
             if (--this.openedCount <= 0) {
                 if (this.filename != null && writeIfClosed) {
                     yield this.writeToFile(this.filename);

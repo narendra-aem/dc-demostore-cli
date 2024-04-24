@@ -51,6 +51,6 @@ const configureYargs = (yargInstance) => {
         resolve(argv);
     }));
 };
-exports.default = (yargInstance = (0, yargs_1.default)(process.argv.slice(2))) => __awaiter(void 0, void 0, void 0, function* () {
+exports.default = (...args_1) => __awaiter(void 0, [...args_1], void 0, function* (yargInstance = (0, yargs_1.default)(process.argv.slice(2))) {
     return yield configureYargs(yargInstance);
 });

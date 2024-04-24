@@ -24,16 +24,13 @@ Run `demostore --help` to get a list of available commands.
 
 This demo appliction was developed and tested with:
 
-- Node version 18.x
-- NPM version 9.x
+- Node version 20.x
 
 To switch to the correct node version it is recommended to have [Node Version Manager](https://github.com/nvm-sh/nvm) installed.
 
+``` 
+nvm use
 ```
-nvm install 18
-nvm use 18
-```
-
 
 ## Installation
 

@@ -63,8 +63,8 @@ let contentMap = {};
 const AmplienceHelperGenerator = (context) => {
     const rest = restMap[context.environment.dc.clientId] = restMap[context.environment.dc.clientId] || (0, dc_integration_middleware_1.OAuthRestClient)({
         api_url: `https://api.amplience.net/v2/content`,
-        auth_url: `https://auth.amplience.net/oauth/token?client_id=${context.environment.dc.clientId}&client_secret=${context.environment.dc.clientSecret}&grant_type=client_credentials`
-    }, {}, {
+        auth_url: `https://auth.amplience.net/oauth/token`
+    }, `client_id=${context.environment.dc.clientId}&client_secret=${context.environment.dc.clientSecret}&grant_type=client_credentials`, {
         headers: {
             'content-type': 'application/x-www-form-urlencoded'
         }
