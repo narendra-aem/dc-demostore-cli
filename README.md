@@ -8,7 +8,7 @@ Demonstration Command line interface for Amplience Demo Store.
 
 Run `demostore --help` to get a list of available commands.
 
-> See [v2.0.0 Changes](docs/v2.0.0-changes.md) if you already have an existing version of demostore that you wish to update.
+> ⚠️ See [v4.0.0 Changes](docs/v4.0.0-changes.md) if you already have an existing 2.x or 3.x version of demostore that you wish to update.
 
 <!-- MarkdownTOC levels="2,3" autolink="true" -->
 - [Prerequisites](#prerequisites)
@@ -112,14 +112,16 @@ Clean a hub.
 
 #### Options
 
-| Option Name            | Type      | Description                                         |
-| ---------------------- | --------- | --------------------------------------------------- |
-| --logRequests, -r      | [boolean] | log http requests/responses                         |
-| --tempDir, -t          | [string]  | temp dir for run files                              |
-| --matchingSchema, -m   | [array]   | apply to (types, schemas, items) matching schema id |
-| --include, -i          | [array]   | types to include                                    |
-| --skipConfirmation, -c | [boolean] | don't ask for confirmation                          |
-| --all, -a              | [boolean] | clean up all resource types                         |
+| Option Name             | Type      | Description                                             |
+| ----------------------- | --------- | ------------------------------------------------------- |
+| --logRequests, -r       | [boolean] | log http requests/responses                             |
+| --tempDir, -t           | [string]  | temp dir for run files                                  |
+| --matchingSchema, -m    | [array]   | apply to (types, schemas, items) matching schema id     |
+| --include, -i           | [array]   | types to include                                        |
+| --skipConfirmation, -c  | [boolean] | don't ask for confirmation                              |
+| --all, -a               | [boolean] | clean up all resource types                             |
+| --automationDir, -d     | [string]  | path to automation template directory                   |
+| --latest, -l            | [boolean] | cleanup using a fresh copy of the automation files      |
 
 Valid resource types are `contentTypeSchema`, `contentTypes`, `contentItems`, `searchIndexes`, `extensions`, `webhooks`, and `events`.
 
@@ -176,9 +178,9 @@ info:
 | --logRequests, -r       | [boolean] | log http requests/responses                             |
 | --tempDir, -t           | [string]  | temp dir for run files                                  |
 | --matchingSchema, -m    | [array]   | apply to (types, schemas, items) matching schema id     |
-| --automationDir, -a     | [string]  | path to import directory                                |
+| --automationDir, -a     | [string]  | path to automation directory                            |
 | --skipContentImport, -s | [boolean] | skip content import                                     |
-| --latest, -l            | [boolean] | using this flag will download the latest automation     |
+| --latest, -l            | [boolean] | import using a fresh copy of the automation files       |
 | --openaiKey, -o         | [string]  | optional openai key for generative rich text automation |
 
 #### Examples

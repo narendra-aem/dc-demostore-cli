@@ -111,10 +111,6 @@ const AmplienceHelperGenerator = (context: AmplienceContext): AmplienceHelper =>
     const getDemoStoreConfig = async (): Promise<any> => {
         return {
             url: context.environment.url,
-            algolia: {
-                appId: '',
-                apiKey: ''
-            },
             cms: {
                 hub: context.environment.name,
                 stagingApi: context.hub.settings?.virtualStagingEnvironment?.hostname || '',

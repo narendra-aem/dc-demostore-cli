@@ -9,7 +9,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.replicaPaginator = exports.searchIndexPaginator = exports.facetPaginator = exports.paginator = exports.DEFAULT_SIZE = void 0;
+exports.facetPaginator = exports.paginator = exports.DEFAULT_SIZE = void 0;
 exports.DEFAULT_SIZE = 100;
 const paginator = (pagableFn_1, ...args_1) => __awaiter(void 0, [pagableFn_1, ...args_1], void 0, function* (pagableFn, options = {}) {
     const currentPage = yield pagableFn(Object.assign(Object.assign({}, options), { size: exports.DEFAULT_SIZE }));
@@ -27,7 +27,3 @@ const paginator = (pagableFn_1, ...args_1) => __awaiter(void 0, [pagableFn_1, ..
 exports.paginator = paginator;
 const facetPaginator = (query, hub) => (options) => hub.related.contentItems.facet(query, options);
 exports.facetPaginator = facetPaginator;
-const searchIndexPaginator = (hub) => (options) => hub.related.searchIndexes.list(undefined, undefined, options);
-exports.searchIndexPaginator = searchIndexPaginator;
-const replicaPaginator = (index) => (options) => index.related.replicas.list(undefined, options);
-exports.replicaPaginator = replicaPaginator;

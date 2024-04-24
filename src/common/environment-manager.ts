@@ -4,7 +4,7 @@ import _ from 'lodash';
 import chalk from 'chalk'
 import { Arguments } from 'yargs';
 import childProcess from 'child_process'
-const { Select, AutoComplete } = require('enquirer');
+const { AutoComplete } = require('enquirer');
 import logger from '../common/logger'
 import fs from 'fs-extra'
 
@@ -100,26 +100,28 @@ export const currentEnvironment = async () => {
     return env
 }
 
-const { Input, Password } = require('enquirer');
+const { Input, Password, Confirm } = require('enquirer');
 
 // formatting helpers
-const ask                   = async (message: string) => await (new Input({ message }).run())
-const secureAsk             = async (message: string) => await (new Password({ message }).run())
-const helpTag               = (message: string) => chalk.gray(`(${message})`)
-const sectionHeader         = (message: string) => console.log(`\n${message}\n`)
+const prompt = async (message: string) => await (new Confirm({ message }).run())
+const ask = async (message: string) => await (new Input({ message }).run())
+const secureAsk = async (message: string) => await (new Password({ message }).run())
+const helpTag = (message: string) => chalk.gray(`(${message})`)
+const sectionHeader = (message: string) => console.log(`\n${message}\n`)
 
-const appTag                = chalk.bold.cyanBright('app')
-const dcTag                 = chalk.bold.cyanBright('dynamic content')
-const damTag                = chalk.bold.cyanBright('content hub')
-const credentialsHelpText   = helpTag('credentials assigned by Amplience support')
-const hubIdHelpText         = helpTag('found in hub settings -> properties')
-const deploymentHelpText    = helpTag('-> https://n.amprsa.net/deployment-instructions')
+const appTag = chalk.bold.cyanBright('app')
+const dcTag = chalk.bold.cyanBright('dynamic content')
+const damTag = chalk.bold.cyanBright('content hub')
+const algoliaTag = chalk.bold.cyanBright('algolia')
+const credentialsHelpText = helpTag('credentials assigned by Amplience support')
+const hubIdHelpText = helpTag('found in hub settings -> properties')
+const deploymentHelpText = helpTag('-> https://n.amprsa.net/deployment-instructions')
 
 export const createEnvironment = async () => {
     try {
         // get loaded environments
-        let environments = getEnvironments()
-        let name = await ask(`name this config:`)
+        const environments = getEnvironments()
+        const name = await ask(`name this config:`)
 
         if (environments.find(byName(name))) {
             throw new Error(`config already exists: ${name}`)
@@ -128,20 +130,38 @@ export const createEnvironment = async () => {
         // app config
         sectionHeader(`${appTag} configuration ${deploymentHelpText}`)
 
-        let url = await ask(`deployment url:`)
+        const url = await ask(`deployment url:`)
 
         // dc config
         sectionHeader(`${dcTag} configuration ${credentialsHelpText}`)
 
-        let clientId = await ask(`client ${chalk.magenta('id')}:`)
-        let clientSecret = await secureAsk(`client ${chalk.magenta('secret')}:`)
-        let hubId = await ask(`hub id ${hubIdHelpText}:`)
+        const clientId = await ask(`client ${chalk.magenta('id')}:`)
+        const clientSecret = await secureAsk(`client ${chalk.magenta('secret')}:`)
+        const hubId = await ask(`hub id ${hubIdHelpText}:`)
 
         // dam config
         sectionHeader(`${damTag} configuration ${credentialsHelpText}`)
 
-        let username = await ask(`username:`)
-        let password = await secureAsk(`password:`)
+        const username = await ask(`username:`)
+        const password = await secureAsk(`password:`)
+
+        // algolia config
+        let algolia;
+        const configureAlgolia = await prompt(`Would you like to configure Algolia?`)
+        if (configureAlgolia) {
+            sectionHeader(`${algoliaTag} configuration ${credentialsHelpText}`)
+    
+            const appId = await ask(`Application ID:`)
+            const searchKey = await ask(`Search API Key:`)
+            const writeKey = await ask(`Write API Key:`)
+
+            algolia = {
+                appId,
+                searchKey,
+                writeKey
+            }
+        }
+
 
         addEnvironment({
             name,
@@ -154,7 +174,8 @@ export const createEnvironment = async () => {
             dam: {
                 username,
                 password
-            }
+            },
+            algolia
         })
     } catch (error) {
         console.log(chalk.red(error));

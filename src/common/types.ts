@@ -2,42 +2,47 @@ import { Hub } from 'dc-management-sdk-js';
 import _, { Dictionary } from 'lodash';
 import { paginator } from '../common/dccli/paginator'
 import { AmplienceHelper } from './amplience-helper';
-import { ImportContext } from '../handlers/resource-handler';
+import { CleanupContext, ImportContext } from '../handlers/resource-handler';
 
 export type EnvironmentConfig = {
-    name:                   string
-    url:                    string
+    name: string
+    url: string
     dc: {
-        clientId:           string
-        clientSecret:       string
-        hubId:              string
+        clientId: string
+        clientSecret: string
+        hubId: string
     }
     dam: {
-        username:           string
-        password:           string
+        username: string
+        password: string
+    }
+    algolia?: {
+        appId?: string
+        searchKey?: string
+        writeKey?: string
     }
 }
 
 export type AmplienceArgs = {
-    environment:            EnvironmentConfig
+    environment: EnvironmentConfig
     automation: {
-        contentItems:       DemoStoreMapping[]
-        workflowStates:     DemoStoreMapping[]
+        contentItems: DemoStoreMapping[]
+        workflowStates: DemoStoreMapping[]
     }
-    hub:                    Hub
-    matchingSchema:         string[]
-    amplienceHelper:        AmplienceHelper
+    hub: Hub
+    matchingSchema: string[]
+    amplienceHelper: AmplienceHelper
 }
 
 export type LoggableArgs = AmplienceArgs & {
-    startTime:              Date
-    logRequests:            boolean
-    tempDir:                string
+    startTime: Date
+    logRequests: boolean
+    tempDir: string
 }
 
 export interface AlgoliaConfig {
-    appId: string;
-    apiKey: string;
+    appId?: string;
+    apiKey?: string;
 }
 export interface AmplienceConfig {
     hub: string;
@@ -51,45 +56,52 @@ export interface DemoStoreConfiguration {
 }
 
 export type ImportArgs = LoggableArgs & {
-    skipContentImport:      boolean
-    automationDir:          string
-    latest:                 boolean
-    branch:                 string
-    config:                 DemoStoreConfiguration
-    openaiKey:              string
+    skipContentImport: boolean
+    automationDir: string
+    latest: boolean
+    branch: string
+    config: DemoStoreConfiguration
+    openaiKey: string
 }
 
 export type CleanupArgs = LoggableArgs & {
-    skipConfirmation:       boolean
-    include:                string[]
+    skipConfirmation: boolean
+    include: string[]
+    all: boolean
+    content: boolean
+    automationDir: string
+    latest: boolean
+    branch: string
+    config: DemoStoreConfiguration
+    openaiKey: string
 }
 
 export type Mapping = {
-    url:                    string
-    openaiKey?:             string
-    cms?:                   CMSMapping
-    algolia?:               AlgoliaConfig
-    dam:                    DAMMapping
-    contentMap:             Dictionary<string>
+    url: string
+    openaiKey?: string
+    cms?: CMSMapping
+    algolia?: AlgoliaConfig
+    dam: DAMMapping
+    contentMap: Dictionary<string>
 }
 
 export type CMSMapping = AmplienceConfig & {
-    hubId:                  string
-    repositories:           Dictionary<string | undefined>
-    workflowStates:         Dictionary<string | undefined>
+    hubId: string
+    repositories: Dictionary<string | undefined>
+    workflowStates: Dictionary<string | undefined>
 }
 
 export type DAMMapping = {
-    mediaEndpoint:          string
-    imagesMap:              Dictionary<string>
+    mediaEndpoint: string
+    imagesMap: Dictionary<string>
 }
 
 export type DemoStoreMapping = {
-    from:                   string
-    to:                     string
+    from: string
+    to: string
 }
 
-export const getMapping = async (context: ImportContext): Promise<Mapping> => {
+export const getMapping = async (context: ImportContext | CleanupContext): Promise<Mapping> => {
     let repositories = await paginator(context.hub.related.contentRepositories.list)
     let workflowStates = await paginator(context.hub.related.workflowStates.list)
     return {
@@ -103,7 +115,7 @@ export const getMapping = async (context: ImportContext): Promise<Mapping> => {
             repositories: _.zipObject(_.map(repositories, r => r.name!), _.map(repositories, 'id')),
             workflowStates: _.zipObject(_.map(workflowStates, ws => _.camelCase(ws.label)), _.map(workflowStates, 'id'))
         },
-        algolia: context.config?.algolia,
+        algolia: context.environment.algolia,
         dam: await context.amplienceHelper.getDAMMapping(),
         contentMap: context.amplienceHelper.getContentMap()
     }

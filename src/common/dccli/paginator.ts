@@ -1,4 +1,4 @@
-import { HalResource, Page, Pageable, Sortable, Hub, SearchIndex, FacetsResponse, FacetQuery, FacetedContentItem } from 'dc-management-sdk-js';
+import { HalResource, Page, Pageable, Sortable, Hub, FacetsResponse, FacetQuery, FacetedContentItem } from 'dc-management-sdk-js';
 
 export const DEFAULT_SIZE = 100;
 
@@ -26,5 +26,3 @@ export const paginator = async <T extends HalResource>(
 };
 
 export const facetPaginator = (query: FacetQuery, hub: Hub) => (options: any): Promise<FacetsResponse<FacetedContentItem>> => hub.related.contentItems.facet(query, options)
-export const searchIndexPaginator = (hub: Hub) => (options: any): Promise<Page<SearchIndex>> => hub.related.searchIndexes.list(undefined, undefined, options)
-export const replicaPaginator = (index: SearchIndex) => (options: any): Promise<Page<SearchIndex>> => index.related.replicas.list(undefined, options)

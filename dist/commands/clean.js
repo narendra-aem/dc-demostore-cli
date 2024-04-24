@@ -20,6 +20,7 @@ const async_1 = __importDefault(require("async"));
 const middleware_1 = require("../common/middleware");
 const amplience_builder_1 = __importDefault(require("../common/amplience-builder"));
 const typed_result_1 = require("../handlers/typed-result");
+const automation_helper_1 = require("../helpers/automation-helper");
 const { Confirm, MultiSelect } = require('enquirer');
 exports.command = 'cleanup';
 exports.desc = "Clean up hub";
@@ -43,12 +44,30 @@ const builder = (yargs) => (0, amplience_builder_1.default)(yargs)
     content: {
         describe: 'cleans up contentTypes, contentTypeSchema, contentItems with no confirmation',
         type: 'boolean'
+    },
+    automationDir: {
+        alias: 'd',
+        describe: 'path to automation directory',
+        default: automation_helper_1.AUTOMATION_DIR_PATH
+    },
+    latest: {
+        alias: 'l',
+        describe: 'use latest automation files',
+        type: 'boolean'
+    },
+    branch: {
+        alias: 'b',
+        describe: 'branch of dc-demostore-automation to use',
+        type: 'string',
+        default: 'main'
     }
-}).middleware([(args) => __awaiter(void 0, void 0, void 0, function* () {
-        if (!!args.content) {
-            args.skipConfirmation = true;
-            args.include = ['contentTypes', 'contentTypeSchema', 'contentItems'];
+}).middleware([(context) => __awaiter(void 0, void 0, void 0, function* () {
+        if (!!context.content) {
+            context.skipConfirmation = true;
+            context.include = ['contentTypes', 'contentTypeSchema', 'contentItems'];
         }
+        yield (0, automation_helper_1.setupAutomationTemplateFiles)(context);
+        yield (0, automation_helper_1.processAutomationTemplateFiles)(context);
     })]);
 exports.builder = builder;
 exports.handler = (0, middleware_1.contextHandler)((context) => __awaiter(void 0, void 0, void 0, function* () {

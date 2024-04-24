@@ -16,7 +16,7 @@ exports.getMapping = void 0;
 const lodash_1 = __importDefault(require("lodash"));
 const paginator_1 = require("../common/dccli/paginator");
 const getMapping = (context) => __awaiter(void 0, void 0, void 0, function* () {
-    var _a, _b, _c, _d;
+    var _a, _b, _c;
     let repositories = yield (0, paginator_1.paginator)(context.hub.related.contentRepositories.list);
     let workflowStates = yield (0, paginator_1.paginator)(context.hub.related.workflowStates.list);
     return {
@@ -30,7 +30,7 @@ const getMapping = (context) => __awaiter(void 0, void 0, void 0, function* () {
             repositories: lodash_1.default.zipObject(lodash_1.default.map(repositories, r => r.name), lodash_1.default.map(repositories, 'id')),
             workflowStates: lodash_1.default.zipObject(lodash_1.default.map(workflowStates, ws => lodash_1.default.camelCase(ws.label)), lodash_1.default.map(workflowStates, 'id'))
         },
-        algolia: (_d = context.config) === null || _d === void 0 ? void 0 : _d.algolia,
+        algolia: context.environment.algolia,
         dam: yield context.amplienceHelper.getDAMMapping(),
         contentMap: context.amplienceHelper.getContentMap()
     };

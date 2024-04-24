@@ -6,68 +6,24 @@ import logger, { logHeadline } from '../common/logger';
 import { ContentTypeSchemaHandler } from '../handlers/content-type-schema-handler';
 import { ContentItemHandler } from '../handlers/content-item-handler';
 import { ExtensionHandler } from '../handlers/extension-handler';
-import { SearchIndexHandler } from '../handlers/search-index-handler';
+import { WebhookHandler } from '../handlers/webhook-handler';
 import { SettingsHandler } from '../handlers/settings-handler';
 
-import { Importable, ImportContext, ResourceHandler } from '../handlers/resource-handler';
-import { copyTemplateFilesToTempDir } from '../helpers/import-helper';
+import { Importable, ImportContext } from '../handlers/resource-handler';
 import { contextHandler } from '../common/middleware';
 import amplienceBuilder from '../common/amplience-builder';
-import fs from 'fs-extra'
-import { CONFIG_PATH } from '../common/environment-manager';
-import axios from 'axios';
-import admZip from 'adm-zip'
-import { sleep } from '../common/utils';
+import { SearchIndexHandler } from '../handlers/search-index-handler';
+import { AUTOMATION_DIR_PATH, processAutomationTemplateFiles, setupAutomationTemplateFiles } from '../helpers/automation-helper';
 
 export const command = 'import';
 export const desc = "Import hub data";
-
-const automationDirPath = `${CONFIG_PATH}/dc-demostore-automation`
-
-const downloadZip = async (branch: string): Promise<void> => {
-    let url = `https://github.com/amplience/dc-demostore-automation/archive/refs/heads/${branch}.zip`
-
-    logger.info(`downloading latest automation files to ${chalk.blue(automationDirPath)}...`)
-    logger.info(`\t${chalk.green(url)}`)
-
-    const response = await axios({
-        method: 'GET',
-        url,
-        responseType: 'stream'
-    })
-
-    const zipFilePath = `${CONFIG_PATH}/${branch}.zip`
-
-    // pipe the result stream into a file on disc
-    response.data.pipe(fs.createWriteStream(zipFilePath))
-
-    // return a promise and resolve when download finishes
-    return new Promise((resolve, reject) => {
-        response.data.on('end', async () => {
-            logger.info(`download successful, unzipping...`)
-            await sleep(1000)
-
-            let zip = new admZip(zipFilePath)
-            zip.extractAllTo(CONFIG_PATH)
-
-            // move files from the dc-demostore-automation-${branch} folder to the automationDirPath
-            fs.moveSync(`${CONFIG_PATH}/dc-demostore-automation-${branch}`, automationDirPath)
-
-            // delete the zip
-            fs.rmSync(zipFilePath)
-
-            resolve()
-        })
-        response.data.on('error', reject)
-    })
-}
 
 export const builder = (yargs: Argv): Argv => {
     return amplienceBuilder(yargs).options({
         automationDir: {
             alias: 'a',
             describe: 'path to automation directory',
-            default: automationDirPath
+            default: AUTOMATION_DIR_PATH
         },
         skipContentImport: {
             alias: 's',
@@ -93,25 +49,22 @@ export const builder = (yargs: Argv): Argv => {
         }
     }).middleware([
         async (context: ImportContext) => {
-            // delete the cached automation files if --latest was used
-            if (context.latest) {
-                await fs.rm(automationDirPath, { recursive: true, force: true })
+            // making sure context config is populated before starting
+            if(!context.config) {
+                context.config = await context.amplienceHelper.getDemoStoreConfig();
             }
-
-            // set up the automation dir if it does not exist and download the latest automation files
-            if (!fs.existsSync(automationDirPath)) {
-                await downloadZip(context.branch)
-            }
+            await setupAutomationTemplateFiles(context);
         }
     ])
-    .command("indexes", "Import search indexes", {}, importHandler(new SearchIndexHandler()))
     .command("extensions", "Import extensions", {}, importHandler(new ExtensionHandler()))
+    .command("webhooks", "Import webhooks", {}, importHandler(new WebhookHandler()))
     .command("settings", "Import settings", {}, importHandler(new SettingsHandler()))
     .command("types", "Import content types/schemas", {}, importHandler(new ContentTypeSchemaHandler()))
+    .command("search-indexes", "Import search indexes", {}, importHandler(new SearchIndexHandler()))
 }
 
 const importHandler = (handler: Importable) => async (context: ImportContext): Promise<void> => {
-    await copyTemplateFilesToTempDir(context)
+    await processAutomationTemplateFiles(context)
     await handler.import(context)
 }
 
@@ -120,25 +73,28 @@ export const handler = contextHandler(async (context: ImportContext): Promise<vo
 
     logHeadline(`Phase 1: preparation`)
 
-    await copyTemplateFilesToTempDir(context)
+    await processAutomationTemplateFiles(context)
 
     await new ContentTypeSchemaHandler().import(context)
 
     logHeadline(`Phase 2: import/update`)
 
-    // process step 1: npm run automate:settings
+    // process settings
     await importHandler(new SettingsHandler())(context)
 
-    // process step 4: npm run automate:extensions
+    // process extensions
     await importHandler(new ExtensionHandler())(context)
 
-    // process step 5: npm run automate:indexes
+    // process webhooks
+    await importHandler(new WebhookHandler())(context)
+
+    // process algolia indexes
     await importHandler(new SearchIndexHandler())(context)
 
     if (!context.skipContentImport) {
         logHeadline(`Phase 3: content import`)
 
-        // process step 6: npm run automate:content-with-republish
+        // process content items
         await importHandler(new ContentItemHandler())(context)
 
         logHeadline(`Phase 4: reentrant import`)
@@ -149,7 +105,7 @@ export const handler = contextHandler(async (context: ImportContext): Promise<vo
         await importHandler(new ContentTypeSchemaHandler())(context)
     }
 
-    // process step 6: generate .env.local file
+    // generate .env.local file
     logHeadline(`Phase 5: generate demostore configuration`)
     await context.amplienceHelper.generateDemoStoreConfig()
 })

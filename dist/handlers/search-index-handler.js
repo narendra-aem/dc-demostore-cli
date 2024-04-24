@@ -37,150 +37,76 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.SearchIndexHandler = void 0;
 const resource_handler_1 = require("./resource-handler");
-const dc_management_sdk_js_1 = require("dc-management-sdk-js");
-const paginator_1 = require("../common/dccli/paginator");
-const lodash_1 = __importDefault(require("lodash"));
 const logger_1 = __importStar(require("../common/logger"));
+const algoliasearch_1 = __importDefault(require("algoliasearch"));
+const fs_1 = require("fs");
+const fs_extra_1 = require("fs-extra");
 const chalk_1 = __importDefault(require("chalk"));
 const prompts_1 = require("../common/prompts");
-const fs_extra_1 = __importDefault(require("fs-extra"));
-const async_1 = __importDefault(require("async"));
-const retry = (count) => (fn, message) => __awaiter(void 0, void 0, void 0, function* () {
-    var _a, _b;
-    let retryCount = 0;
-    while (retryCount < count) {
-        try {
-            let runMessage = message;
-            if (retryCount > 0) {
-                runMessage = runMessage + ` ` + chalk_1.default.red(`[ retry ${retryCount} ]`);
-            }
-            (0, logger_1.logUpdate)(runMessage);
-            return yield fn();
-        }
-        catch (error) {
-            if (((_a = error.response) === null || _a === void 0 ? void 0 : _a.status) === 504) {
-                retryCount++;
-            }
-            else if (((_b = error.response) === null || _b === void 0 ? void 0 : _b.status) === 409) {
-                logger_1.default.debug(`got a 409/conflict while running the command: ${message}`);
-                retryCount = count;
-            }
-            else {
-                throw error;
-            }
-        }
-    }
-});
-const retrier = retry(3);
-const ensureSearchIndexSettings = (settings) => {
-    return settings instanceof dc_management_sdk_js_1.SearchIndexSettings
-        ? settings
-        : new dc_management_sdk_js_1.SearchIndexSettings(settings);
-};
 class SearchIndexHandler extends resource_handler_1.ResourceHandler {
     constructor() {
-        super(dc_management_sdk_js_1.SearchIndex, 'searchIndexes');
-        this.icon = '🔍';
-        this.sortPriority = 1.09;
+        super(undefined, 'searchIndexes');
+        this.icon = '🔎';
     }
     import(context) {
         return __awaiter(this, void 0, void 0, function* () {
-            const { hub, mapping } = context;
-            let indexesFile = `${context.tempDir}/content/indexes/indexes.json`;
-            let publishedIndexes = [];
-            if (!fs_extra_1.default.existsSync(indexesFile)) {
+            var _a, _b;
+            (0, logger_1.logSubheading)(`[ import ] search indexes`);
+            const { algolia } = context.environment;
+            if (!(algolia === null || algolia === void 0 ? void 0 : algolia.appId) || !algolia.writeKey) {
+                logger_1.default.info(`skipped, algolia environment not configured`);
+                return;
+            }
+            const client = (0, algoliasearch_1.default)(algolia.appId, algolia.writeKey);
+            const indexesFile = `${context.tempDir}/content/indexes/indexes.json`;
+            if (!(0, fs_1.existsSync)(indexesFile)) {
                 logger_1.default.info(`skipped, content/indexes/indexes.json not found`);
                 return;
             }
-            else {
-                let testIndexes = fs_extra_1.default.readJsonSync(`${context.tempDir}/content/indexes/test-index.json`);
-                let importIndexes = fs_extra_1.default.readJsonSync(indexesFile);
-                const indexes = importIndexes;
-                let publishedIndexes = yield (0, paginator_1.paginator)((0, paginator_1.searchIndexPaginator)(hub));
-                let unpublishedIndexes = lodash_1.default.filter(indexes, idx => !lodash_1.default.includes(lodash_1.default.map(publishedIndexes, 'name'), idx.indexDetails.name));
-                let searchIndexCount = 0;
-                let replicaCount = 0;
-                let webhookCount = 0;
-                yield async_1.default.eachSeries(unpublishedIndexes, (item, callback) => __awaiter(this, void 0, void 0, function* () {
-                    delete item.indexDetails.id;
-                    delete item.indexDetails.replicaCount;
-                    let createdIndex = yield retrier(() => hub.related.searchIndexes.create(item.indexDetails), `create index: ${chalk_1.default.cyanBright(item.indexDetails.name)}`);
-                    if (!createdIndex) {
-                        throw new Error(`failed to create search index [ ${item.indexDetails.name} ] after 3 attempts`);
-                    }
-                    searchIndexCount++;
-                    publishedIndexes = yield (0, paginator_1.paginator)((0, paginator_1.searchIndexPaginator)(hub));
-                    const replicasSettings = item.replicasSettings;
-                    const replicasIndexes = lodash_1.default.map(replicasSettings, (item) => lodash_1.default.find(publishedIndexes, i => i.name === item.name));
-                    yield retrier(() => createdIndex.related.settings.update(ensureSearchIndexSettings(item.settings), {
-                        waitUntilApplied: replicasIndexes.length > 0 ? ['replicas'] : false
-                    }), `apply settings: ${chalk_1.default.cyanBright(item.indexDetails.name)}`);
-                    yield Promise.all(replicasIndexes.map((replicaIndex, index) => __awaiter(this, void 0, void 0, function* () {
-                        yield retrier(() => replicaIndex.related.settings.update(ensureSearchIndexSettings(replicasSettings[index].settings)), `apply replica settings: ${chalk_1.default.cyanBright(replicaIndex.name)}`);
-                        replicaCount++;
-                    })));
-                    const types = yield (0, paginator_1.paginator)(createdIndex.related.assignedContentTypes.list);
-                    if (types.length > 0) {
-                        const type = types[0];
-                        const activeContentWebhookId = type._links['active-content-webhook'].href.split('/').slice(-1)[0];
-                        const archivedContentWebhookId = type._links['archived-content-webhook'].href.split('/').slice(-1)[0];
-                        const webhooks = yield (0, paginator_1.paginator)(hub.related.webhooks.list);
-                        const activeContentWebhook = lodash_1.default.find(webhooks, hook => hook.id === activeContentWebhookId);
-                        const archivedContentWebhook = lodash_1.default.find(webhooks, hook => hook.id === archivedContentWebhookId);
-                        if (activeContentWebhook && archivedContentWebhook) {
-                            activeContentWebhook.customPayload = {
-                                type: 'text/x-handlebars-template',
-                                value: item.activeContentWebhook
-                            };
-                            yield retrier(() => activeContentWebhook.related.update(activeContentWebhook), `update webhook: ${chalk_1.default.cyanBright(activeContentWebhook.label)}`);
-                            webhookCount++;
-                            activeContentWebhook.customPayload = {
-                                type: 'text/x-handlebars-template',
-                                value: item.archivedContentWebhook
-                            };
-                            yield retrier(() => archivedContentWebhook.related.update(archivedContentWebhook), `update webhook: ${chalk_1.default.cyanBright(archivedContentWebhook.label)}`);
-                            webhookCount++;
-                        }
-                    }
-                    callback();
-                }));
-                (0, logger_1.logComplete)(`${this.getDescription()}: [ ${chalk_1.default.green(searchIndexCount)} created ] [ ${chalk_1.default.green(replicaCount)} replicas created ] [ ${chalk_1.default.green(webhookCount)} webhooks created ]`);
-            }
-            publishedIndexes = yield (0, paginator_1.paginator)((0, paginator_1.searchIndexPaginator)(hub));
-            const index = lodash_1.default.first(publishedIndexes);
-            if (index) {
-                let key = yield index.related.keys.get();
-                if (key && key.applicationId && key.key) {
-                    if (!context.config) {
-                        let tempMapping = yield context.amplienceHelper.getDemoStoreConfig();
-                        context.config = tempMapping;
-                    }
-                    context.config.algolia = {
-                        appId: key.applicationId,
-                        apiKey: key.key
-                    };
+            const indexFixtures = (0, fs_extra_1.readJsonSync)(indexesFile);
+            for (const { indexDetails, settings } of indexFixtures) {
+                try {
+                    (0, logger_1.logUpdate)(`apply index settings: ${chalk_1.default.cyanBright(indexDetails.name)}`);
+                    const index = client.initIndex(indexDetails.name);
+                    index.setSettings(settings);
+                }
+                catch (error) {
+                    logger_1.default.error(`${prompts_1.prompts.error} applying index settings [ ${indexDetails.name} ]: ${error.message}`);
                 }
             }
+            (0, logger_1.logComplete)(`${this.getDescription()}: [ ${chalk_1.default.green(indexFixtures.length)} updated ]`);
+            context.config.algolia = {
+                appId: ((_a = context.environment.algolia) === null || _a === void 0 ? void 0 : _a.appId) || '',
+                apiKey: ((_b = context.environment.algolia) === null || _b === void 0 ? void 0 : _b.searchKey) || ''
+            };
         });
     }
     cleanup(context) {
         return __awaiter(this, void 0, void 0, function* () {
-            let searchIndexes = yield (0, paginator_1.paginator)((0, paginator_1.searchIndexPaginator)(context.hub));
-            let searchIndexCount = 0;
-            let replicaCount = 0;
-            yield async_1.default.each(searchIndexes, ((searchIndex, callback) => __awaiter(this, void 0, void 0, function* () {
-                if (searchIndex.replicaCount && searchIndex.replicaCount > 0) {
-                    let replicas = yield (0, paginator_1.paginator)((0, paginator_1.replicaPaginator)(searchIndex));
-                    yield Promise.all(replicas.map((replica) => __awaiter(this, void 0, void 0, function* () {
-                        yield retrier(() => replica.related.delete(), `${prompts_1.prompts.delete} replica index ${chalk_1.default.cyan(replica.name)}...`);
-                        replicaCount++;
-                    })));
+            (0, logger_1.logSubheading)(`[ cleanup ] search indexes`);
+            const { algolia } = context.environment;
+            if (!(algolia === null || algolia === void 0 ? void 0 : algolia.appId) || !algolia.writeKey) {
+                logger_1.default.info(`skipped, algolia environment not configured`);
+                return;
+            }
+            const client = (0, algoliasearch_1.default)(algolia.appId, algolia.writeKey);
+            const indexesFile = `${context.tempDir}/content/indexes/indexes.json`;
+            if (!(0, fs_1.existsSync)(indexesFile)) {
+                logger_1.default.info(`skipped, content/indexes/indexes.json not found`);
+                return;
+            }
+            const indexFixtures = (0, fs_extra_1.readJsonSync)(indexesFile);
+            for (const { indexDetails } of indexFixtures) {
+                try {
+                    (0, logger_1.logUpdate)(`deleting index objects: ${chalk_1.default.cyanBright(indexDetails.name)}`);
+                    const index = client.initIndex(indexDetails.name);
+                    yield index.clearObjects();
                 }
-                yield retrier(() => searchIndex.related.delete(), `${prompts_1.prompts.delete} search index ${chalk_1.default.cyan(searchIndex.name)}...`);
-                searchIndexCount++;
-                callback();
-            })));
-            (0, logger_1.logComplete)(`${this.getDescription()}: [ ${chalk_1.default.red(searchIndexCount)} deleted ] [ ${chalk_1.default.red(replicaCount)} replicas deleted ]`);
+                catch (error) {
+                    logger_1.default.error(`${prompts_1.prompts.error} deleting index objects [ ${indexDetails.name} ]: ${error.message}`);
+                }
+            }
+            (0, logger_1.logComplete)(`${this.getDescription()}: [ ${chalk_1.default.red(indexFixtures.length)} cleared ]`);
         });
     }
 }

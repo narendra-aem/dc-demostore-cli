@@ -128,10 +128,6 @@ const AmplienceHelperGenerator = (context) => {
         var _a, _b;
         return {
             url: context.environment.url,
-            algolia: {
-                appId: '',
-                apiKey: ''
-            },
             cms: {
                 hub: context.environment.name,
                 stagingApi: ((_b = (_a = context.hub.settings) === null || _a === void 0 ? void 0 : _a.virtualStagingEnvironment) === null || _b === void 0 ? void 0 : _b.hostname) || '',

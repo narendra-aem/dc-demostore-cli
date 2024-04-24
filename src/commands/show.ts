@@ -1,4 +1,4 @@
-import { paginator, searchIndexPaginator } from '../common/dccli/paginator';
+import { paginator } from '../common/dccli/paginator';
 import _ from 'lodash';
 import Table from 'cli-table'
 import chalk from 'chalk';
@@ -29,9 +29,6 @@ export const handler = contextHandler(async (context: AmplienceContext): Promise
 
     logUpdate(`reading contentTypeSchemas...`)
     count.contentTypeSchemas = contentTypeSchemas.length
-
-    logUpdate(`reading searchIndexes...`)
-    count.searchIndexes = (await paginator(searchIndexPaginator(context.hub), { status: 'ACTIVE' })).length
 
     logUpdate(`reading extensions...`)
     count.extensions = (await paginator(context.hub.related.extensions.list, { status: 'ACTIVE' })).length

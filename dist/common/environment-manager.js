@@ -18,7 +18,7 @@ const fs_extra_1 = require("fs-extra");
 const lodash_1 = __importDefault(require("lodash"));
 const chalk_1 = __importDefault(require("chalk"));
 const child_process_1 = __importDefault(require("child_process"));
-const { Select, AutoComplete } = require('enquirer');
+const { AutoComplete } = require('enquirer');
 const logger_1 = __importDefault(require("../common/logger"));
 const fs_extra_2 = __importDefault(require("fs-extra"));
 const getConfigPath = (platform = process.platform) => (0, path_1.join)(process.env[platform == 'win32' ? 'USERPROFILE' : 'HOME'] || __dirname, '.amplience');
@@ -103,7 +103,8 @@ const currentEnvironment = () => __awaiter(void 0, void 0, void 0, function* () 
     return env;
 });
 exports.currentEnvironment = currentEnvironment;
-const { Input, Password } = require('enquirer');
+const { Input, Password, Confirm } = require('enquirer');
+const prompt = (message) => __awaiter(void 0, void 0, void 0, function* () { return yield (new Confirm({ message }).run()); });
 const ask = (message) => __awaiter(void 0, void 0, void 0, function* () { return yield (new Input({ message }).run()); });
 const secureAsk = (message) => __awaiter(void 0, void 0, void 0, function* () { return yield (new Password({ message }).run()); });
 const helpTag = (message) => chalk_1.default.gray(`(${message})`);
@@ -111,25 +112,39 @@ const sectionHeader = (message) => console.log(`\n${message}\n`);
 const appTag = chalk_1.default.bold.cyanBright('app');
 const dcTag = chalk_1.default.bold.cyanBright('dynamic content');
 const damTag = chalk_1.default.bold.cyanBright('content hub');
+const algoliaTag = chalk_1.default.bold.cyanBright('algolia');
 const credentialsHelpText = helpTag('credentials assigned by Amplience support');
 const hubIdHelpText = helpTag('found in hub settings -> properties');
 const deploymentHelpText = helpTag('-> https://n.amprsa.net/deployment-instructions');
 const createEnvironment = () => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        let environments = (0, exports.getEnvironments)();
-        let name = yield ask(`name this config:`);
+        const environments = (0, exports.getEnvironments)();
+        const name = yield ask(`name this config:`);
         if (environments.find((0, exports.byName)(name))) {
             throw new Error(`config already exists: ${name}`);
         }
         sectionHeader(`${appTag} configuration ${deploymentHelpText}`);
-        let url = yield ask(`deployment url:`);
+        const url = yield ask(`deployment url:`);
         sectionHeader(`${dcTag} configuration ${credentialsHelpText}`);
-        let clientId = yield ask(`client ${chalk_1.default.magenta('id')}:`);
-        let clientSecret = yield secureAsk(`client ${chalk_1.default.magenta('secret')}:`);
-        let hubId = yield ask(`hub id ${hubIdHelpText}:`);
+        const clientId = yield ask(`client ${chalk_1.default.magenta('id')}:`);
+        const clientSecret = yield secureAsk(`client ${chalk_1.default.magenta('secret')}:`);
+        const hubId = yield ask(`hub id ${hubIdHelpText}:`);
         sectionHeader(`${damTag} configuration ${credentialsHelpText}`);
-        let username = yield ask(`username:`);
-        let password = yield secureAsk(`password:`);
+        const username = yield ask(`username:`);
+        const password = yield secureAsk(`password:`);
+        let algolia;
+        const configureAlgolia = yield prompt(`Would you like to configure Algolia?`);
+        if (configureAlgolia) {
+            sectionHeader(`${algoliaTag} configuration ${credentialsHelpText}`);
+            const appId = yield ask(`Application ID:`);
+            const searchKey = yield ask(`Search API Key:`);
+            const writeKey = yield ask(`Write API Key:`);
+            algolia = {
+                appId,
+                searchKey,
+                writeKey
+            };
+        }
         (0, exports.addEnvironment)({
             name,
             url,
@@ -141,7 +156,8 @@ const createEnvironment = () => __awaiter(void 0, void 0, void 0, function* () {
             dam: {
                 username,
                 password
-            }
+            },
+            algolia
         });
     }
     catch (error) {

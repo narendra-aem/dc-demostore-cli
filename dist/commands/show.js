@@ -38,8 +38,6 @@ exports.handler = (0, middleware_1.contextHandler)((context) => __awaiter(void 0
     count.contentTypes = contentTypes.length;
     (0, logger_1.logUpdate)(`reading contentTypeSchemas...`);
     count.contentTypeSchemas = contentTypeSchemas.length;
-    (0, logger_1.logUpdate)(`reading searchIndexes...`);
-    count.searchIndexes = (yield (0, paginator_1.paginator)((0, paginator_1.searchIndexPaginator)(context.hub), { status: 'ACTIVE' })).length;
     (0, logger_1.logUpdate)(`reading extensions...`);
     count.extensions = (yield (0, paginator_1.paginator)(context.hub.related.extensions.list, { status: 'ACTIVE' })).length;
     (0, logger_1.logUpdate)(`reading webhooks...`);
