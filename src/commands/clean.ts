@@ -45,12 +45,6 @@ export const builder = (yargs: Argv): Argv =>
                 alias: 'l',
                 describe: 'use latest automation files',
                 type: 'boolean'
-            },
-            branch: {
-                alias: 'b',
-                describe: 'branch of dc-demostore-automation to use',
-                type: 'string',
-                default: 'main'
             }
         }).middleware([async (context: CleanupContext) => {
             if (!!context.content) {

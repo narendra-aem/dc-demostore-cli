@@ -71,12 +71,6 @@ const builder = (yargs) => {
             describe: 'OpenAI Key (required for rich text AI features)',
             type: 'string',
             default: ''
-        },
-        branch: {
-            alias: 'b',
-            describe: 'branch of dc-demostore-automation to use',
-            type: 'string',
-            default: 'main'
         }
     }).middleware([
         (context) => __awaiter(void 0, void 0, void 0, function* () {

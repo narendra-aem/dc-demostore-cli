@@ -22,8 +22,8 @@ const adm_zip_1 = __importDefault(require("adm-zip"));
 const utils_1 = require("../common/utils");
 const types_1 = require("../common/types");
 exports.AUTOMATION_DIR_PATH = `${environment_manager_1.CONFIG_PATH}/dc-demostore-automation`;
-const fetchRemoteTemplateFiles = (branch) => __awaiter(void 0, void 0, void 0, function* () {
-    let url = `https://github.com/amplience/dc-demostore-automation/archive/refs/heads/${branch}.zip`;
+const fetchRemoteTemplateFiles = () => __awaiter(void 0, void 0, void 0, function* () {
+    let url = `https://github.com/amplience/dc-demostore-automation/archive/refs/heads/main.zip`;
     logger_1.default.info(`downloading latest automation files to ${chalk_1.default.blue(exports.AUTOMATION_DIR_PATH)}...`);
     logger_1.default.info(`\t${chalk_1.default.green(url)}`);
     const response = yield (0, axios_1.default)({
@@ -31,7 +31,7 @@ const fetchRemoteTemplateFiles = (branch) => __awaiter(void 0, void 0, void 0, f
         url,
         responseType: 'stream'
     });
-    const zipFilePath = `${environment_manager_1.CONFIG_PATH}/${branch}.zip`;
+    const zipFilePath = `${environment_manager_1.CONFIG_PATH}/main.zip`;
     response.data.pipe(fs_extra_1.default.createWriteStream(zipFilePath));
     return new Promise((resolve, reject) => {
         response.data.on('end', () => __awaiter(void 0, void 0, void 0, function* () {
@@ -39,7 +39,7 @@ const fetchRemoteTemplateFiles = (branch) => __awaiter(void 0, void 0, void 0, f
             yield (0, utils_1.sleep)(1000);
             let zip = new adm_zip_1.default(zipFilePath);
             zip.extractAllTo(environment_manager_1.CONFIG_PATH);
-            fs_extra_1.default.moveSync(`${environment_manager_1.CONFIG_PATH}/dc-demostore-automation-${branch}`, exports.AUTOMATION_DIR_PATH);
+            fs_extra_1.default.moveSync(`${environment_manager_1.CONFIG_PATH}/dc-demostore-automation-main`, exports.AUTOMATION_DIR_PATH);
             fs_extra_1.default.rmSync(zipFilePath);
             resolve();
         }));
@@ -52,7 +52,7 @@ const setupAutomationTemplateFiles = (context) => __awaiter(void 0, void 0, void
         yield fs_extra_1.default.rm(exports.AUTOMATION_DIR_PATH, { recursive: true, force: true });
     }
     if (!fs_extra_1.default.existsSync(exports.AUTOMATION_DIR_PATH)) {
-        yield (0, exports.fetchRemoteTemplateFiles)(context.branch);
+        yield (0, exports.fetchRemoteTemplateFiles)();
     }
 });
 exports.setupAutomationTemplateFiles = setupAutomationTemplateFiles;

@@ -59,7 +59,6 @@ export type ImportArgs = LoggableArgs & {
     skipContentImport: boolean
     automationDir: string
     latest: boolean
-    branch: string
     config: DemoStoreConfiguration
     openaiKey: string
 }
@@ -71,7 +70,6 @@ export type CleanupArgs = LoggableArgs & {
     content: boolean
     automationDir: string
     latest: boolean
-    branch: string
     config: DemoStoreConfiguration
     openaiKey: string
 }

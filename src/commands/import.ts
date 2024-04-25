@@ -40,12 +40,6 @@ export const builder = (yargs: Argv): Argv => {
             describe: 'OpenAI Key (required for rich text AI features)',
             type: 'string',
             default: ''
-        },
-        branch: {
-            alias: 'b',
-            describe: 'branch of dc-demostore-automation to use',
-            type: 'string',
-            default: 'main'
         }
     }).middleware([
         async (context: ImportContext) => {

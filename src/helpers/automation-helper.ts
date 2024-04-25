@@ -11,8 +11,8 @@ import { getMapping } from '../common/types';
 
 export const AUTOMATION_DIR_PATH = `${CONFIG_PATH}/dc-demostore-automation`;
 
-export const fetchRemoteTemplateFiles = async (branch: string): Promise<void> => {
-    let url = `https://github.com/amplience/dc-demostore-automation/archive/refs/heads/${branch}.zip`;
+export const fetchRemoteTemplateFiles = async (): Promise<void> => {
+    let url = `https://github.com/amplience/dc-demostore-automation/archive/refs/heads/main.zip`;
 
     logger.info(`downloading latest automation files to ${chalk.blue(AUTOMATION_DIR_PATH)}...`);
     logger.info(`\t${chalk.green(url)}`);
@@ -23,7 +23,7 @@ export const fetchRemoteTemplateFiles = async (branch: string): Promise<void> =>
         responseType: 'stream'
     });
 
-    const zipFilePath = `${CONFIG_PATH}/${branch}.zip`;
+    const zipFilePath = `${CONFIG_PATH}/main.zip`;
 
     // pipe the result stream into a file on disc
     response.data.pipe(fs.createWriteStream(zipFilePath));
@@ -37,8 +37,8 @@ export const fetchRemoteTemplateFiles = async (branch: string): Promise<void> =>
             let zip = new admZip(zipFilePath);
             zip.extractAllTo(CONFIG_PATH);
 
-            // move files from the dc-demostore-automation-${branch} folder to the automationDirPath
-            fs.moveSync(`${CONFIG_PATH}/dc-demostore-automation-${branch}`, AUTOMATION_DIR_PATH);
+            // move files from the dc-demostore-automation-main folder to the automationDirPath
+            fs.moveSync(`${CONFIG_PATH}/dc-demostore-automation-main`, AUTOMATION_DIR_PATH);
 
             // delete the zip
             fs.rmSync(zipFilePath);
@@ -57,7 +57,7 @@ export const setupAutomationTemplateFiles = async (context: ImportContext | Clea
 
     // set up the automation dir if it does not exist and download the latest automation files
     if (!fs.existsSync(AUTOMATION_DIR_PATH)) {
-        await fetchRemoteTemplateFiles(context.branch);
+        await fetchRemoteTemplateFiles();
     }
 }
 

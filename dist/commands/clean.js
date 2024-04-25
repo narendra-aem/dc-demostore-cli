@@ -54,12 +54,6 @@ const builder = (yargs) => (0, amplience_builder_1.default)(yargs)
         alias: 'l',
         describe: 'use latest automation files',
         type: 'boolean'
-    },
-    branch: {
-        alias: 'b',
-        describe: 'branch of dc-demostore-automation to use',
-        type: 'string',
-        default: 'main'
     }
 }).middleware([(context) => __awaiter(void 0, void 0, void 0, function* () {
         if (!!context.content) {
