@@ -1,4 +1,4 @@
-import { FileLog } from '../file-log';
+import { FileLog } from "../file-log";
 
 export interface ImportItemBuilderOptions {
   dir: string;

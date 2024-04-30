@@ -1,6 +1,6 @@
-import { ArchiveLog } from './archive-log';
+import { ArchiveLog } from "./archive-log";
 
-let version = require('../../../package.json').version;
+let version = require("../../../package.json").version;
 
 export function setVersion(newVersion: string): void {
   version = newVersion;
@@ -12,9 +12,9 @@ export function versionedTitle(title: string): string {
 
 function buildTitle(filename?: string): string {
   if (filename) {
-    return versionedTitle(filename.replace('<DATE>', Date.now().toString()));
+    return versionedTitle(filename.replace("<DATE>", Date.now().toString()));
   } else {
-    return '';
+    return "";
   }
 }
 
@@ -27,13 +27,13 @@ export class FileLog extends ArchiveLog {
 
     if (this.filename != null) {
       const timestamp = Date.now().toString();
-      this.filename = this.filename.replace('<DATE>', timestamp);
+      this.filename = this.filename.replace("<DATE>", timestamp);
     }
   }
 
-  public appendLine(text = 'undefined', silent = false): void {
+  public appendLine(text = "undefined", silent = false): void {
     if (!silent) {
-      process.stdout.write(text + '\n');
+      process.stdout.write(text + "\n");
     }
 
     this.addComment(text as string);

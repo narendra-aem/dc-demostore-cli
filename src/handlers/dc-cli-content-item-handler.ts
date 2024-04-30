@@ -1,15 +1,19 @@
-import { Arguments, Argv } from 'yargs';
-import { ConfigurationParameters } from '../common/dccli/configure';
-import dynamicContentClientFactory from '../common/dccli/dynamic-content-client-factory';
-import { FileLog } from '../common/dccli/file-log';
-import { dirname, basename, join, relative, resolve, extname } from 'path';
+import { Arguments, Argv } from "yargs";
+import { ConfigurationParameters } from "../common/dccli/configure";
+import dynamicContentClientFactory from "../common/dccli/dynamic-content-client-factory";
+import { FileLog } from "../common/dccli/file-log";
+import { dirname, basename, join, relative, resolve, extname } from "path";
 
-import { AxiosHttpClient, HttpRequest, HttpResponse } from 'dc-management-sdk-js';
+import {
+  AxiosHttpClient,
+  HttpRequest,
+  HttpResponse,
+} from "dc-management-sdk-js";
 
-import { lstat, readdir, readFile } from 'fs';
-import { promisify } from 'util';
-import { ImportItemBuilderOptions } from '../common/dccli/interfaces/import-item-builder-options.interface';
-import { paginator } from '../common/dccli/paginator'
+import { lstat, readdir, readFile } from "fs";
+import { promisify } from "util";
+import { ImportItemBuilderOptions } from "../common/dccli/interfaces/import-item-builder-options.interface";
+import { paginator } from "../common/dccli/paginator";
 import {
   ContentItem,
   Folder,
@@ -18,118 +22,127 @@ import {
   ContentRepository,
   ContentType,
   ContentTypeSchema,
-  Status
-} from 'dc-management-sdk-js';
-import { ContentMapping } from '../common/dccli/content-mapping'
+  Status,
+} from "dc-management-sdk-js";
+import { ContentMapping } from "../common/dccli/content-mapping";
 import {
   ContentDependencyTree,
   RepositoryContentItem,
   ItemContentDependencies,
-  ContentDependencyInfo
-} from '../common/dccli/content-item/content-dependency-tree';
-import { Body } from '../common/dccli/content-item/body';
+  ContentDependencyInfo,
+} from "../common/dccli/content-item/content-dependency-tree";
+import { Body } from "../common/dccli/content-item/body";
 
-import { AmplienceSchemaValidator, defaultSchemaLookup } from '../common/dccli/content-item/amplience-schema-validator';
-import { createLog, getDefaultLogPath } from '../common/dccli/log-helpers';
-import { asyncQuestion } from '../common/dccli/question-helpers';
-import _, { Dictionary } from 'lodash';
-import { logUpdate, logComplete } from "../common/logger"
+import {
+  AmplienceSchemaValidator,
+  defaultSchemaLookup,
+} from "../common/dccli/content-item/amplience-schema-validator";
+import { createLog, getDefaultLogPath } from "../common/dccli/log-helpers";
+import { asyncQuestion } from "../common/dccli/question-helpers";
+import _, { Dictionary } from "lodash";
+import { logUpdate, logComplete } from "../common/logger";
 
-export function getDefaultMappingPath(name: string, platform: string = process.platform): string {
+export function getDefaultMappingPath(
+  name: string,
+  platform: string = process.platform,
+): string {
   return join(
-    process.env[platform == 'win32' ? 'USERPROFILE' : 'HOME'] || __dirname,
-    '.amplience',
+    process.env[platform == "win32" ? "USERPROFILE" : "HOME"] || __dirname,
+    ".amplience",
     `imports/`,
-    `${name}.json`
+    `${name}.json`,
   );
 }
 
-export const command = 'import <dir>';
+export const command = "import <dir>";
 
-export const desc = 'Import content items';
+export const desc = "Import content items";
 
 export const LOG_FILENAME = (platform: string = process.platform): string =>
-  getDefaultLogPath('item', 'import', platform);
+  getDefaultLogPath("item", "import", platform);
 
 export const builder = (yargs: Argv): void => {
   yargs
-    .positional('dir', {
+    .positional("dir", {
       describe:
-        'Directory containing content items to import. If this points to an export manifest, we will try and import the content with the same absolute path and repositories as the export.',
-      type: 'string',
-      requiresArg: true
+        "Directory containing content items to import. If this points to an export manifest, we will try and import the content with the same absolute path and repositories as the export.",
+      type: "string",
+      requiresArg: true,
     })
 
-    .option('baseRepo', {
-      type: 'string',
+    .option("baseRepo", {
+      type: "string",
       describe:
-        'Import matching the given repository to the import base directory, by ID. Folder structure will be followed and replicated from there.'
+        "Import matching the given repository to the import base directory, by ID. Folder structure will be followed and replicated from there.",
     })
 
-    .option('baseFolder', {
-      type: 'string',
+    .option("baseFolder", {
+      type: "string",
       describe:
-        'Import matching the given folder to the import base directory, by ID. Folder structure will be followed and replicated from there.'
+        "Import matching the given folder to the import base directory, by ID. Folder structure will be followed and replicated from there.",
     })
 
-    .option('mapFile', {
-      type: 'string',
+    .option("mapFile", {
+      type: "string",
       describe:
-        'Mapping file to use when updating content that already exists. Updated with any new mappings that are generated. If not present, will be created.'
+        "Mapping file to use when updating content that already exists. Updated with any new mappings that are generated. If not present, will be created.",
     })
 
-    .alias('f', 'force')
-    .option('f', {
-      type: 'boolean',
+    .alias("f", "force")
+    .option("f", {
+      type: "boolean",
       boolean: true,
       describe:
-        'Overwrite content, create and assign content types, and ignore content with missing types/references without asking.'
+        "Overwrite content, create and assign content types, and ignore content with missing types/references without asking.",
     })
 
-    .alias('v', 'validate')
-    .option('v', {
-      type: 'boolean',
-      boolean: true,
-      describe: 'Only recreate folder structure - content is validated but not imported.'
-    })
-
-    .option('skipIncomplete', {
-      type: 'boolean',
-      boolean: true,
-      describe: 'Skip any content items that has one or more missing dependency.'
-    })
-
-    .option('publish', {
-      type: 'boolean',
+    .alias("v", "validate")
+    .option("v", {
+      type: "boolean",
       boolean: true,
       describe:
-        'Publish any content items that either made a new version on import, or were published more recently in the JSON.'
+        "Only recreate folder structure - content is validated but not imported.",
     })
 
-    .option('republish', {
-      type: 'boolean',
-      boolean: true,
-      describe: 'Republish content items regardless of whether the import changed them or not. (--publish not required)'
-    })
-
-    .option('excludeKeys', {
-      type: 'boolean',
-      boolean: true,
-      describe: 'Exclude delivery keys when importing content items.'
-    })
-
-    .option('media', {
-      type: 'boolean',
+    .option("skipIncomplete", {
+      type: "boolean",
       boolean: true,
       describe:
-        "Detect and rewrite media links to match assets in the target account's DAM. Your client must have DAM permissions configured."
+        "Skip any content items that has one or more missing dependency.",
     })
 
-    .option('logFile', {
-      type: 'string',
+    .option("publish", {
+      type: "boolean",
+      boolean: true,
+      describe:
+        "Publish any content items that either made a new version on import, or were published more recently in the JSON.",
+    })
+
+    .option("republish", {
+      type: "boolean",
+      boolean: true,
+      describe:
+        "Republish content items regardless of whether the import changed them or not. (--publish not required)",
+    })
+
+    .option("excludeKeys", {
+      type: "boolean",
+      boolean: true,
+      describe: "Exclude delivery keys when importing content items.",
+    })
+
+    .option("media", {
+      type: "boolean",
+      boolean: true,
+      describe:
+        "Detect and rewrite media links to match assets in the target account's DAM. Your client must have DAM permissions configured.",
+    })
+
+    .option("logFile", {
+      type: "string",
       default: LOG_FILENAME,
-      describe: 'Path to a log file to write to.',
-      coerce: createLog
+      describe: "Path to a log file to write to.",
+      coerce: createLog,
     });
 };
 
@@ -145,9 +158,14 @@ interface ImportContext {
   log: FileLog;
 }
 
-const getSubfolders = (context: ImportContext, folder: Folder): Promise<Folder[]> => {
+const getSubfolders = (
+  context: ImportContext,
+  folder: Folder,
+): Promise<Folder[]> => {
   if (context.folderToSubfolderMap.has(folder.id as string)) {
-    return context.folderToSubfolderMap.get(folder.id as string) as Promise<Folder[]>;
+    return context.folderToSubfolderMap.get(folder.id as string) as Promise<
+      Folder[]
+    >;
   }
 
   const subfolders = paginator(folder.related.folders.list);
@@ -157,27 +175,41 @@ const getSubfolders = (context: ImportContext, folder: Folder): Promise<Folder[]
 };
 
 // eslint-disable-next-line prefer-const
-let getOrCreateFolderCached: (context: ImportContext, path: string) => Promise<Folder>;
-const getOrCreateFolder = async (context: ImportContext, rel: string): Promise<Folder> => {
+let getOrCreateFolderCached: (
+  context: ImportContext,
+  path: string,
+) => Promise<Folder>;
+const getOrCreateFolder = async (
+  context: ImportContext,
+  rel: string,
+): Promise<Folder> => {
   try {
     // Get the parent folder.
     const parentPath = dirname(rel);
 
-    const parent = await getOrCreateFolderCached(context, resolve(context.baseDir, parentPath));
+    const parent = await getOrCreateFolderCached(
+      context,
+      resolve(context.baseDir, parentPath),
+    );
 
     const folderInfo = {
-      name: basename(rel)
+      name: basename(rel),
     };
 
-    const container = parent == null ? context.rootFolders : await getSubfolders(context, parent);
+    const container =
+      parent == null
+        ? context.rootFolders
+        : await getSubfolders(context, parent);
 
-    let result = container.find(target => target.name === folderInfo.name);
+    let result = container.find((target) => target.name === folderInfo.name);
 
     const containerName = parent == null ? context.repo.label : parent.name;
 
     if (result == null) {
       if (parent == null) {
-        result = await context.repo.related.folders.create(new Folder(folderInfo));
+        result = await context.repo.related.folders.create(
+          new Folder(folderInfo),
+        );
       } else {
         result = await parent.related.folders.create(new Folder(folderInfo));
       }
@@ -194,10 +226,13 @@ const getOrCreateFolder = async (context: ImportContext, rel: string): Promise<F
   }
 };
 
-getOrCreateFolderCached = async (context: ImportContext, path: string): Promise<Folder> => {
+getOrCreateFolderCached = async (
+  context: ImportContext,
+  path: string,
+): Promise<Folder> => {
   let rel = relative(context.baseDir, path);
-  if (rel === '') {
-    rel = '.';
+  if (rel === "") {
+    rel = ".";
   }
 
   if (context.pathToFolderMap.has(rel)) {
@@ -211,15 +246,20 @@ getOrCreateFolderCached = async (context: ImportContext, path: string): Promise<
   return result;
 };
 
-const traverseRecursive = async (path: string, action: (path: string) => Promise<void>): Promise<void> => {
+const traverseRecursive = async (
+  path: string,
+  action: (path: string) => Promise<void>,
+): Promise<void> => {
   const dir = await promisify(readdir)(path);
 
   await Promise.all(
     dir.map(async (contained: string) => {
       contained = join(path, contained);
       const stat = await promisify(lstat)(contained);
-      return await (stat.isDirectory() ? traverseRecursive(contained, action) : action(contained));
-    })
+      return await (stat.isDirectory()
+        ? traverseRecursive(contained, action)
+        : action(contained));
+    }),
   );
 };
 
@@ -232,10 +272,10 @@ const createOrUpdateContent = async (
   client: DynamicContent,
   repo: ContentRepository,
   existing: string | ContentItem | null,
-  item: ContentItem
+  item: ContentItem,
 ): Promise<ContentImportResult> => {
   let oldItem: ContentItem | null = null;
-  if (typeof existing === 'string') {
+  if (typeof existing === "string") {
     oldItem = await client.contentItems.get(existing);
   } else {
     oldItem = existing;
@@ -251,7 +291,10 @@ const createOrUpdateContent = async (
   item.locale = undefined;
 
   if (oldItem == null) {
-    result = { newItem: await repo.related.contentItems.create(item), oldVersion: 0 };
+    result = {
+      newItem: await repo.related.contentItems.create(item),
+      oldVersion: 0,
+    };
   } else {
     const oldVersion = oldItem.version || 0;
     item.version = oldItem.version;
@@ -271,16 +314,27 @@ const createOrUpdateContent = async (
   return result;
 };
 
-const itemShouldPublish = (item: ContentItem, newItem: ContentItem, updated: boolean): boolean => {
+const itemShouldPublish = (
+  item: ContentItem,
+  newItem: ContentItem,
+  updated: boolean,
+): boolean => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const sourceDate = (item as any).lastPublish;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const targetDate = (newItem as any).lastPublishedDate;
 
-  return sourceDate && (updated || !targetDate || new Date(targetDate) < new Date(sourceDate)); // Added when creating the filtered content.
+  return (
+    sourceDate &&
+    (updated || !targetDate || new Date(targetDate) < new Date(sourceDate))
+  ); // Added when creating the filtered content.
 };
 
-const trySaveMapping = async (mapFile: string | undefined, mapping: ContentMapping, log: FileLog): Promise<void> => {
+const trySaveMapping = async (
+  mapFile: string | undefined,
+  mapping: ContentMapping,
+  log: FileLog,
+): Promise<void> => {
   if (mapFile != null) {
     try {
       await mapping.save(mapFile);
@@ -297,7 +351,7 @@ const prepareContentForImport = async (
   folder: Folder | null,
   mapping: ContentMapping,
   log: FileLog,
-  argv: Arguments<ImportItemBuilderOptions & ConfigurationParameters>
+  argv: Arguments<ImportItemBuilderOptions & ConfigurationParameters>,
 ): Promise<ContentDependencyTree | null> => {
   // traverse folder structure and find content items
   // replicate relative path string in target repo/folder (create if does not exist)
@@ -307,13 +361,13 @@ const prepareContentForImport = async (
   const { force, skipIncomplete } = argv;
 
   const contexts = new Map<ContentRepository, ImportContext>();
-  repos.forEach(repo => {
+  repos.forEach((repo) => {
     const pathToFolderMap: Map<string, Promise<Folder | null>> = new Map();
 
     if (folder != null) {
-      pathToFolderMap.set('.', Promise.resolve(folder));
+      pathToFolderMap.set(".", Promise.resolve(folder));
     } else {
-      pathToFolderMap.set('.', Promise.resolve(null));
+      pathToFolderMap.set(".", Promise.resolve(null));
     }
 
     contexts.set(repo.repo, {
@@ -325,7 +379,7 @@ const prepareContentForImport = async (
       folderToSubfolderMap: new Map(),
       mapping,
       rootFolders: [],
-      log
+      log,
     });
   });
 
@@ -361,21 +415,27 @@ const prepareContentForImport = async (
       return null;
     }
 
-    logUpdate(`Scanning structure and content in '${repos[i].basePath}' for repository '${repo.label}'...`);
+    logUpdate(
+      `Scanning structure and content in '${repos[i].basePath}' for repository '${repo.label}'...`,
+    );
 
-    await traverseRecursive(resolve(repos[i].basePath), async path => {
+    await traverseRecursive(resolve(repos[i].basePath), async (path) => {
       // Is this valid content? Must have extension .json to be considered, for a start.
-      if (extname(path) !== '.json') {
+      if (extname(path) !== ".json") {
         return;
       }
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       let contentJSON: any;
       try {
-        const contentText = await promisify(readFile)(path, { encoding: 'utf8' });
+        const contentText = await promisify(readFile)(path, {
+          encoding: "utf8",
+        });
         contentJSON = JSON.parse(contentText);
       } catch (e) {
-        log.appendLine(`Couldn't read content item at '${path}': ${e.toString()}`);
+        log.appendLine(
+          `Couldn't read content item at '${path}': ${e.toString()}`,
+        );
         return;
       }
 
@@ -388,9 +448,12 @@ const prepareContentForImport = async (
         label: contentJSON.label,
         locale: contentJSON.locale,
         body: contentJSON.body,
-        deliveryId: contentJSON.deliveryId == contentJSON.Id || argv.excludeKeys ? undefined : contentJSON.deliveryId,
+        deliveryId:
+          contentJSON.deliveryId == contentJSON.Id || argv.excludeKeys
+            ? undefined
+            : contentJSON.deliveryId,
         folderId: folder == null ? null : folder.id,
-        lastPublish: contentJSON.lastPublishedDate
+        lastPublish: contentJSON.lastPublishedDate,
       };
 
       if (argv.excludeKeys) {
@@ -399,23 +462,30 @@ const prepareContentForImport = async (
 
       schemaNames.add(contentJSON.body._meta.schema);
 
-      contentItems.push({ repo: repo, content: new ContentItem(filteredContent) });
+      contentItems.push({
+        repo: repo,
+        content: new ContentItem(filteredContent),
+      });
     });
   }
 
-  logUpdate('Done. Validating content...');
+  logUpdate("Done. Validating content...");
 
-  const alreadyExists = contentItems.filter(item => mapping.getContentItem(item.content.id) != null);
+  const alreadyExists = contentItems.filter(
+    (item) => mapping.getContentItem(item.content.id) != null,
+  );
   if (alreadyExists.length > 0) {
     const updateExisting =
       force ||
       (await asyncQuestion(
         `${alreadyExists.length} of the items being imported already exist in the mapping. Would you like to update these content items instead of skipping them? (y/n) `,
-        log
+        log,
       ));
 
     if (!updateExisting) {
-      contentItems = contentItems.filter(item => mapping.getContentItem(item.content.id) == null);
+      contentItems = contentItems.filter(
+        (item) => mapping.getContentItem(item.content.id) == null,
+      );
     }
   }
 
@@ -428,13 +498,15 @@ const prepareContentForImport = async (
     types = await paginator(hub.related.contentTypes.list);
     schemas = await paginator(hub.related.contentTypeSchema.list);
   } catch (e) {
-    log.error('Could not load content types:', e);
+    log.error("Could not load content types:", e);
     return null;
   }
 
-  const typesBySchema = new Map<string, ContentType>(types.map(type => [type.contentTypeUri as string, type]));
+  const typesBySchema = new Map<string, ContentType>(
+    types.map((type) => [type.contentTypeUri as string, type]),
+  );
 
-  const missingTypes = Array.from(schemaNames).filter(name => {
+  const missingTypes = Array.from(schemaNames).filter((name) => {
     return !typesBySchema.has(name);
   });
 
@@ -442,19 +514,23 @@ const prepareContentForImport = async (
     // Alert the user of missing content types.
     // Can we create content types in the missing cases? (schema exists, not recommended)
 
-    const existing = schemas.filter(schema => missingTypes.indexOf(schema.schemaId as string) !== -1);
+    const existing = schemas.filter(
+      (schema) => missingTypes.indexOf(schema.schemaId as string) !== -1,
+    );
 
-    log.appendLine('Required content types are missing from the target hub.');
+    log.appendLine("Required content types are missing from the target hub.");
     if (existing.length > 0) {
-      log.appendLine('The following required content types schemas exist, but do not exist as content types:');
-      existing.forEach(schema => {
+      log.appendLine(
+        "The following required content types schemas exist, but do not exist as content types:",
+      );
+      existing.forEach((schema) => {
         log.appendLine(`  ${schema.schemaId}`);
       });
       const create =
         force ||
         (await asyncQuestion(
-          'Content types can be automatically created for these schemas, but it is not recommended as they will have a default name and lack any configuration. Are you sure you wish to continue? (y/n) ',
-          log
+          "Content types can be automatically created for these schemas, but it is not recommended as they will have a default name and lack any configuration. Are you sure you wish to continue? (y/n) ",
+          log,
         ));
       if (!create) {
         return null;
@@ -468,7 +544,7 @@ const prepareContentForImport = async (
         const missing = existing[i];
         let type = new ContentType({
           contentTypeUri: missing.schemaId,
-          settings: { label: basename(missing.schemaId as string) } // basename on a URL is valid.
+          settings: { label: basename(missing.schemaId as string) }, // basename on a URL is valid.
         });
         type = await hub.related.contentTypes.register(type);
         types.push(type);
@@ -481,7 +557,7 @@ const prepareContentForImport = async (
 
   const repom = new Map<ContentRepository, Set<ContentType>>();
 
-  contentItems.forEach(item => {
+  contentItems.forEach((item) => {
     let repoSet = repom.get(item.repo);
     if (repoSet == null) {
       repoSet = new Set<ContentType>();
@@ -500,15 +576,22 @@ const prepareContentForImport = async (
     const expectedTypesArray = Array.from(expectedTypes);
 
     const missingTypes = expectedTypesArray.filter(
-      expectedType => (repo.contentTypes || []).find(type => type.hubContentTypeId == expectedType.id) == null
+      (expectedType) =>
+        (repo.contentTypes || []).find(
+          (type) => type.hubContentTypeId == expectedType.id,
+        ) == null,
     );
-    missingTypes.forEach(missingType => missingRepoAssignments.push([repo, missingType]));
+    missingTypes.forEach((missingType) =>
+      missingRepoAssignments.push([repo, missingType]),
+    );
   });
 
   if (missingRepoAssignments.length > 0) {
-    log.appendLine('Some content items are using types incompatible with the target repository. Missing assignments:');
+    log.appendLine(
+      "Some content items are using types incompatible with the target repository. Missing assignments:",
+    );
     missingRepoAssignments.forEach(([repo, type]) => {
-      let label = '<no label>';
+      let label = "<no label>";
       if (type.settings && type.settings.label) {
         label = type.settings.label;
       }
@@ -518,21 +601,25 @@ const prepareContentForImport = async (
     const createAssignments =
       force ||
       (await asyncQuestion(
-        'These assignments will be created automatically. Are you sure you still wish to continue? (y/n) ',
-        log
+        "These assignments will be created automatically. Are you sure you still wish to continue? (y/n) ",
+        log,
       ));
     if (!createAssignments) {
       return null;
     }
 
-    log.warn(`Creating ${missingRepoAssignments.length} missing repo assignments.`);
+    log.warn(
+      `Creating ${missingRepoAssignments.length} missing repo assignments.`,
+    );
 
     try {
       await Promise.all(
-        missingRepoAssignments.map(([repo, type]) => repo.related.contentTypes.assign(type.id as string))
+        missingRepoAssignments.map(([repo, type]) =>
+          repo.related.contentTypes.assign(type.id as string),
+        ),
       );
     } catch (e) {
-      log.error('Failed creating repo assignments:', e);
+      log.error("Failed creating repo assignments:", e);
       return null;
     }
   }
@@ -546,15 +633,17 @@ const prepareContentForImport = async (
   // Do all the content types that items use exist in the schema list?
   const missingSchema = tree.requiredSchema.filter(
     (schemaId: string) =>
-      schemas.findIndex(schema => schema.schemaId === schemaId) === -1 &&
-      types.findIndex(type => type.contentTypeUri === schemaId) === -1 // Can also exist with external schema.
+      schemas.findIndex((schema) => schema.schemaId === schemaId) === -1 &&
+      types.findIndex((type) => type.contentTypeUri === schemaId) === -1, // Can also exist with external schema.
   );
 
   if (missingSchema.length > 0) {
-    log.appendLine('Required content type schema are missing from the target hub:');
+    log.appendLine(
+      "Required content type schema are missing from the target hub:",
+    );
     missingSchema.forEach((schema: string) => log.appendLine(`  ${schema}`));
     log.appendLine(
-      'All content referencing this content type schema, and any content depending on those items will be skipped.'
+      "All content referencing this content type schema, and any content depending on those items will be skipped.",
     );
 
     const affectedContentItems = tree.filterAny((item: any) => {
@@ -566,7 +655,9 @@ const prepareContentForImport = async (
     tree.removeContent(affectedContentItems);
 
     if (tree.all.length === 0) {
-      log.error('No content remains after removing those with missing content type schemas. Aborting.');
+      log.error(
+        "No content remains after removing those with missing content type schemas. Aborting.",
+      );
       return null;
     }
 
@@ -574,20 +665,24 @@ const prepareContentForImport = async (
       force ||
       (await asyncQuestion(
         `${affectedContentItems.length} out of ${beforeRemove} content items will be skipped. Are you sure you still wish to continue? (y/n) `,
-        log
+        log,
       ));
     if (!ignore) {
       return null;
     }
 
-    log.warn(`Skipping ${missingRepoAssignments.length} content items due to missing schemas.`);
+    log.warn(
+      `Skipping ${missingRepoAssignments.length} content items due to missing schemas.`,
+    );
   }
 
   // Do all the content items that we depend on exist either in the mapping or in the items we're importing?
   const missingIDs = new Set<string>();
   const invalidContentItems = tree.filterAny((item: any) => {
     const missingDeps = item.dependencies.filter(
-      (dep: any) => !tree.byId.has(dep.dependency.id as string) && mapping.getContentItem(dep.dependency.id) == null
+      (dep: any) =>
+        !tree.byId.has(dep.dependency.id as string) &&
+        mapping.getContentItem(dep.dependency.id) == null,
     );
     missingDeps.forEach((dep: any) => {
       if (dep.dependency.id != null) {
@@ -601,14 +696,16 @@ const prepareContentForImport = async (
     if (skipIncomplete) {
       tree.removeContent(invalidContentItems);
     } else {
-      const validator = new AmplienceSchemaValidator(defaultSchemaLookup(types, schemas));
+      const validator = new AmplienceSchemaValidator(
+        defaultSchemaLookup(types, schemas),
+      );
 
       const mustSkip: ItemContentDependencies[] = [];
       await Promise.all(
         invalidContentItems.map(async (item: any) => {
           tree.removeContentDependenciesFromBody(
             item.owner.content.body,
-            item.dependencies.map((dependency: any) => dependency.dependency)
+            item.dependencies.map((dependency: any) => dependency.dependency),
           );
 
           try {
@@ -619,63 +716,77 @@ const prepareContentForImport = async (
           } catch {
             // Just ignore invalid schema for now.
           }
-        })
+        }),
       );
 
       if (mustSkip.length > 0) {
         log.appendLine(
-          'Required dependencies for the following content items are missing, and would cause validation errors if set null.'
+          "Required dependencies for the following content items are missing, and would cause validation errors if set null.",
         );
-        log.appendLine('These items will be skipped:');
-        mustSkip.forEach(item => log.appendLine(`  ${item.owner.content.label}`));
+        log.appendLine("These items will be skipped:");
+        mustSkip.forEach((item) =>
+          log.appendLine(`  ${item.owner.content.label}`),
+        );
 
         tree.removeContent(mustSkip);
       }
     }
 
-    log.appendLine('Referenced content items (targets of links/references) are missing from the import and mapping:');
-    missingIDs.forEach(id => log.appendLine(`  ${id}`));
-    const action = skipIncomplete ? 'skipped' : 'set as null';
     log.appendLine(
-      `All references to these content items will be ${action}. Note: if you have already imported these items before, make sure you are using a mapping file from that import.`
+      "Referenced content items (targets of links/references) are missing from the import and mapping:",
+    );
+    missingIDs.forEach((id) => log.appendLine(`  ${id}`));
+    const action = skipIncomplete ? "skipped" : "set as null";
+    log.appendLine(
+      `All references to these content items will be ${action}. Note: if you have already imported these items before, make sure you are using a mapping file from that import.`,
     );
 
     if (tree.all.length === 0) {
-      log.appendLine('No content remains after removing those with missing dependencies. Aborting.');
+      log.appendLine(
+        "No content remains after removing those with missing dependencies. Aborting.",
+      );
       return null;
     }
 
-    invalidContentItems.forEach((item: any) => log.appendLine(`  ${item.owner.content.label}`));
+    invalidContentItems.forEach((item: any) =>
+      log.appendLine(`  ${item.owner.content.label}`),
+    );
 
     const ignore =
       force ||
       (await asyncQuestion(
         `${invalidContentItems.length} out of ${contentItems.length} content items will be affected. Are you sure you still wish to continue? (y/n) `,
-        log
+        log,
       ));
     if (!ignore) {
       return null;
     }
 
-    log.warn(`${invalidContentItems.length} content items ${action} due to missing references.`);
+    log.warn(
+      `${invalidContentItems.length} content items ${action} due to missing references.`,
+    );
   }
 
   logUpdate(
-    `Found ${tree.levels.length} dependency levels in ${tree.all.length} items, ${tree.circularLinks.length} referencing a circular dependency.`
+    `Found ${tree.levels.length} dependency levels in ${tree.all.length} items, ${tree.circularLinks.length} referencing a circular dependency.`,
   );
   logUpdate(`Importing ${tree.all.length} content items...`);
 
   return tree;
 };
 
-const rewriteDependency = (dep: ContentDependencyInfo, mapping: ContentMapping, allowNull: boolean): void => {
+const rewriteDependency = (
+  dep: ContentDependencyInfo,
+  mapping: ContentMapping,
+  allowNull: boolean,
+): void => {
   let id = mapping.getContentItem(dep.dependency.id);
 
   if (id == null && !allowNull) {
     id = dep.dependency.id;
   }
 
-  if (dep.dependency._meta.schema === '_hierarchy') {
+  if (dep.dependency._meta.schema === "_hierarchy") {
     dep.owner.content.body._meta.hierarchy.parentId = id;
   } else if (dep.parent) {
     const parent = dep.parent as Body;
@@ -688,19 +799,28 @@ const rewriteDependency = (dep: ContentDependencyInfo, mapping: ContentMapping, 
   }
 };
 
-const sortDependencies = (a: ItemContentDependencies, b: ItemContentDependencies): number => {
+const sortDependencies = (
+  a: ItemContentDependencies,
+  b: ItemContentDependencies,
+): number => {
   // if b depends on a, a should be sorted first, and vice versa
   if (
     _.includes(
-      _.map(a.dependents, (d: ContentDependencyInfo) => d.resolved && d.resolved.owner.content.id),
-      b.owner.content.id
+      _.map(
+        a.dependents,
+        (d: ContentDependencyInfo) => d.resolved && d.resolved.owner.content.id,
+      ),
+      b.owner.content.id,
     )
   ) {
     return -1;
   } else if (
     _.includes(
-      _.map(b.dependents, (d: ContentDependencyInfo) => d.resolved && d.resolved.owner.content.id),
-      a.owner.content.id
+      _.map(
+        b.dependents,
+        (d: ContentDependencyInfo) => d.resolved && d.resolved.owner.content.id,
+      ),
+      a.owner.content.id,
     )
   ) {
     return 1;
@@ -711,17 +831,19 @@ const sortDependencies = (a: ItemContentDependencies, b: ItemContentDependencies
 };
 
 const abort = (error: Error, log: FileLog): void => {
-  log.appendLine(`Importing content item failed, aborting. Error: ${error.toString()}`);
+  log.appendLine(
+    `Importing content item failed, aborting. Error: ${error.toString()}`,
+  );
 };
 
-let dependents: Dictionary<ContentItem> = {}
+let dependents: Dictionary<ContentItem> = {};
 const importContentItem = async (
   item: ItemContentDependencies,
   mapping: ContentMapping,
   client: DynamicContent,
   log: FileLog,
   shouldRewrite: boolean,
-  existing: string | ContentItem | null
+  existing: string | ContentItem | null,
 ) => {
   const content = item.owner.content;
 
@@ -730,7 +852,7 @@ const importContentItem = async (
   });
 
   const originalId = content.id;
-  content.id = mapping.getContentItem(content.id as string) || '';
+  content.id = mapping.getContentItem(content.id as string) || "";
 
   if (_.isEmpty(content.id)) {
     delete (content as any).id;
@@ -743,7 +865,7 @@ const importContentItem = async (
       client,
       item.owner.repo,
       existing,
-      content
+      content,
     );
     newItem = result.newItem;
     oldVersion = result.oldVersion;
@@ -754,24 +876,25 @@ const importContentItem = async (
   }
 
   const updated = oldVersion > 0;
-  log.addComment(`${updated ? 'Updated' : 'Created'} ${content.label}.`);
+  log.addComment(`${updated ? "Updated" : "Created"} ${content.label}.`);
   log.addAction(
-    updated ? 'UPDATE' : 'CREATE',
-    (newItem.id || 'unknown') + (updated ? ` ${oldVersion} ${newItem.version}` : '')
+    updated ? "UPDATE" : "CREATE",
+    (newItem.id || "unknown") +
+      (updated ? ` ${oldVersion} ${newItem.version}` : ""),
   );
 
   content.id = originalId;
   dependents[originalId] = newItem;
   mapping.registerContentItem(originalId as string, newItem.id as string);
   mapping.registerContentItem(newItem.id as string, newItem.id as string);
-}
+};
 
 const importTree = async (
   client: DynamicContent,
   tree: ContentDependencyTree,
   mapping: ContentMapping,
   log: FileLog,
-  argv: Arguments<ImportItemBuilderOptions & ConfigurationParameters>
+  argv: Arguments<ImportItemBuilderOptions & ConfigurationParameters>,
 ): Promise<boolean> => {
   let publishable: { item: ContentItem; node: ItemContentDependencies }[] = [];
 
@@ -779,7 +902,14 @@ const importTree = async (
     const level = tree.levels[i];
     for (let j = 0; j < level.items.length; j++) {
       const item = level.items[j];
-      await importContentItem(item, mapping, client, log, false, mapping.getContentItem(item.owner.content.id) || null)
+      await importContentItem(
+        item,
+        mapping,
+        client,
+        log,
+        false,
+        mapping.getContentItem(item.owner.content.id) || null,
+      );
     }
   }
 
@@ -787,17 +917,20 @@ const importTree = async (
   // Cuts down on unnecessary requests.
   let publishChildren = 0;
 
-  publishable = publishable.filter(entry => {
+  publishable = publishable.filter((entry) => {
     let isTopLevel = true;
 
     tree.traverseDependents(
       entry.node,
       (dependent: any) => {
-        if (dependent != entry.node && publishable.findIndex(entry => entry.node === dependent) !== -1) {
+        if (
+          dependent != entry.node &&
+          publishable.findIndex((entry) => entry.node === dependent) !== -1
+        ) {
           isTopLevel = false;
         }
       },
-      true
+      true,
     );
 
     if (!isTopLevel) {
@@ -812,23 +945,29 @@ const importTree = async (
   // const dependents: Dictionary<ContentItem> = {};
 
   for (let pass = 0; pass < 2; pass++) {
-    const mode = pass === 0 ? 'Creating' : 'Resolving';
+    const mode = pass === 0 ? "Creating" : "Resolving";
     logUpdate(`${mode} circular dependents.`);
 
     const circularLinksSorted = tree.circularLinks.sort(sortDependencies);
     for (let i = 0; i < circularLinksSorted.length; i++) {
       const item = circularLinksSorted[i];
-      await importContentItem(item, mapping, client, log, pass === 0, dependents[item.owner.content.id] || mapping.getContentItem(item.owner.content.id))
+      await importContentItem(
+        item,
+        mapping,
+        client,
+        log,
+        pass === 0,
+        dependents[item.owner.content.id] ||
+          mapping.getContentItem(item.owner.content.id),
+      );
     }
   }
 
-  logUpdate('Done!');
+  logUpdate("Done!");
   return true;
 };
 
-export const handler = async (
-  argv: any
-): Promise<boolean> => {
+export const handler = async (argv: any): Promise<boolean> => {
   // if (await argv.revertLog) {
   //   return revert(argv);
   // }
@@ -846,11 +985,11 @@ export const handler = async (
     hub = await client.hubs.get(argv.hubId);
   } catch (e) {
     log.error(`Couldn't get hub:`, e);
-    await log.close()
+    await log.close();
     return false;
   }
 
-  let importTitle = 'unknownImport';
+  let importTitle = "unknownImport";
   if (baseFolder != null) {
     importTitle = `folder-${baseFolder}`;
   } else if (baseRepo != null) {
@@ -865,7 +1004,9 @@ export const handler = async (
   }
 
   if (await mapping.load(mapFile)) {
-    logUpdate(`Existing mapping loaded from '${mapFile}', changes will be saved back to it.`);
+    logUpdate(
+      `Existing mapping loaded from '${mapFile}', changes will be saved back to it.`,
+    );
   } else {
     logUpdate(`Creating new mapping file at '${mapFile}'.`);
   }
@@ -880,20 +1021,36 @@ export const handler = async (
       folder = bFolder;
     } catch (e) {
       log.error(`Couldn't get base folder:`, e);
-      await log.close()
+      await log.close();
       return false;
     }
-    tree = await prepareContentForImport(client, hub, [{ repo, basePath: dir }], folder, mapping, log, argv);
+    tree = await prepareContentForImport(
+      client,
+      hub,
+      [{ repo, basePath: dir }],
+      folder,
+      mapping,
+      log,
+      argv,
+    );
   } else if (baseRepo != null) {
     let repo: ContentRepository;
     try {
       repo = await client.contentRepositories.get(baseRepo);
     } catch (e) {
       log.error(`Couldn't get base repository:`, e);
-      await log.close()
+      await log.close();
       return false;
     }
-    tree = await prepareContentForImport(client, hub, [{ repo, basePath: dir }], null, mapping, log, argv);
+    tree = await prepareContentForImport(
+      client,
+      hub,
+      [{ repo, basePath: dir }],
+      null,
+      mapping,
+      log,
+      argv,
+    );
   } else {
     // Match repositories by label.
     let repos: ContentRepository[];
@@ -901,7 +1058,7 @@ export const handler = async (
       repos = await paginator(hub.related.contentRepositories.list);
     } catch (e) {
       log.error(`Couldn't get repositories:`, e);
-      await log.close()
+      await log.close();
       return false;
     }
 
@@ -914,7 +1071,7 @@ export const handler = async (
       const status = await promisify(lstat)(path);
       if (status.isDirectory()) {
         // does this folder map to a repository name?
-        const match = repos.find(repo => repo.label === name);
+        const match = repos.find((repo) => repo.label === name);
         if (match) {
           importRepos.push({ basePath: path, repo: match });
         } else {
@@ -925,20 +1082,20 @@ export const handler = async (
 
     if (missingRepos.length > 0) {
       log.appendLine(
-        "The following repositories must exist on the destination hub to import content into them, but don't:"
+        "The following repositories must exist on the destination hub to import content into them, but don't:",
       );
-      missingRepos.forEach(name => {
+      missingRepos.forEach((name) => {
         log.appendLine(`  ${name}`);
       });
       if (importRepos.length > 0) {
         const ignore =
           force ||
           (await asyncQuestion(
-            'These repositories will be skipped during the import, as they need to be added to the hub manually. Do you want to continue? (y/n) ',
-            log
+            "These repositories will be skipped during the import, as they need to be added to the hub manually. Do you want to continue? (y/n) ",
+            log,
           ));
         if (!ignore) {
-          await log.close()
+          await log.close();
           return false;
         }
 
@@ -947,12 +1104,22 @@ export const handler = async (
     }
 
     if (importRepos.length == 0) {
-      log.error('Could not find any matching repositories to import into, aborting.');
-      await log.close()
+      log.error(
+        "Could not find any matching repositories to import into, aborting.",
+      );
+      await log.close();
       return false;
     }
 
-    tree = await prepareContentForImport(client, hub, importRepos, null, mapping, log, argv);
+    tree = await prepareContentForImport(
+      client,
+      hub,
+      importRepos,
+      null,
+      mapping,
+      log,
+      argv,
+    );
   }
 
   let result = true;
@@ -961,13 +1128,13 @@ export const handler = async (
     if (!validate) {
       result = await importTree(client, tree, mapping, log, argv);
     } else {
-      log.appendLine('--validate was passed, so no content was imported.');
+      log.appendLine("--validate was passed, so no content was imported.");
     }
   }
 
   trySaveMapping(mapFile, mapping, log);
-  await log.close()
+  await log.close();
   return result;
 };
 
-export default handler
+export default handler;

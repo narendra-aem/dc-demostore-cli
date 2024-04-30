@@ -1,5 +1,5 @@
-import { RepositoryContentItem } from './content-dependency-tree';
-import { Body } from './body';
+import { RepositoryContentItem } from "./content-dependency-tree";
+import { Body } from "./body";
 
 export interface MediaLink {
   id: string;
@@ -9,8 +9,8 @@ export interface MediaLink {
   mediaType: string;
   _meta: {
     schema:
-      | 'http://bigcontent.io/cms/schema/v1/core#/definitions/image-link'
-      | 'http://bigcontent.io/cms/schema/v1/core#/definitions/video-link';
+      | "http://bigcontent.io/cms/schema/v1/core#/definitions/image-link"
+      | "http://bigcontent.io/cms/schema/v1/core#/definitions/video-link";
   };
 }
 
@@ -25,8 +25,8 @@ export interface ItemMediaLinks {
 }
 
 export const linkTypes = [
-  'http://bigcontent.io/cms/schema/v1/core#/definitions/image-link',
-  'http://bigcontent.io/cms/schema/v1/core#/definitions/video-link'
+  "http://bigcontent.io/cms/schema/v1/core#/definitions/image-link",
+  "http://bigcontent.io/cms/schema/v1/core#/definitions/video-link",
 ];
 
 type RecursiveSearchStep = Body | MediaLink | Array<Body>;
@@ -42,10 +42,10 @@ export class MediaLinkInjector {
   private searchObjectForMediaLinks(
     item: RepositoryContentItem,
     body: RecursiveSearchStep,
-    result: MediaLinkInfo[]
+    result: MediaLinkInfo[],
   ): void {
     if (Array.isArray(body)) {
-      body.forEach(contained => {
+      body.forEach((contained) => {
         this.searchObjectForMediaLinks(item, contained, result);
       });
     } else {
@@ -54,16 +54,16 @@ export class MediaLinkInjector {
       if (
         body._meta &&
         linkTypes.indexOf(body._meta.schema) !== -1 &&
-        typeof body.name === 'string' &&
-        typeof body.id === 'string'
+        typeof body.name === "string" &&
+        typeof body.id === "string"
       ) {
         result.push({ link: body as MediaLink, owner: item });
         return;
       }
 
-      allPropertyNames.forEach(propName => {
+      allPropertyNames.forEach((propName) => {
         const prop = (body as Body)[propName];
-        if (typeof prop === 'object') {
+        if (typeof prop === "object") {
           this.searchObjectForMediaLinks(item, prop, result);
         }
       });
@@ -71,7 +71,7 @@ export class MediaLinkInjector {
   }
 
   private identifyMediaLinks(items: RepositoryContentItem[]): ItemMediaLinks[] {
-    return items.map(item => {
+    return items.map((item) => {
       const result: MediaLinkInfo[] = [];
       this.searchObjectForMediaLinks(item, item.content.body, result);
       return { owner: item, links: result };

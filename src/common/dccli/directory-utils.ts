@@ -1,6 +1,6 @@
-import { promisify } from 'util';
-import { mkdir, exists, lstat } from 'fs';
-import { sep } from 'path';
+import { promisify } from "util";
+import { mkdir, exists, lstat } from "fs";
+import { sep } from "path";
 
 export async function ensureDirectoryExists(dir: string): Promise<void> {
   if (await promisify(exists)(dir)) {

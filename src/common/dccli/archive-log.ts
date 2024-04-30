@@ -1,8 +1,8 @@
-import { readFile, writeFile } from 'fs';
-import { dirname } from 'path';
-import { promisify } from 'util';
-import { logUpdate } from '../logger';
-import { ensureDirectoryExists } from './directory-utils';
+import { readFile, writeFile } from "fs";
+import { dirname } from "path";
+import { promisify } from "util";
+import { logUpdate } from "../logger";
+import { ensureDirectoryExists } from "./directory-utils";
 
 export interface ArchiveLogItem {
   comment: boolean;
@@ -14,26 +14,26 @@ export enum LogErrorLevel {
   NONE = 0,
   WARNING,
   ERROR,
-  INVALID
+  INVALID,
 }
 
 export class ArchiveLog {
   errorLevel: LogErrorLevel = LogErrorLevel.NONE;
-  items: Map<string, ArchiveLogItem[]> = new Map([['_default', []]]);
+  items: Map<string, ArchiveLogItem[]> = new Map([["_default", []]]);
 
   public accessGroup: ArchiveLogItem[];
 
   constructor(public title?: string) {
-    this.accessGroup = this.items.get('_default') as ArchiveLogItem[];
+    this.accessGroup = this.items.get("_default") as ArchiveLogItem[];
   }
 
   async loadFromFile(path: string): Promise<ArchiveLog> {
-    const log = await promisify(readFile)(path, 'utf8');
-    const logLines = log.split('\n');
+    const log = await promisify(readFile)(path, "utf8");
+    const logLines = log.split("\n");
 
-    this.switchGroup('_default');
+    this.switchGroup("_default");
     logLines.forEach((line, index) => {
-      if (line.startsWith('//')) {
+      if (line.startsWith("//")) {
         // The first comment is the title, all ones after it should be recorded as comment items.
         const message = line.substring(2).trimLeft();
         if (this.title == null) {
@@ -42,7 +42,7 @@ export class ArchiveLog {
           this.addComment(message);
         }
         return;
-      } else if (line.startsWith('> ')) {
+      } else if (line.startsWith("> ")) {
         // Group start. End the active group and start building another.
         this.switchGroup(line.substring(2));
         return;
@@ -51,23 +51,23 @@ export class ArchiveLog {
       if (index === logLines.length - 1) {
         this.errorLevel = this.parseResultCode(line);
       } else {
-        const lineSplit = line.split(' ');
+        const lineSplit = line.split(" ");
         if (lineSplit.length >= 2) {
-          this.addAction(lineSplit[0], lineSplit.slice(1).join(' '));
+          this.addAction(lineSplit[0], lineSplit.slice(1).join(" "));
         }
       }
     });
 
-    this.switchGroup('_default');
+    this.switchGroup("_default");
     return this;
   }
 
   private getResultCode(): string {
     switch (this.errorLevel) {
       case LogErrorLevel.NONE:
-        return 'SUCCESS';
+        return "SUCCESS";
       case LogErrorLevel.ERROR:
-        return 'FAILURE';
+        return "FAILURE";
       default:
         return LogErrorLevel[this.errorLevel];
     }
@@ -75,12 +75,15 @@ export class ArchiveLog {
 
   private parseResultCode(code: string): LogErrorLevel {
     switch (code) {
-      case 'SUCCESS':
+      case "SUCCESS":
         return LogErrorLevel.NONE;
-      case 'FAILURE':
+      case "FAILURE":
         return LogErrorLevel.ERROR;
       default:
-        return LogErrorLevel[code as keyof typeof LogErrorLevel] || LogErrorLevel.NONE;
+        return (
+          LogErrorLevel[code as keyof typeof LogErrorLevel] ||
+          LogErrorLevel.NONE
+        );
     }
   }
 
@@ -88,11 +91,11 @@ export class ArchiveLog {
     try {
       let log = `// ${this.title}\n`;
       this.items.forEach((group, groupName) => {
-        if (groupName !== '_default') {
+        if (groupName !== "_default") {
           log += `> ${groupName}\n`;
         }
 
-        group.forEach(item => {
+        group.forEach((item) => {
           if (item.comment) {
             log += `// ${item.data}\n`;
           } else {
@@ -110,7 +113,7 @@ export class ArchiveLog {
       logUpdate(`Log written to "${path}".`);
       return true;
     } catch {
-      console.log('Could not write log.');
+      console.log("Could not write log.");
       return false;
     }
   }
@@ -120,12 +123,13 @@ export class ArchiveLog {
       this.errorLevel = level;
     }
 
-    this.addAction(LogErrorLevel[level], '');
-    this.addComment(LogErrorLevel[level] + ': ' + message);
+    this.addAction(LogErrorLevel[level], "");
+    this.addComment(LogErrorLevel[level] + ": " + message);
 
-    const errorLog = level == LogErrorLevel.ERROR ? console.error : console.warn;
+    const errorLog =
+      level == LogErrorLevel.ERROR ? console.error : console.warn;
 
-    errorLog(LogErrorLevel[level] + ': ' + message);
+    errorLog(LogErrorLevel[level] + ": " + message);
 
     if (error) {
       this.addComment(error.toString());
@@ -155,8 +159,8 @@ export class ArchiveLog {
   }
 
   addComment(comment: string): void {
-    const lines = comment.split('\n');
-    lines.forEach(line => {
+    const lines = comment.split("\n");
+    lines.forEach((line) => {
       this.accessGroup.push({ comment: true, data: line });
     });
   }
@@ -165,13 +169,15 @@ export class ArchiveLog {
     this.accessGroup.push({ comment: false, action: action, data: data });
   }
 
-  getData(action: string, group = '_default'): string[] {
+  getData(action: string, group = "_default"): string[] {
     const items = this.items.get(group);
 
     if (!items) {
       throw new Error(`Group ${group} was missing from the log file.`);
     }
 
-    return items.filter(item => !item.comment && item.action === action).map(item => item.data);
+    return items
+      .filter((item) => !item.comment && item.action === action)
+      .map((item) => item.data);
   }
 }

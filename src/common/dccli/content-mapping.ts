@@ -1,6 +1,6 @@
-import { readFile, writeFile, exists, mkdir } from 'fs';
-import { dirname } from 'path';
-import { promisify } from 'util';
+import { readFile, writeFile, exists, mkdir } from "fs";
+import { dirname } from "path";
+import { promisify } from "util";
 
 export class ContentMapping {
   contentItems: Map<string, string>;
@@ -38,7 +38,7 @@ export class ContentMapping {
   async save(filename: string): Promise<void> {
     const obj: SerializedContentMapping = {
       contentItems: Array.from(this.contentItems),
-      workflowStates: Array.from(this.workflowStates)
+      workflowStates: Array.from(this.workflowStates),
     };
 
     const text = JSON.stringify(obj);
@@ -47,12 +47,12 @@ export class ContentMapping {
     if (!(await promisify(exists)(dir))) {
       await promisify(mkdir)(dir);
     }
-    await promisify(writeFile)(filename, text, { encoding: 'utf8' });
+    await promisify(writeFile)(filename, text, { encoding: "utf8" });
   }
 
   async load(filename: string): Promise<boolean> {
     try {
-      const text = await promisify(readFile)(filename, { encoding: 'utf8' });
+      const text = await promisify(readFile)(filename, { encoding: "utf8" });
       const obj = JSON.parse(text);
 
       this.contentItems = new Map(obj.contentItems);

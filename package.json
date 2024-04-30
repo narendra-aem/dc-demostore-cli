@@ -12,6 +12,8 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "rimraf dist && tsc && cross-os osbuild",
+    "format:check": "prettier --check \"{app,src,test}/**/*.{ts,js}\"",
+    "format": "prettier --write \"{app,src,test}/**/*.{ts,js}\"",
     "osbuild": {
       "darwin": "chmod +x dist/index.js",
       "linux": "chmod +x dist/index.js",
@@ -79,6 +81,7 @@
     "@types/yargs": "^17.0.32",
     "cross-os": "^1.5.0",
     "npm-run-all": "^4.1.5",
+    "prettier": "^3.2.5",
     "rimraf": "^5.0.5",
     "standard-version": "^9.3.2",
     "typescript": "^5.4.5"

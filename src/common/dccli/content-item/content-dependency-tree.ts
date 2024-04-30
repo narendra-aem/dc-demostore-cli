@@ -1,11 +1,11 @@
-import { ContentItem, ContentRepository } from 'dc-management-sdk-js';
-import { ContentMapping } from '../content-mapping';
-import { Body } from './body';
+import { ContentItem, ContentRepository } from "dc-management-sdk-js";
+import { ContentMapping } from "../content-mapping";
+import { Body } from "./body";
 
 type DependencyContentTypeSchema =
-  | 'http://bigcontent.io/cms/schema/v1/core#/definitions/content-link'
-  | 'http://bigcontent.io/cms/schema/v1/core#/definitions/content-reference'
-  | '_hierarchy'; // Used internally for parent dependencies.
+  | "http://bigcontent.io/cms/schema/v1/core#/definitions/content-link"
+  | "http://bigcontent.io/cms/schema/v1/core#/definitions/content-reference"
+  | "_hierarchy"; // Used internally for parent dependencies.
 
 export interface RepositoryContentItem {
   repo: ContentRepository;
@@ -38,14 +38,14 @@ export interface ContentDependencyLayer {
 }
 
 export const referenceTypes = [
-  'http://bigcontent.io/cms/schema/v1/core#/definitions/content-link',
-  'http://bigcontent.io/cms/schema/v1/core#/definitions/content-reference'
+  "http://bigcontent.io/cms/schema/v1/core#/definitions/content-link",
+  "http://bigcontent.io/cms/schema/v1/core#/definitions/content-reference",
 ];
 
 enum CircularDependencyStage {
   Standalone = 0,
   Intertwined,
-  Parent
+  Parent,
 }
 
 type RecursiveSearchStep = Body | ContentDependency | Array<Body>;
@@ -64,7 +64,7 @@ export class ContentDependencyTree {
     this.resolveContentDependencies(info);
 
     const requiredSchema = new Set<string>();
-    info.forEach(item => {
+    info.forEach((item) => {
       requiredSchema.add(item.owner.content.body._meta.schema);
     });
 
@@ -80,8 +80,10 @@ export class ContentDependencyTree {
     while (unresolvedCount > 0) {
       const stage: ItemContentDependencies[] = [];
       const lastUnresolvedCount = unresolvedCount;
-      info = info.filter(item => {
-        const unresolvedDependencies = item.dependencies.filter(dep => !resolved.has(dep.dependency.id as string));
+      info = info.filter((item) => {
+        const unresolvedDependencies = item.dependencies.filter(
+          (dep) => !resolved.has(dep.dependency.id as string),
+        );
 
         if (unresolvedDependencies.length === 0) {
           stage.push(item);
@@ -91,7 +93,7 @@ export class ContentDependencyTree {
         return true;
       });
 
-      stage.forEach(item => {
+      stage.forEach((item) => {
         resolved.add(item.owner.content.id as string);
       });
 
@@ -114,9 +116,13 @@ export class ContentDependencyTree {
       // To be in this stage, the circular dependency must contain no other circular dependencies (before self-loop).
       // The circular dependencies that appear before self loop are
       const lastUnresolvedCount = unresolvedCount;
-      const circularLevels = info.map(item => this.topLevelCircular(item, info));
+      const circularLevels = info.map((item) =>
+        this.topLevelCircular(item, info),
+      );
 
-      const chosenLevel = Math.min(...circularLevels) as CircularDependencyStage;
+      const chosenLevel = Math.min(
+        ...circularLevels,
+      ) as CircularDependencyStage;
 
       for (let i = 0; i < info.length; i++) {
         const item = info[i];
@@ -137,10 +143,12 @@ export class ContentDependencyTree {
 
     this.levels = stages;
     this.circularLinks = [];
-    circularStages.forEach(stage => this.circularLinks.push(...stage));
+    circularStages.forEach((stage) => this.circularLinks.push(...stage));
 
     this.all = allInfo;
-    this.byId = new Map(allInfo.map(info => [info.owner.content.id as string, info]));
+    this.byId = new Map(
+      allInfo.map((info) => [info.owner.content.id as string, info]),
+    );
     this.requiredSchema = Array.from(requiredSchema);
   }
 
@@ -149,11 +157,17 @@ export class ContentDependencyTree {
     body: RecursiveSearchStep,
     result: ContentDependencyInfo[],
     parent: RecursiveSearchStep | undefined,
-    index: string | number
+    index: string | number,
   ): void {
     if (Array.isArray(body)) {
       body.forEach((contained, index) => {
-        this.searchObjectForContentDependencies(item, contained, result, body, index);
+        this.searchObjectForContentDependencies(
+          item,
+          contained,
+          result,
+          body,
+          index,
+        );
       });
     } else if (body != null) {
       const allPropertyNames = Object.getOwnPropertyNames(body);
@@ -161,17 +175,28 @@ export class ContentDependencyTree {
       if (
         body._meta &&
         referenceTypes.indexOf(body._meta.schema) !== -1 &&
-        typeof body.contentType === 'string' &&
-        typeof body.id === 'string'
+        typeof body.contentType === "string" &&
+        typeof body.id === "string"
       ) {
-        result.push({ dependency: body as ContentDependency, owner: item, parent, index });
+        result.push({
+          dependency: body as ContentDependency,
+          owner: item,
+          parent,
+          index,
+        });
         return;
       }
 
-      allPropertyNames.forEach(propName => {
+      allPropertyNames.forEach((propName) => {
         const prop = (body as Body)[propName];
-        if (typeof prop === 'object') {
-          this.searchObjectForContentDependencies(item, prop, result, body, propName);
+        if (typeof prop === "object") {
+          this.searchObjectForContentDependencies(
+            item,
+            prop,
+            result,
+            body,
+            propName,
+          );
         }
       });
     }
@@ -180,7 +205,7 @@ export class ContentDependencyTree {
   public removeContentDependenciesFromBody(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     body: any,
-    remove: object[]
+    remove: object[],
   ): void {
     if (Array.isArray(body)) {
       for (let i = 0; i < body.length; i++) {
@@ -193,11 +218,11 @@ export class ContentDependencyTree {
     } else {
       const allPropertyNames = Object.getOwnPropertyNames(body);
 
-      allPropertyNames.forEach(propName => {
+      allPropertyNames.forEach((propName) => {
         const prop = body[propName];
         if (remove.indexOf(prop) !== -1) {
           delete body[propName];
-        } else if (typeof prop === 'object') {
+        } else if (typeof prop === "object") {
           this.removeContentDependenciesFromBody(prop, remove);
         }
       });
@@ -206,7 +231,7 @@ export class ContentDependencyTree {
 
   private topLevelCircular(
     top: ItemContentDependencies,
-    unresolved: ItemContentDependencies[]
+    unresolved: ItemContentDependencies[],
   ): CircularDependencyStage {
     let selfLoop = false;
     let intertwinedLoop = false;
@@ -219,7 +244,7 @@ export class ContentDependencyTree {
       depth: number,
       unresolved: ItemContentDependencies[],
       seenBefore: Set<ItemContentDependencies>,
-      intertwined: boolean
+      intertwined: boolean,
     ): boolean => {
       let hasCircular = false;
 
@@ -234,7 +259,14 @@ export class ContentDependencyTree {
         if (!intertwined) {
           // Does it loop back to the parent?
           const storedSelfLoop = selfLoop;
-          const childIntertwined = traverse(item, item, 0, [top], new Set<ItemContentDependencies>(), true);
+          const childIntertwined = traverse(
+            item,
+            item,
+            0,
+            [top],
+            new Set<ItemContentDependencies>(),
+            true,
+          );
           selfLoop = storedSelfLoop;
 
           if (childIntertwined) {
@@ -254,8 +286,16 @@ export class ContentDependencyTree {
 
       seenBefore.add(item);
 
-      item.dependencies.forEach(dep => {
-        hasCircular = traverse(top, dep.resolved, depth + 1, unresolved, seenBefore, intertwined) || hasCircular;
+      item.dependencies.forEach((dep) => {
+        hasCircular =
+          traverse(
+            top,
+            dep.resolved,
+            depth + 1,
+            unresolved,
+            seenBefore,
+            intertwined,
+          ) || hasCircular;
       });
 
       return hasCircular;
@@ -278,25 +318,36 @@ export class ContentDependencyTree {
     }
   }
 
-  private identifyContentDependencies(items: RepositoryContentItem[]): ItemContentDependencies[] {
-    return items.map(item => {
+  private identifyContentDependencies(
+    items: RepositoryContentItem[],
+  ): ItemContentDependencies[] {
+    return items.map((item) => {
       const result: ContentDependencyInfo[] = [];
-      this.searchObjectForContentDependencies(item, item.content.body, result, undefined, 0);
+      this.searchObjectForContentDependencies(
+        item,
+        item.content.body,
+        result,
+        undefined,
+        0,
+      );
 
       // Hierarchy parent is also a dependency.
-      if (item.content.body._meta.hierarchy && item.content.body._meta.hierarchy.parentId) {
+      if (
+        item.content.body._meta.hierarchy &&
+        item.content.body._meta.hierarchy.parentId
+      ) {
         result.push({
           dependency: {
             _meta: {
-              schema: '_hierarchy',
-              name: '_hierarchy'
+              schema: "_hierarchy",
+              name: "_hierarchy",
             },
             id: item.content.body._meta.hierarchy.parentId,
-            contentType: ''
+            contentType: "",
           },
           owner: item,
           parent: undefined,
-          index: 0
+          index: 0,
         });
       }
 
@@ -307,14 +358,16 @@ export class ContentDependencyTree {
   private resolveContentDependencies(items: ItemContentDependencies[]): void {
     // Create cross references to make it easier to traverse dependencies.
 
-    const idMap = new Map(items.map(item => [item.owner.content.id as string, item]));
+    const idMap = new Map(
+      items.map((item) => [item.owner.content.id as string, item]),
+    );
     const visited = new Set<ItemContentDependencies>();
 
     const resolve = (item: ItemContentDependencies): void => {
       if (visited.has(item)) return;
       visited.add(item);
 
-      item.dependencies.forEach(dep => {
+      item.dependencies.forEach((dep) => {
         const target = idMap.get(dep.dependency.id as string);
         dep.resolved = target;
         if (target) {
@@ -323,27 +376,27 @@ export class ContentDependencyTree {
             resolved: item,
             dependency: dep.dependency,
             parent: dep.parent,
-            index: dep.index
+            index: dep.index,
           });
           resolve(target);
         }
       });
     };
 
-    items.forEach(item => resolve(item));
+    items.forEach((item) => resolve(item));
   }
 
   public traverseDependents(
     item: ItemContentDependencies,
     action: (item: ItemContentDependencies) => void,
     ignoreHier = false,
-    traversed?: Set<ItemContentDependencies>
+    traversed?: Set<ItemContentDependencies>,
   ): void {
     const traversedSet = traversed || new Set<ItemContentDependencies>();
     traversedSet.add(item);
     action(item);
-    item.dependents.forEach(dependent => {
-      if (ignoreHier && dependent.dependency._meta.schema == '_hierarchy') {
+    item.dependents.forEach((dependent) => {
+      if (ignoreHier && dependent.dependency._meta.schema == "_hierarchy") {
         return;
       }
 
@@ -354,10 +407,12 @@ export class ContentDependencyTree {
     });
   }
 
-  public filterAny(action: (item: ItemContentDependencies) => boolean): ItemContentDependencies[] {
-    return this.all.filter(item => {
+  public filterAny(
+    action: (item: ItemContentDependencies) => boolean,
+  ): ItemContentDependencies[] {
+    return this.all.filter((item) => {
       let match = false;
-      this.traverseDependents(item, item => {
+      this.traverseDependents(item, (item) => {
         if (action(item)) {
           match = true;
         }
@@ -367,14 +422,16 @@ export class ContentDependencyTree {
   }
 
   public removeContent(items: ItemContentDependencies[]): void {
-    this.levels.forEach(level => {
-      level.items = level.items.filter(item => items.indexOf(item) === -1);
+    this.levels.forEach((level) => {
+      level.items = level.items.filter((item) => items.indexOf(item) === -1);
     });
 
-    this.all = this.all.filter(item => items.indexOf(item) === -1);
-    this.circularLinks = this.circularLinks.filter(item => items.indexOf(item) === -1);
+    this.all = this.all.filter((item) => items.indexOf(item) === -1);
+    this.circularLinks = this.circularLinks.filter(
+      (item) => items.indexOf(item) === -1,
+    );
 
-    items.forEach(item => {
+    items.forEach((item) => {
       this.byId.delete(item.owner.content.id as string);
     });
   }

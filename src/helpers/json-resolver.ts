@@ -1,18 +1,26 @@
-import axios from 'axios';
-import { URL } from 'url';
-import * as fs from 'fs';
-import * as path from 'path';
+import axios from "axios";
+import { URL } from "url";
+import * as fs from "fs";
+import * as path from "path";
 
-export async function jsonResolver(jsonToResolve = '', relativeDir: string = __dirname): Promise<string> {
+export async function jsonResolver(
+  jsonToResolve = "",
+  relativeDir: string = __dirname,
+): Promise<string> {
   try {
     const resolvedJson = JSON.parse(jsonToResolve);
-    if (resolvedJson && (Array.isArray(resolvedJson) || typeof resolvedJson === 'object')) {
+    if (
+      resolvedJson &&
+      (Array.isArray(resolvedJson) || typeof resolvedJson === "object")
+    ) {
       return jsonToResolve;
     }
-  } catch { }
+  } catch {}
 
   if (jsonToResolve.match(/^(http|https):\/\//)) {
-    const result = await axios.get(jsonToResolve, { transformResponse: data => data });
+    const result = await axios.get(jsonToResolve, {
+      transformResponse: (data) => data,
+    });
     return result.data;
   }
 
@@ -23,15 +31,18 @@ export async function jsonResolver(jsonToResolve = '', relativeDir: string = __d
     resolvedFilename = path.resolve(relativeDir, jsonToResolve);
   }
 
-  if (typeof resolvedFilename === 'string' && resolvedFilename.startsWith('.')) {
-    resolvedFilename = resolvedFilename.replace(/^\./, relativeDir)
+  if (
+    typeof resolvedFilename === "string" &&
+    resolvedFilename.startsWith(".")
+  ) {
+    resolvedFilename = resolvedFilename.replace(/^\./, relativeDir);
   }
 
   if (!fs.existsSync(resolvedFilename)) {
     throw new Error(
-      `Cannot find JSON file "${jsonToResolve}" using relative dir "${relativeDir}" (resolved path "${resolvedFilename}")`
+      `Cannot find JSON file "${jsonToResolve}" using relative dir "${relativeDir}" (resolved path "${resolvedFilename}")`,
     );
   }
 
-  return fs.readFileSync(resolvedFilename, 'utf-8');
+  return fs.readFileSync(resolvedFilename, "utf-8");
 }
