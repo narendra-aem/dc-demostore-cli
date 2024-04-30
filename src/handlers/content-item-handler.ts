@@ -173,7 +173,7 @@ export class ContentItemHandler extends ResourceHandler implements Cleanable {
             // Updating delivery key
             if (contentItem.body._meta.deliveryKey?.length > 0) {
               if (!_.isEmpty(contentItem.body._meta.deliveryKey)) {
-                contentItem.body._meta.deliveryKey = `${contentItem.body._meta.deliveryKey}-${nanoid()}`;
+                contentItem.body._meta.deliveryKey = `${contentItem.body._meta.deliveryKey.slice(0, 128)}-${nanoid()}`;
                 needsUpdate = true;
               }
             }
