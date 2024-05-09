@@ -13,6 +13,7 @@ import fs from "fs-extra";
 import { prompts } from "../common/prompts";
 
 export class WebhookHandler extends CleanableResourceHandler {
+  sortPriority = 0.01;
   icon = "🪝";
 
   constructor() {

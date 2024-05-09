@@ -69,7 +69,6 @@ const installTypes = async (
   );
   const storedContentTypes = [...activeContentTypes, ...archivedContentTypes];
 
-  // let fileContentTypes = _.map(Object.entries(jsonTypes), x => x[1])
   await Promise.all(
     types.map(async (fileContentType) => {
       let stored = _.find(
@@ -172,9 +171,6 @@ export class ContentTypeHandler extends CleanableResourceHandler {
       return;
     }
 
-    // first we will load the site/integration types (codecs)
-    //await installTypes(context, getCodecs().map(getContentType))
-
     const jsonTypes =
       loadJsonFromDirectory<ContentTypeWithRepositoryAssignments>(
         sourceDir,
@@ -186,7 +182,6 @@ export class ContentTypeHandler extends CleanableResourceHandler {
     }
     validateNoDuplicateContentTypeUris(jsonTypes);
 
-    // const typesToInstall = _.filter(Object.values(jsonTypes), s => !_.includes(_.map(getCodecs(), 'schema.uri'), s.contentTypeUri))
     const typesToInstall = Object.values(jsonTypes);
     await installTypes(context, typesToInstall);
 

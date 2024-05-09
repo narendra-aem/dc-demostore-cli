@@ -3,13 +3,6 @@ import { ConfigurationParameters } from "../common/dccli/configure";
 import dynamicContentClientFactory from "../common/dccli/dynamic-content-client-factory";
 import { FileLog } from "../common/dccli/file-log";
 import { dirname, basename, join, relative, resolve, extname } from "path";
-
-import {
-  AxiosHttpClient,
-  HttpRequest,
-  HttpResponse,
-} from "dc-management-sdk-js";
-
 import { lstat, readdir, readFile } from "fs";
 import { promisify } from "util";
 import { ImportItemBuilderOptions } from "../common/dccli/interfaces/import-item-builder-options.interface";
@@ -968,10 +961,6 @@ const importTree = async (
 };
 
 export const handler = async (argv: any): Promise<boolean> => {
-  // if (await argv.revertLog) {
-  //   return revert(argv);
-  // }
-
   const { dir, baseRepo, baseFolder, validate, logFile } = argv;
   const force = argv.force || false;
   let { mapFile } = argv;

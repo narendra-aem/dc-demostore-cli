@@ -7,6 +7,7 @@ import {
   Sortable,
   Hub,
   ContentRepository,
+  ContentType,
 } from "dc-management-sdk-js";
 import logger, { logComplete, logSubheading } from "./logger";
 import chalk from "chalk";
@@ -16,11 +17,10 @@ import { ContentItemHandler } from "../handlers/content-item-handler";
 import { AmplienceContext } from "../handlers/resource-handler";
 import fs from "fs-extra";
 import { sleep } from "./utils";
-import { OAuthRestClient } from "@amplience/dc-integration-middleware";
 import { paginator, StatusQuery } from "../common/dccli/paginator";
-import { OAuthRestClientInterface } from "@amplience/dc-integration-middleware";
 import { DAMMapping } from "./types";
 import { DAMService } from "../dam/dam-service";
+import { DCClient } from "../dc/dc-client";
 
 type IntegrationConstants = {
   automation: string;
@@ -39,28 +39,24 @@ export const schemas: IntegrationConstants = {
   automation: `https://demostore.amplience.com/site/automation`,
 };
 
-const baseURL = `https://demostore-catalog.s3.us-east-2.amazonaws.com`;
-const restMap: Dictionary<OAuthRestClientInterface> = {};
 const damServiceMap: Dictionary<DAMService> = {};
 
 let contentMap: Dictionary<ContentItem> = {};
 const AmplienceHelperGenerator = (
   context: AmplienceContext,
 ): AmplienceHelper => {
-  const rest = (restMap[context.environment.dc.clientId] =
-    restMap[context.environment.dc.clientId] ||
-    OAuthRestClient(
-      {
-        api_url: `https://api.amplience.net/v2/content`,
-        auth_url: `https://auth.amplience.net/oauth/token`,
-      },
-      `client_id=${context.environment.dc.clientId}&client_secret=${context.environment.dc.clientSecret}&grant_type=client_credentials`,
-      {
-        headers: {
-          "content-type": "application/x-www-form-urlencoded",
-        },
-      },
-    ));
+  const dcSdkClient = new DynamicContent({
+    client_id: context.environment.dc.clientId,
+    client_secret: context.environment.dc.clientSecret,
+  });
+
+  const dcClient = new DCClient(
+    {
+      clientId: context.environment.dc.clientId,
+      clientSecret: context.environment.dc.clientSecret,
+    },
+    { authUrl: process.env.AUTH_URL },
+  );
 
   const getContentItems = async (
     hub: Hub,
@@ -92,12 +88,7 @@ const AmplienceHelperGenerator = (
     await timedBlock("login", async () => {
       try {
         // log in to Dynamic Content
-        let client = new DynamicContent({
-          client_id: context.environment.dc.clientId,
-          client_secret: context.environment.dc.clientSecret,
-        });
-
-        let hub: Hub = await client.hubs.get(context.environment.dc.hubId);
+        let hub: Hub = await dcSdkClient.hubs.get(context.environment.dc.hubId);
         if (!hub) {
           throw new Error(`hubId not found: ${context.environment.dc.hubId}`);
         }
@@ -112,8 +103,11 @@ const AmplienceHelperGenerator = (
     });
 
   const deleteFolder = async (folder: Folder) =>
-    await rest.delete(`/folders/${folder.id}`);
-  const get = rest.get;
+    await dcClient.deleteFolder(folder);
+
+  const getEffectiveContentType = async (contentType: ContentType) => {
+    return dcClient.getEffectiveContentType(contentType);
+  };
 
   const updateContentMap = (item: ContentItem) => {
     contentMap[item.body._meta.deliveryKey] = item;
@@ -264,8 +258,12 @@ const AmplienceHelperGenerator = (
   };
 
   const publishContentItem = async (item: ContentItem) => {
-    await rest.post(`/content-items/${item.id}/publish`);
+    await dcClient.publish(item);
     updateContentMap(item);
+  };
+
+  const unpublishContentItem = async (item: ContentItem) => {
+    await dcClient.unpublish(item);
   };
 
   const publishAll = async (): Promise<void> => {
@@ -303,12 +301,43 @@ const AmplienceHelperGenerator = (
     );
   };
 
+  const waitUntilUnpublished = async (contentItem: ContentItem) => {
+    logUpdate(`waiting for content item ${contentItem.id} to be unpublished`);
+    const MAX_ATTEMPTS = 10;
+    for (let i = 0; i < MAX_ATTEMPTS; i++) {
+      await sleep(4000);
+      logUpdate(
+        `checking content item ${contentItem.id} unpublished state (attempt=${i})`,
+      );
+      const item = (await dcSdkClient.contentItems.get(
+        contentItem.id,
+      )) as ContentItem & {
+        lastPublishedDate: number;
+        lastUnpublishedDate: number;
+      };
+      if (!item.lastPublishedDate) {
+        logUpdate(
+          `content item ${contentItem.id} not published (attempt=${i})`,
+        );
+        return; // item has never been published
+      }
+      if (
+        item.lastUnpublishedDate &&
+        item.lastPublishedDate &&
+        item.lastUnpublishedDate >= item.lastPublishedDate
+      ) {
+        logUpdate(
+          `content item ${contentItem.id} is unpublished (attempt=${i})`,
+        );
+        return; // item is unpublished;
+      }
+    }
+  };
+
   return {
     getContentItem,
     getDemoStoreConfig,
     generateDemoStoreConfig: updateDemoStoreConfig,
-
-    get,
     getAutomation,
     updateAutomation,
 
@@ -316,14 +345,18 @@ const AmplienceHelperGenerator = (
     getContentMap,
     getContentRepository,
     getContentItemsInRepository,
+    getEffectiveContentType,
 
     getDAMMapping,
 
     publishContentItem,
+    unpublishContentItem,
     publishAll,
 
     deleteFolder,
     login,
+
+    waitUntilUnpublished,
   };
 };
 export default AmplienceHelperGenerator;
@@ -339,9 +372,11 @@ export type AmplienceHelper = {
   getContentMap: () => Dictionary<string>;
   getContentRepository: (key: string) => Promise<ContentRepository>;
   getContentItemsInRepository: (key: string) => Promise<ContentItem[]>;
+  getEffectiveContentType: (contentType: ContentType) => Promise<ContentType>;
   getDAMMapping: () => Promise<DAMMapping>;
-  get: (url: string) => Promise<any>;
   publishContentItem: (ContentItem: any) => Promise<void>;
+  unpublishContentItem: (ContentItem: any) => Promise<void>;
   deleteFolder: (folder: Folder) => Promise<void>;
   login: () => Promise<Hub>;
+  waitUntilUnpublished: (contentItem: ContentItem) => Promise<void>;
 };

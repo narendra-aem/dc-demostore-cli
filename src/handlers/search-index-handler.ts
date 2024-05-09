@@ -83,14 +83,13 @@ export class SearchIndexHandler extends ResourceHandler {
 
     for (const { indexDetails } of indexFixtures) {
       try {
-        logUpdate(
-          `deleting index objects: ${chalk.cyanBright(indexDetails.name)}`,
-        );
+        logUpdate(`deleting index: ${chalk.cyanBright(indexDetails.name)}`);
         const index = client.initIndex(indexDetails.name);
-        await index.clearObjects();
+        const response = await index.delete();
+        logUpdate(`delete index job created with task ID: ${response.taskID}`);
       } catch (error) {
         logger.error(
-          `${prompts.error} deleting index objects [ ${indexDetails.name} ]: ${error.message}`,
+          `${prompts.error} deleting index [ ${indexDetails.name} ]: ${error.message}`,
         );
       }
     }

@@ -5,6 +5,7 @@ export const prompts: any = {
   created: chalk.green.bold("created"),
   import: chalk.green("import"),
   update: chalk.green("update"),
+  cleanup: chalk.green("cleanup"),
   unarchive: chalk.yellow("unarchive"),
 
   sync: chalk.blue("sync"),
