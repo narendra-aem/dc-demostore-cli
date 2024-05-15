@@ -1,4 +1,4 @@
-import { Options } from 'yargs';
+import { Options } from "yargs";
 
 export interface CommandOptions {
   [key: string]: Options;

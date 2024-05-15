@@ -1,20 +1,29 @@
-import fs from 'fs';
-import path from 'path';
-import { HalResource, HalResourceConstructor } from 'dc-management-sdk-js';
-import _ from 'lodash';
+import fs from "fs";
+import path from "path";
+import { HalResource, HalResourceConstructor } from "dc-management-sdk-js";
+import _ from "lodash";
 
-export const loadJsonFromDirectory = <T extends HalResource>(dir: string, resourceType: HalResourceConstructor<T>): { [p: string]: T } => {
+export const loadJsonFromDirectory = <T extends HalResource>(
+  dir: string,
+  resourceType: HalResourceConstructor<T>,
+): { [p: string]: T } => {
   if (!fs.existsSync(dir)) {
     return {};
   }
 
-  const files = fs.readdirSync(dir).map(file => path.resolve(dir, file))
-    .filter(file => fs.lstatSync(file).isFile() && path.extname(file) === '.json');
+  const files = fs
+    .readdirSync(dir)
+    .map((file) => path.resolve(dir, file))
+    .filter(
+      (file) => fs.lstatSync(file).isFile() && path.extname(file) === ".json",
+    );
 
   const loadedFiles: { [filename: string]: T } = {};
-  files.forEach(filename => {
+  files.forEach((filename) => {
     try {
-      loadedFiles[filename] = new resourceType(JSON.parse(fs.readFileSync(filename, 'utf-8')));
+      loadedFiles[filename] = new resourceType(
+        JSON.parse(fs.readFileSync(filename, "utf-8")),
+      );
     } catch (e) {
       throw new Error(`Non-JSON file found: ${filename}, aborting...`);
     }
@@ -23,5 +32,5 @@ export const loadJsonFromDirectory = <T extends HalResource>(dir: string, resour
 };
 
 export const loadFileFromDirectory = <json>(sourceFile: string): string => {
-  return fs.readFileSync(sourceFile, { encoding: 'utf8' });
+  return fs.readFileSync(sourceFile, { encoding: "utf8" });
 };
