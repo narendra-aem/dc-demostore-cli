@@ -2,6 +2,34 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [4.0.0](https://github.com/amplience/dc-demostore-cli/compare/v2.0.1...v4.0.0) (2024-05-15)
+
+
+### ⚠ BREAKING CHANGES
+
+* automate external search indexes ([#10](https://github.com/amplience/dc-demostore-cli/issues/10))
+
+### Features
+
+* automate external search indexes ([#10](https://github.com/amplience/dc-demostore-cli/issues/10)) ([b4d40f4](https://github.com/amplience/dc-demostore-cli/commit/b4d40f446031e88507c7d5c14afb76843ded4a11))
+* remove dist directory ([#15](https://github.com/amplience/dc-demostore-cli/issues/15)) ([7f7fc8d](https://github.com/amplience/dc-demostore-cli/commit/7f7fc8dfc241cffd4a0cf2ed8c0a0488689b4a2b))
+* unpublish content items ([#18](https://github.com/amplience/dc-demostore-cli/issues/18)) ([9a683f5](https://github.com/amplience/dc-demostore-cli/commit/9a683f5cba3da695bb29d9a8c97a4d5c8ecdd605))
+* update node and dependencies ([#11](https://github.com/amplience/dc-demostore-cli/issues/11)) ([e52e14c](https://github.com/amplience/dc-demostore-cli/commit/e52e14c7a188f085d6c2143c04b7945c194ed455))
+
+
+### Bug Fixes
+
+* adding and applying prettier formatting ([#17](https://github.com/amplience/dc-demostore-cli/issues/17)) ([15d1490](https://github.com/amplience/dc-demostore-cli/commit/15d149058723baa8e621e27cb72f01ffdf197ddb))
+* remove legacy update command ([#16](https://github.com/amplience/dc-demostore-cli/issues/16)) ([de59410](https://github.com/amplience/dc-demostore-cli/commit/de5941056e9a0cfe3d9589d000f64b5ffd45eae6))
+* removing unused branch argument ([#14](https://github.com/amplience/dc-demostore-cli/issues/14)) ([553474f](https://github.com/amplience/dc-demostore-cli/commit/553474f60bf45f5ad976e49a29b13f71d9ef6d5c))
+* slicing long delivery keys ([859b1d3](https://github.com/amplience/dc-demostore-cli/commit/859b1d3255178709a3b6245f5426721e28c18723))
+* updating package lock ([c773144](https://github.com/amplience/dc-demostore-cli/commit/c773144f9d6fab6ca1f49d785df03ad164252abd))
+
+
+### Miscellaneous Chores
+
+* release 4.0.0 ([bf0c94e](https://github.com/amplience/dc-demostore-cli/commit/bf0c94e7ba7f6dc00794f0353196d3865e535086))
+
 ### [2.0.1](https://github.com/amplience/dc-demostore-cli/compare/v2.0.0...v2.0.1) (2023-09-13)
 
 ## [2.0.0](https://github.com/amplience/dc-demostore-cli/compare/v1.1.4...v2.0.0) (2023-09-13)
