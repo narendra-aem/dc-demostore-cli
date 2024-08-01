@@ -10,9 +10,9 @@
   "type": "commonjs",
   "main": "./dist/index.js",
   "scripts": {
-    "build": "./ build --output public"
+    "build": "./ build --output public",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "rimraf dist && tsc && cross-os osbuild && ./ build --output public",
+    "build": "rimraf dist && tsc && cross-os osbuild",
     "format:check": "prettier --check \"{app,src,test}/**/*.{ts,js}\"",
     "format": "prettier --write \"{app,src,test}/**/*.{ts,js}\"",
     "osbuild": {
